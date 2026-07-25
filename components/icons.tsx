@@ -1,0 +1,183 @@
+// The app's icon set — hand-drawn inline SVGs on a 16px grid (IconDoc is 24px),
+// stroked with currentColor so they inherit text colour. Deliberately not an
+// icon library: the set is small, and a dependency would drag in a house style.
+type IconProps = { className?: string };
+
+// Document-with-magnifier — marks the recovery plan on the home screen.
+export function IconDoc({ className }: IconProps) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      aria-hidden
+      className={className ?? "size-5"}
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.75}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z" />
+      <path d="M14 3v5h5" />
+      <circle cx="11" cy="14" r="2.25" />
+      <path d="m12.6 15.6 1.4 1.4" />
+    </svg>
+  );
+}
+
+// Keyboard for the "Type instead" text link.
+export function IconKeyboard({ className }: IconProps) {
+  return (
+    <svg
+      viewBox="0 0 16 16"
+      aria-hidden
+      className={className ?? "size-4"}
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.5}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <rect x="1.5" y="3.5" width="13" height="9" rx="1.5" />
+      <path d="M4 6.5h.01M6.5 6.5h.01M9 6.5h.01M11.5 6.5h.01M4 9h8" />
+    </svg>
+  );
+}
+
+export function IconChevron({ className }: IconProps) {
+  return (
+    <svg
+      viewBox="0 0 16 16"
+      aria-hidden
+      className={className ?? "size-4"}
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.6}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="m6 3.5 5 4.5-5 4.5" />
+    </svg>
+  );
+}
+
+export function IconMenu({ className }: IconProps) {
+  return (
+    <svg
+      viewBox="0 0 16 16"
+      aria-hidden
+      className={className ?? "size-4"}
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.6}
+      strokeLinecap="round"
+    >
+      <path d="M2.5 4h11M2.5 8h11M2.5 12h11" />
+    </svg>
+  );
+}
+
+export function IconChat({ className }: IconProps) {
+  return (
+    <svg
+      viewBox="0 0 16 16"
+      aria-hidden
+      className={className ?? "size-4"}
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.5}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M3 4.5A1.5 1.5 0 0 1 4.5 3h7A1.5 1.5 0 0 1 13 4.5v4A1.5 1.5 0 0 1 11.5 10H6l-3 2.5V4.5Z" />
+    </svg>
+  );
+}
+
+export function IconClose({ className }: IconProps) {
+  return (
+    <svg
+      viewBox="0 0 16 16"
+      aria-hidden
+      className={className ?? "size-4"}
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.7}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="m4 4 8 8M12 4l-8 8" />
+    </svg>
+  );
+}
+
+export function IconSend({ className }: IconProps) {
+  return (
+    <svg
+      viewBox="0 0 16 16"
+      aria-hidden
+      className={className ?? "size-4"}
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.6}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M8 13V3M4 7l4-4 4 4" />
+    </svg>
+  );
+}
+
+export function IconMic({ className }: IconProps) {
+  return (
+    <svg
+      viewBox="0 0 16 16"
+      aria-hidden
+      className={className ?? "size-4"}
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.4}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <rect x="6" y="2" width="4" height="7" rx="2" />
+      <path d="M4 7.5a4 4 0 0 0 8 0M8 11.5V14M6 14h4" />
+    </svg>
+  );
+}
+
+// "+" affordance at the head of the input capsule.
+export function IconPlus({ className }: IconProps) {
+  return (
+    <svg
+      viewBox="0 0 16 16"
+      aria-hidden
+      className={className ?? "size-4"}
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.6}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M8 3.5v9M3.5 8h9" />
+    </svg>
+  );
+}
+
+// Padlock for the "Your data is private" reassurance card.
+export function IconLock({ className }: IconProps) {
+  return (
+    <svg
+      viewBox="0 0 16 16"
+      aria-hidden
+      className={className ?? "size-4"}
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.5}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <rect x="3.5" y="7" width="9" height="6" rx="1.5" />
+      <path d="M5.5 7V5.25a2.5 2.5 0 0 1 5 0V7" />
+    </svg>
+  );
+}

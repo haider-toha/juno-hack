@@ -1,0 +1,14 @@
+.next
+out
+build
+node_modules
+pnpm-lock.yaml
+
+# Next.js rewrites these on every dev/build — let it own their formatting
+tsconfig.json
+next-env.d.ts
+
+# Agent tooling, not app code. The skills are vendored verbatim and tracked by
+# hash in skills-lock.json — reformatting them would break that.
+.claude
+.agents

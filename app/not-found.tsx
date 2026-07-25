@@ -1,0 +1,31 @@
+import Link from "next/link";
+
+export default function NotFound() {
+  return (
+    <main className="mx-auto flex min-h-dvh max-w-5xl flex-col px-6 sm:px-10">
+      <header className="border-b border-rule-strong py-6">
+        <Link
+          href="/"
+          className="font-display text-base font-semibold tracking-tight text-ink transition-opacity duration-150 ease-out hover:opacity-70"
+        >
+          Juno
+        </Link>
+      </header>
+      <div className="flex flex-1 flex-col justify-center py-24">
+        <p className="font-display text-sm uppercase tracking-[0.18em] text-accent">
+          404
+        </p>
+        <h1 className="mt-3 text-5xl tracking-tight sm:text-6xl">
+          Page not found.
+        </h1>
+        <p className="mt-6 max-w-[50ch] text-xl text-ink-muted">
+          This page doesn&rsquo;t exist.{" "}
+          <Link href="/" className="text-accent">
+            Back to home
+          </Link>
+          .
+        </p>
+      </div>
+    </main>
+  );
+}

@@ -1,0 +1,76 @@
+{
+  "version": 1,
+  "skills": {
+    "create-implementation-plan": {
+      "source": "github/awesome-copilot",
+      "sourceType": "github",
+      "skillPath": "skills/create-implementation-plan/SKILL.md",
+      "computedHash": "5c282fded01e40a7db621b0690513f62d179b600e0a271751e82cb0c9e1bcafc"
+    },
+    "deep-research": {
+      "source": "199-biotechnologies/claude-deep-research-skill",
+      "sourceType": "github",
+      "skillPath": "SKILL.md",
+      "computedHash": "685efecf2091dccf219506641671acc3c0c31ecb83f54b8473b9d399ba0337b8"
+    },
+    "haider-building-clis": {
+      "source": "/Users/haidertoha/Code/axiometa-ant-hack/.claude/skills",
+      "sourceType": "local",
+      "computedHash": "a815a160ccec648042de2541dd8f19cf204e720f127d50f0a3784d736e140507"
+    },
+    "haider-building-mcp-servers": {
+      "source": "/Users/haidertoha/Code/axiometa-ant-hack/.claude/skills",
+      "sourceType": "local",
+      "computedHash": "5d49459c7c0c1fa23bceb6e0dfb7da4a9538848fe37e737856fb0f0fe877057b"
+    },
+    "haider-commit-conventions": {
+      "source": "/Users/haidertoha/Code/axiometa-ant-hack/.claude/skills",
+      "sourceType": "local",
+      "computedHash": "8fa3003962fa6972affab43481dfea8d062900ad848ee9a558a279e0df004e81"
+    },
+    "haider-design-taste": {
+      "source": "/Users/haidertoha/Code/axiometa-ant-hack/.claude/skills",
+      "sourceType": "local",
+      "computedHash": "2f506531cc370e6c33532d78681af0b147b330c1e4e100fce28ee9fb54d59ffa"
+    },
+    "haider-engineering-defaults": {
+      "source": "/Users/haidertoha/Code/axiometa-ant-hack/.claude/skills",
+      "sourceType": "local",
+      "computedHash": "966df04ab8b790882b90d0e8dce4ccd3d4729f468f8cc3bb875979fcf1544959"
+    },
+    "haider-icon-geometry": {
+      "source": "/Users/haidertoha/Code/axiometa-ant-hack/.claude/skills",
+      "sourceType": "local",
+      "computedHash": "334182e749082515c4f342ccb5a56ce019517d780a4f2b8b95905b219b886e3a"
+    },
+    "haider-ui-components": {
+      "source": "/Users/haidertoha/Code/axiometa-ant-hack/.claude/skills",
+      "sourceType": "local",
+      "computedHash": "22315715d1d6988c246cd39522626553f467acf7bc3643c7a7901ad438d8368b"
+    },
+    "planning-and-task-breakdown": {
+      "source": "addyosmani/agent-skills",
+      "sourceType": "github",
+      "skillPath": "skills/planning-and-task-breakdown/SKILL.md",
+      "computedHash": "2b47f19bb035cd8bf6816cb3d21c6d9830cb1da52a089e2e2892d1c63521f5d8"
+    },
+    "spec-driven-development": {
+      "source": "addyosmani/agent-skills",
+      "sourceType": "github",
+      "skillPath": "skills/spec-driven-development/SKILL.md",
+      "computedHash": "2dee9aa940633b7b5e0f45be34839ab31c0de98d482e16772c5cd350f4b91b4b"
+    },
+    "using-superpowers": {
+      "source": "obra/superpowers",
+      "sourceType": "github",
+      "skillPath": "skills/using-superpowers/SKILL.md",
+      "computedHash": "a77a803b7fc1a19c87605cf7a5ef318c5adc233de10b9ebeecb2ee2609f5454e"
+    },
+    "writing-plans": {
+      "source": "obra/superpowers",
+      "sourceType": "github",
+      "skillPath": "skills/writing-plans/SKILL.md",
+      "computedHash": "a8a8b0d07b744173079b25d26c6a189a0b5e7ddd80444ce92055b974dab7352b"
+    }
+  }
+}
