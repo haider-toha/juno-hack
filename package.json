@@ -1,5 +1,5 @@
 {
-  "name": "juno",
+  "name": "portico",
   "private": true,
   "type": "module",
   "packageManager": "pnpm@11.9.0",
@@ -15,9 +15,13 @@
   },
   "dependencies": {
     "@elevenlabs/react": "^1.8.0",
+    "@upstash/redis": "^1.38.0",
+    "@vercel/blob": "^2.6.1",
+    "ai": "^7.0.37",
     "next": "16.2.9",
     "react": "19.2.7",
     "react-dom": "19.2.7",
+    "server-only": "^0.0.1",
     "zod": "4.4.3"
   },
   "devDependencies": {
