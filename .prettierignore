@@ -12,3 +12,9 @@ next-env.d.ts
 # hash in skills-lock.json — reformatting them would break that.
 .claude
 .agents
+
+# The medic's discharge corpus is an external input contract, not our source.
+# It is the ground-truth label set for extraction QA, so it stays byte-for-byte
+# as delivered — and re-sending a corrected letter must not turn CI red.
+# Our own generated fixtures/nhs-drug-map.json is NOT ignored and stays checked.
+fixtures/discharge-summaries

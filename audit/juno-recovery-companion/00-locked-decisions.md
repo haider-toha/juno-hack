@@ -31,10 +31,10 @@ Portico is the doorway you pass through with a clear plan.
 
 **Decision:** Real persistence is in scope. It is Vercel-native.
 
-| Concern                                        | Choice                     | Package         | Env                                              |
-| ---------------------------------------------- | -------------------------- | --------------- | ------------------------------------------------ |
-| App state (patient, plan JSON, daily log, kin) | **Upstash Redis**          | `@upstash/redis`| `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN` |
-| Uploaded letter images / PDFs                  | **Vercel Blob**            | `@vercel/blob`  | `BLOB_READ_WRITE_TOKEN`                          |
+| Concern                                        | Choice            | Package          | Env                                                  |
+| ---------------------------------------------- | ----------------- | ---------------- | ---------------------------------------------------- |
+| App state (patient, plan JSON, daily log, kin) | **Upstash Redis** | `@upstash/redis` | `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN` |
+| Uploaded letter images / PDFs                  | **Vercel Blob**   | `@vercel/blob`   | `BLOB_READ_WRITE_TOKEN`                              |
 
 **Supersedes:** `plan/initial-idea.md` line ~109 ("Storage: local / mock first…
 Supabase = stretch goal") and the "no database of any kind" constraint given to
@@ -165,7 +165,7 @@ Results are stored as extra fields on that patient's plan JSON.
 
 ### Action item for the medic (time-critical)
 
-The demo's clot-preventer must be **apixaban or rivaroxaban**, *not* enoxaparin
+The demo's clot-preventer must be **apixaban or rivaroxaban**, _not_ enoxaparin
 or dalteparin — the injectable LMWHs 404 on the NHS medicines A-Z, so the
 red-flag lookup would return nothing on the single most important drug in the
 demo. Apixaban is clinically correct here (its PIL covers prevention of clots
@@ -230,8 +230,8 @@ because this was a planning-only pass. Phase 3 must schedule them.
    provided for a field that does not have overrides enabled." Fix the README —
    and treat that throw as **desired** (loud failure), not something to soften.
 4. **CI is red.** `prettier --check` fails on `plan/raw-transcript.md`; the last
-   commit landed without `make format`. CI runs *only* `format:check` — `tsc
-   --noEmit` and `eslint .` both pass and need no env vars, so they are free
+   commit landed without `make format`. CI runs _only_ `format:check` — `tsc
+--noEmit` and `eslint .` both pass and need no env vars, so they are free
    additions.
 5. **`next build` fails at `lib/env.ts:12`** when `NEXT_PUBLIC_*` are empty. The
    same module-scope trap will hit `Redis.fromEnv()`. The lazy `serverEnv()` shape
@@ -251,7 +251,7 @@ ASR is Excellent.
 
 **The lesson from Welsh (still binding as engineering law):** ElevenLabs has
 **no language enum** on the agent `language` field. An unsupported code is
-accepted and fails at *runtime* as bad audio, not a config error. The dashboard
+accepted and fails at _runtime_ as bad audio, not a config error. The dashboard
 "Additional Languages" flow also **rewrites the TTS model** under you. That is
 exactly the class of silent fallback this project forbids (see D9).
 

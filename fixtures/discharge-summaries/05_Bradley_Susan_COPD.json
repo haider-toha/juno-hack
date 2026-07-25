@@ -1,0 +1,133 @@
+{
+  "patient_details": {
+    "surname": "Bradley",
+    "forename": "Susan",
+    "sex": "Female",
+    "date_of_birth": "27/09/1951",
+    "nhs_or_hospital_number": "512 897 6634",
+    "address": "9 Meadow Rise, Farnborough, GU14 8XZ",
+    "telephone": "01252 611 7789"
+  },
+  "admission_and_gp_details": {
+    "discharging_consultant": "Dr E. Marchetti",
+    "discharging_speciality_department": "Respiratory Medicine",
+    "method_of_admission": "Emergency - GP referral",
+    "date_of_admission": "20/07/2026",
+    "date_of_discharge": "25/07/2026",
+    "gp_details": "Dr T. Nguyen, Farnborough Medical Practice"
+  },
+  "diagnosis_at_discharge": "Infective exacerbation of COPD. PMH: hypertension, osteoarthritis, GORD.",
+  "operations_and_procedures": "None.",
+  "reason_for_admission_and_presenting_complaints": "4-day history of increased breathlessness, increased sputum volume/purulence (green) and wheeze on a background of known moderate COPD. No fevers, no chest pain.",
+  "clinical_narrative": "74F, ex-smoker (30 pack-years, quit 2015) with known COPD (FEV1 58% predicted) presented with a typical infective exacerbation. Treated with nebulised salbutamol/ipratropium, oral prednisolone 30mg for 5 days and oral doxycycline for 5 days per local antimicrobial guidelines. Oxygen saturations maintained on air throughout; ABG showed no hypercapnia. Symptoms improved over 48 hours and she was stepped down from nebulisers to inhalers. Physiotherapy input given for sputum clearance, and inhaler technique reviewed and corrected by the respiratory nurse specialist.",
+  "relevant_investigations_and_results": "WCC 12.1, CRP 62. CXR: hyperinflated, no consolidation. ABG: pH7.38, pCO2 5.4. Sputum: H. influenzae.",
+  "discharge_destination": "Home, lives alone; independent with ADLs, supported by neighbour and daughter (weekly visits).",
+  "relevant_legal_information": "No safeguarding or Mental Capacity Act concerns; full capacity.",
+  "information_given_to_patient_or_representative": "Advised on completing steroid/antibiotic course; inhaler technique corrected and demonstrated with spacer. Counselled on early recognition of exacerbations and smoking abstinence. Advised to contact GP/111 if breathless, feverish or coughing blood; call 999 if severe.",
+  "physical_ability_and_cognitive_function": {
+    "physical": {
+      "on_admission": "Breathless",
+      "at_discharge": "Improved; baseline exercise tolerance (~100m)"
+    },
+    "cognitive": {
+      "on_admission": "Normal",
+      "at_discharge": "Normal"
+    },
+    "other": {
+      "on_admission": "Wheeze",
+      "at_discharge": "Chest clear, no accessory muscle use"
+    }
+  },
+  "advice_recommendations_and_future_plans": {
+    "gp_actions": "Review in 2 weeks; ensure pulmonary rehab referral has been actioned.",
+    "advice_and_recommendations": "For GP: review response to treatment in 2 weeks - 2nd exacerbation this year, consider stepping up inhaled therapy (e.g. triple therapy) if frequent exacerbator; check vaccination status; encourage pulmonary rehab attendance. Counselling given as above re inhaler technique, COPD self-management and completing treatment course.",
+    "strategies_for_potential_problems": "COPD rescue pack discussed for future exacerbations per action plan; daughter aware."
+  },
+  "actions_and_outstanding_investigations": {
+    "hospital": {
+      "action": "Respiratory OP follow-up in 6-8 weeks with spirometry; pulmonary rehabilitation referral.",
+      "person_responsible": "Dr Marchetti's team",
+      "date": "~15/09/2026"
+    },
+    "community_and_specialist_services": {
+      "action": "GP review in 2 weeks; no district nursing input required.",
+      "person_responsible": "GP practice",
+      "date": "Within 2 weeks"
+    }
+  },
+  "medications_stopped_or_changed": {
+    "status": "No",
+    "details": "No regular medications stopped; prednisolone/doxycycline are new short courses only."
+  },
+  "allergies_risks_and_warnings": "NKDA",
+  "discharge_medications": [
+    {
+      "name": "Prednisolone 30mg",
+      "dose": "1 tab",
+      "frequency": "OD",
+      "route": "Oral",
+      "duration": "3 days remaining",
+      "quantity_supplied": "3 tabs"
+    },
+    {
+      "name": "Doxycycline 100mg",
+      "dose": "1 tab",
+      "frequency": "OD",
+      "route": "Oral",
+      "duration": "3 days remaining",
+      "quantity_supplied": "3 tabs"
+    },
+    {
+      "name": "Salbutamol 100mcg inh",
+      "dose": "2 puffs",
+      "frequency": "PRN",
+      "route": "Inhaled",
+      "duration": "Ongoing",
+      "quantity_supplied": "1 inhaler"
+    },
+    {
+      "name": "Spiolto Respimat",
+      "dose": "2 puffs",
+      "frequency": "OD",
+      "route": "Inhaled",
+      "duration": "Ongoing",
+      "quantity_supplied": "1 inhaler"
+    },
+    {
+      "name": "Omeprazole 20mg",
+      "dose": "1 tab",
+      "frequency": "OD",
+      "route": "Oral",
+      "duration": "Ongoing",
+      "quantity_supplied": "28 tabs"
+    },
+    {
+      "name": "Amlodipine 5mg",
+      "dose": "1 tab",
+      "frequency": "OD",
+      "route": "Oral",
+      "duration": "Ongoing",
+      "quantity_supplied": "28 tabs"
+    },
+    {
+      "name": "Paracetamol 1g",
+      "dose": "1 tab",
+      "frequency": "QDS PRN",
+      "route": "Oral",
+      "duration": "Ongoing",
+      "quantity_supplied": "28 tabs"
+    }
+  ],
+  "pharmacy": {
+    "compliance_aid": "N/A",
+    "supplying_pharmacy": "Lloyds Pharmacy, Farnborough",
+    "dispensed_by": "D.C.",
+    "checked_by": "N.P.",
+    "date": "25/07/2026"
+  },
+  "discharging_doctor": {
+    "print_name": "Dr E. Marchetti (ST6)",
+    "date": "25/07/2026",
+    "bleep_no": "5521"
+  }
+}

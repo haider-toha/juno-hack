@@ -160,7 +160,7 @@ code. Full schema, JSONC example and field-by-field rationale:
   do not get to say the thing [01 §I1, §I2, §I10].
 - **Red flags are a pair**, never a single string:
   `{ triggerVerbatim, actionVerbatim, contactIds, escalationChannel,
-  matchHints }`. `escalationChannel` is derived **only** from the recipient
+matchHints }`. `escalationChannel` is derived **only** from the recipient
   named in `actionVerbatim`, never from the symptom [01 §V6, §V7, §I7].
   `matchHints` is model-generated but structurally quarantined — used only to
   **route** speech to a verbatim line, never rendered or spoken [01 §I6].
@@ -216,7 +216,7 @@ export async function readPlan(
 ```
 
 - Discriminated unions over booleans, everywhere (`type Phase = "idle" |
-  "conversation"` is the existing house style — `voice-session.tsx:19`).
+"conversation"` is the existing house style — `voice-session.tsx:19`).
 - `satisfies`, never `as`, for config-shaped literals (seed fixtures,
   dictionaries).
 - `kebab-case.tsx` files exporting one `PascalCase` component. `use-*.ts` for
@@ -233,7 +233,7 @@ No test runner exists today. Given the timebox, add one only for the two pure
 modules where a silent bug is invisible until the demo:
 
 - `lib/timeline/schedule.ts` — date arithmetic across `offset | date |
-  conditional` anchors. Wrong math here is the kind of bug nobody notices
+conditional` anchors. Wrong math here is the kind of bug nobody notices
   until day 7 on stage.
 - `lib/escalation/rules.ts` — the "missed twice in three days on a high-stakes
   med" rule. This is the exact claim spoken on the family dashboard; it must
@@ -252,6 +252,7 @@ new CI steps. Both pass today, need no env vars, and CI is currently red on
 ## Boundaries
 
 **Always do:**
+
 - Run `make format` before every push (CI enforces it and is currently red).
 - Treat `lib/plan/schema.ts` as the shared contract — any change is
   communicated to both tracks before merging, not discovered in review.
@@ -263,6 +264,7 @@ new CI steps. Both pass today, need no env vars, and CI is currently red on
   never into the browser-safe `env` object.
 
 **Ask first (surface to the human before proceeding):**
+
 - Any change to `lib/plan/schema.ts` after both tracks have started building
   against it.
 - Whether to build the Tier 3 email escalation stretch (Resend) — verify
@@ -274,6 +276,7 @@ new CI steps. Both pass today, need no env vars, and CI is currently red on
   a Locked D4/D8 change, not a local tweak.
 
 **Never do:**
+
 - Add Supabase, Postgres, Neon, Prisma, Drizzle, or any ORM.
 - Build a standing drug side-effect database, computer-vision pill ID, label
   OCR, open-web Q&A, an AI symptom-checker/triage feature, or
@@ -333,7 +336,7 @@ Each is specific and independently checkable on demo night.
 Requiring a human decision; nothing else belongs here.
 
 1. **Scenario and drug names are not yet fixed.** The medic has not chosen
-   the clinical case. Action pending: `plan/medic-brief.md` has been sent;
+   the clinical case. Action pending: `tasks/medic-brief.md` has been sent;
    his reply picks the scenario and confirms apixaban/rivaroxaban as the
    clot-preventer [Locked D6 action item].
 2. **Blob access: `public` vs `private`.** Affects extraction (URL vs bytes)
@@ -369,8 +372,8 @@ manual standard `[04 §A.1]`. Concrete, checkable rules, all cited in
   comprehension above the numeracy level this product targets `[04 §A.10]`.
 - Natural frequencies over percentages ("1 in 2", not "50%") — NICE NG197.
 - Teach-back after every plan instruction, phrased as checking Portico's own
-  explanation, never the patient: *"Just so I know I explained that
-  clearly, when are you taking the next one?"* `[04 §A.18]`.
+  explanation, never the patient: _"Just so I know I explained that
+  clearly, when are you taking the next one?"_ `[04 §A.18]`.
 - Error messages name the problem and the fix, never "please"/"sorry"/
   "oops". Two existing strings in `voice-session.tsx` need rewriting
   `[04 §A.16]`.
@@ -410,8 +413,8 @@ it to decorative-glyph duty only, or introduce a darker third ink tier.
 ## Grading Criteria Coverage
 
 **Idea/concept.** The product's entire defence is one sentence, checkable by
-a judge: *everything Portico says is either the patient's own discharge letter
-or the NHS's own medicines page, read back verbatim with a link* — never
+a judge: _everything Portico says is either the patient's own discharge letter
+or the NHS's own medicines page, read back verbatim with a link_ — never
 generated clinical content. This is structurally enforced by the schema
 (§Shared contract above), not asserted in the pitch. The scope-creep test
 from the original planning doc still applies to every future feature idea:

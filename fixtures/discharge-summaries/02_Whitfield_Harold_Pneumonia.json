@@ -1,0 +1,133 @@
+{
+  "patient_details": {
+    "surname": "Whitfield",
+    "forename": "Harold",
+    "sex": "Male",
+    "date_of_birth": "02/11/1943",
+    "nhs_or_hospital_number": "872 419 3305",
+    "address": "8 Orchard Grove, Basingstoke, RG21 5FJ",
+    "telephone": "01256 778 3345 / NOK 07712 345678"
+  },
+  "admission_and_gp_details": {
+    "discharging_consultant": "Dr F. Osei",
+    "discharging_speciality_department": "Resp Med / COTE",
+    "method_of_admission": "Emergency - ambulance (home)",
+    "date_of_admission": "16/07/2026",
+    "date_of_discharge": "25/07/2026",
+    "gp_details": "Dr N. Patel, Kingsclere Road Surgery, Basingstoke"
+  },
+  "diagnosis_at_discharge": "Community-acquired pneumonia (right lower lobe); infective exacerbation of COPD. PMH: T2DM, hypertension, CKD stage 3a, permanent AF (on apixaban).",
+  "operations_and_procedures": "None.",
+  "reason_for_admission_and_presenting_complaints": "3-day history of worsening productive cough with green sputum, fevers and increasing breathlessness; daughter noted new confusion. Found hypoxic (SpO2 88% on air) with reduced air entry at right base.",
+  "clinical_narrative": "82M with COPD, T2DM, hypertension, CKD3a and AF presented with sepsis secondary to CAP with acute delirium. CXR confirmed right lower lobe consolidation. Treated with IV co-amoxiclav and clarithromycin, then stepped down to oral, with nebulised bronchodilators and controlled oxygen therapy (target 88-92% given COPD). Delirium resolved fully with treatment of sepsis, hydration and reorientation. Blood glucose monitored and diabetic medications adjusted during acute illness. Renal function remained at baseline CKD3a throughout. Physiotherapy input given. Discharged back to baseline mobility with frame, sats 94% on air.",
+  "relevant_investigations_and_results": "WCC 16.8, CRP 210 falling to 34. Cr 142 (baseline), eGFR 38. CXR: RLL consolidation. Sputum: H. influenzae.",
+  "discharge_destination": "Home with existing package of care (2x daily); OT/PT assessed, safe for discharge with frame.",
+  "relevant_legal_information": "Transient delirium during admission, now fully resolved. Capacity assessed and intact at discharge; no ongoing MCA concerns.",
+  "information_given_to_patient_or_representative": "Diagnosis and recovery plan discussed with patient and daughter (with consent). Both counselled on signs of worsening chest infection, completing antibiotics and correct inhaler use. Advised to seek urgent help if breathless, feverish or confused again.",
+  "physical_ability_and_cognitive_function": {
+    "physical": {
+      "on_admission": "Needs standby help",
+      "at_discharge": "Back to baseline, mobilises independently with frame"
+    },
+    "cognitive": {
+      "on_admission": "Acute delirium",
+      "at_discharge": "Resolved; baseline mild memory impairment only"
+    },
+    "other": {
+      "on_admission": "Hypoxic, 2L O2",
+      "at_discharge": "SpO2 94% on room air"
+    }
+  },
+  "advice_recommendations_and_future_plans": {
+    "gp_actions": "Recheck U&E and CRP in 1 week; review inhaler technique at next review.",
+    "advice_and_recommendations": "For GP: recheck U&E/CRP in 1 week (AKI on CKD3a); Ramipril withheld - review and restart once renal function stable; review COPD management, consider pulmonary rehab referral; check flu/pneumococcal vaccination status. Patient/daughter counselled as above re infection signs, antibiotic compliance and falls prevention; referral made to community falls clinic.",
+    "strategies_for_potential_problems": "Daughter aware/involved in care; has contact details for community matron and falls team."
+  },
+  "actions_and_outstanding_investigations": {
+    "hospital": {
+      "action": "Respiratory OP follow-up in 6 weeks with repeat CXR to confirm radiological resolution.",
+      "person_responsible": "Dr Osei's team",
+      "date": "~05/09/2026"
+    },
+    "community_and_specialist_services": {
+      "action": "District nursing POC review; community falls team referral.",
+      "person_responsible": "District nurses / Falls team",
+      "date": "Within 2 weeks"
+    }
+  },
+  "medications_stopped_or_changed": {
+    "status": "Yes",
+    "details": "Ramipril withheld due to AKI - GP to review/restart once renal function stable. Metformin reduced from 1g BD to 500mg BD due to reduced eGFR."
+  },
+  "allergies_risks_and_warnings": "NKDA",
+  "discharge_medications": [
+    {
+      "name": "Doxycycline 100mg",
+      "dose": "1 tab",
+      "frequency": "OD",
+      "route": "Oral",
+      "duration": "2 days (complete)",
+      "quantity_supplied": "2 tabs"
+    },
+    {
+      "name": "Apixaban 5mg",
+      "dose": "1 tab",
+      "frequency": "BD",
+      "route": "Oral",
+      "duration": "Ongoing",
+      "quantity_supplied": "56 tabs"
+    },
+    {
+      "name": "Metformin 500mg",
+      "dose": "1 tab",
+      "frequency": "BD",
+      "route": "Oral",
+      "duration": "Ongoing (reduced)",
+      "quantity_supplied": "56 tabs"
+    },
+    {
+      "name": "Ramipril 5mg",
+      "dose": "1 tab",
+      "frequency": "OD",
+      "route": "Oral",
+      "duration": "WITHHELD-GP review",
+      "quantity_supplied": "0 - see note"
+    },
+    {
+      "name": "Atorvastatin 20mg",
+      "dose": "1 tab",
+      "frequency": "Nocte",
+      "route": "Oral",
+      "duration": "Ongoing",
+      "quantity_supplied": "28 tabs"
+    },
+    {
+      "name": "Salbutamol 100mcg inh",
+      "dose": "2 puffs",
+      "frequency": "PRN",
+      "route": "Inhaled",
+      "duration": "Ongoing",
+      "quantity_supplied": "1 inhaler"
+    },
+    {
+      "name": "Tiotropium 18mcg",
+      "dose": "1 puff",
+      "frequency": "OD",
+      "route": "Inhaled",
+      "duration": "Ongoing",
+      "quantity_supplied": "1 inhaler"
+    }
+  ],
+  "pharmacy": {
+    "compliance_aid": "Dossette",
+    "supplying_pharmacy": "Boots Pharmacy, Basingstoke",
+    "dispensed_by": "A.M.",
+    "checked_by": "J.O.",
+    "date": "25/07/2026"
+  },
+  "discharging_doctor": {
+    "print_name": "Dr F. Osei (SpR)",
+    "date": "25/07/2026",
+    "bleep_no": "2287"
+  }
+}

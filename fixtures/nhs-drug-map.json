@@ -1,0 +1,396 @@
+{
+  "generated": "2026-07-25",
+  "source": "https://www.nhs.uk/medicines/",
+  "indexSlugs": 260,
+  "note": "Verified resolution for every drug in fixtures/discharge-summaries. states: found | no-urgent-guidance | absent | unavailable",
+  "drugs": [
+    {
+      "asWritten": "Co-codamol 30/500mg",
+      "normalised": "co-codamol",
+      "slug": "co-codamol-for-adults",
+      "aliasKind": "exact",
+      "letters": ["01"],
+      "state": "found",
+      "urgent": [
+        {
+          "aspect": "UsageOrScheduleHealthAspect",
+          "headline": "Contact 111 for advice now if:",
+          "text": "you take more than the recommended dose of co-codamol, even if you feel well Go to 111 online or call 111"
+        }
+      ]
+    },
+    {
+      "asWritten": "Ibuprofen 400mg",
+      "normalised": "ibuprofen",
+      "slug": "ibuprofen-for-adults",
+      "aliasKind": "exact",
+      "letters": ["01"],
+      "state": "found",
+      "urgent": [
+        {
+          "aspect": "UsageOrScheduleHealthAspect",
+          "headline": "Get help from NHS 111 if:",
+          "text": "you've taken more ibuprofen tablets, capsules, liquid or granules than it says on the packet or leaflet you've accidentally swallowed ibuprofen gel or spray and feel unwell You can call 111 or get help from 111 online ."
+        },
+        {
+          "aspect": "SideEffectsHealthAspect",
+          "headline": "Call NHS 111 if:",
+          "text": "you're taking ibuprofen and think you might be having serious side effects"
+        }
+      ]
+    },
+    {
+      "asWritten": "Apixaban 5mg",
+      "normalised": "apixaban",
+      "slug": "apixaban",
+      "aliasKind": "exact",
+      "letters": ["02"],
+      "state": "found",
+      "urgent": [
+        {
+          "aspect": "MedicalHelpUrgentHealthAspect",
+          "headline": "Get help from NHS 111 if:",
+          "text": "you or your child have taken more than your prescribed dose of apixaban You can call 111 or get help from 111 online . Call 111 for a child under 5 years old."
+        },
+        {
+          "aspect": "SideEffectsHealthAspect",
+          "headline": "Call NHS 111 if:",
+          "text": "You're taking apixaban and: you have symptoms of bleeding you've had a head injury you think you might be having any other serious side effects"
+        }
+      ]
+    },
+    {
+      "asWritten": "Atorvastatin 20mg",
+      "normalised": "atorvastatin",
+      "slug": "atorvastatin",
+      "aliasKind": "exact",
+      "letters": ["02"],
+      "state": "found",
+      "urgent": [
+        {
+          "aspect": "UsageOrScheduleHealthAspect",
+          "headline": "Speak to a pharmacist as soon as possible if:",
+          "text": "you've taken more than your prescribed dose of atorvastatin If you're unable to speak to a pharmacist, or you took too much of your medicine on purpose, call NHS 111 for advice. Find a pharmacy"
+        },
+        {
+          "aspect": "SideEffectsHealthAspect",
+          "headline": "Call NHS 111 if:",
+          "text": "you're taking atorvastatin and think you might be having serious side effects"
+        }
+      ]
+    },
+    {
+      "asWritten": "Doxycycline 100mg",
+      "normalised": "doxycycline",
+      "slug": "doxycycline",
+      "aliasKind": "exact",
+      "letters": ["02", "05"],
+      "state": "found",
+      "urgent": [
+        {
+          "aspect": "UsageOrScheduleHealthAspect",
+          "headline": "Get help from NHS 111 if:",
+          "text": "you've taken more than your prescribed dose of doxycycline You can call 111 or get help from 111 online ."
+        },
+        {
+          "aspect": "SideEffectsHealthAspect",
+          "headline": "Call NHS 111 if:",
+          "text": "you're taking doxycycline and think you might be having serious side effects"
+        }
+      ]
+    },
+    {
+      "asWritten": "Metformin 500mg",
+      "normalised": "metformin",
+      "slug": "metformin",
+      "aliasKind": "exact",
+      "letters": ["02"],
+      "state": "found",
+      "urgent": [
+        {
+          "aspect": "UsageOrScheduleHealthAspect",
+          "headline": "Contact 111 for advice now if:",
+          "text": "you take more than your prescribed dose of metformin Get help from 111 online or call 111"
+        }
+      ]
+    },
+    {
+      "asWritten": "Ramipril 5mg",
+      "normalised": "ramipril",
+      "slug": "ramipril",
+      "aliasKind": "exact",
+      "letters": ["02"],
+      "state": "no-urgent-guidance",
+      "urgent": []
+    },
+    {
+      "asWritten": "Salbutamol 100mcg inh",
+      "normalised": "salbutamol",
+      "slug": "salbutamol-inhaler",
+      "aliasKind": "exact",
+      "letters": ["02", "05"],
+      "state": "no-urgent-guidance",
+      "urgent": []
+    },
+    {
+      "asWritten": "Tiotropium 18mcg",
+      "normalised": "tiotropium",
+      "slug": "tiotropium-inhalers",
+      "aliasKind": "exact",
+      "letters": ["02"],
+      "state": "found",
+      "urgent": [
+        {
+          "aspect": "UsageOrScheduleHealthAspect",
+          "headline": "Contact 111 for advice now if:",
+          "text": "you use more than your prescribed dose of tiotropium and have a faster heartbeat or blurred vision. Call 111 or get help from 111 online ."
+        }
+      ]
+    },
+    {
+      "asWritten": "Aspirin 75mg",
+      "normalised": "aspirin",
+      "slug": "aspirin",
+      "aliasKind": "exact",
+      "letters": ["03"],
+      "state": "found",
+      "urgent": [
+        {
+          "aspect": "UsageOrScheduleHealthAspect",
+          "headline": "Speak to a pharmacist as soon as possible if:",
+          "text": "you've taken more aspirin than it says on the packet, leaflet or prescription If you're unable to speak to a pharmacist, or you took too much of your medicine on purpose, call NHS 111 for advice. Find a pharmacy"
+        },
+        {
+          "aspect": "SideEffectsHealthAspect",
+          "headline": "Call NHS 111 if:",
+          "text": "you're taking aspirin and you think you might be having serious side effects"
+        }
+      ]
+    },
+    {
+      "asWritten": "Atorvastatin 80mg",
+      "normalised": "atorvastatin",
+      "slug": "atorvastatin",
+      "aliasKind": "exact",
+      "letters": ["03"],
+      "state": "found",
+      "urgent": [
+        {
+          "aspect": "UsageOrScheduleHealthAspect",
+          "headline": "Speak to a pharmacist as soon as possible if:",
+          "text": "you've taken more than your prescribed dose of atorvastatin If you're unable to speak to a pharmacist, or you took too much of your medicine on purpose, call NHS 111 for advice. Find a pharmacy"
+        },
+        {
+          "aspect": "SideEffectsHealthAspect",
+          "headline": "Call NHS 111 if:",
+          "text": "you're taking atorvastatin and think you might be having serious side effects"
+        }
+      ]
+    },
+    {
+      "asWritten": "Bisoprolol 2.5mg",
+      "normalised": "bisoprolol",
+      "slug": "bisoprolol",
+      "aliasKind": "exact",
+      "letters": ["03"],
+      "state": "found",
+      "urgent": [
+        {
+          "aspect": "UsageOrScheduleHealthAspect",
+          "headline": "Get help from NHS 111 if:",
+          "text": "you've taken more than your prescribed dose of bisoprolol You can call 111 or get help from 111 online ."
+        },
+        {
+          "aspect": "SideEffectsHealthAspect",
+          "headline": "Call NHS 111 if:",
+          "text": "you're taking bisoprolol and think you might be having serious side effects"
+        }
+      ]
+    },
+    {
+      "asWritten": "GTN spray 400mcg",
+      "normalised": "gtn spray",
+      "slug": "glyceryl-trinitrate-gtn",
+      "aliasKind": "exact",
+      "letters": ["03"],
+      "state": "found",
+      "urgent": [
+        {
+          "aspect": "UsageOrScheduleHealthAspect",
+          "headline": "Contact 111 now if:",
+          "text": "you take or use more than your prescribed dose of GTN spray, tablets, patches or ointment and you feel unwell Get help from 111 online or call 111"
+        }
+      ]
+    },
+    {
+      "asWritten": "Metformin 1g",
+      "normalised": "metformin",
+      "slug": "metformin",
+      "aliasKind": "exact",
+      "letters": ["03"],
+      "state": "found",
+      "urgent": [
+        {
+          "aspect": "UsageOrScheduleHealthAspect",
+          "headline": "Contact 111 for advice now if:",
+          "text": "you take more than your prescribed dose of metformin Get help from 111 online or call 111"
+        }
+      ]
+    },
+    {
+      "asWritten": "Ramipril 2.5mg",
+      "normalised": "ramipril",
+      "slug": "ramipril",
+      "aliasKind": "exact",
+      "letters": ["03"],
+      "state": "no-urgent-guidance",
+      "urgent": []
+    },
+    {
+      "asWritten": "Ticagrelor 90mg",
+      "normalised": "ticagrelor",
+      "slug": "ticagrelor",
+      "aliasKind": "exact",
+      "letters": ["03"],
+      "state": "no-urgent-guidance",
+      "urgent": []
+    },
+    {
+      "asWritten": "Adcal-D3",
+      "normalised": "adcal-d3",
+      "slug": "colecalciferol",
+      "aliasKind": "partial",
+      "letters": ["04"],
+      "state": "found",
+      "urgent": [
+        {
+          "aspect": "UsageOrScheduleHealthAspect",
+          "headline": "Contact 111 for advice now if:",
+          "text": "you have taken more than 4,000IU of colecalciferol in 1 day your child is between 1 and 10 years of age and has had more than 2,000IU in 1 day your child is under 12 months and has had more than 1,000IU in 1 day Go to 111.nhs.uk or call 111 . Call 111 if you are asking about a child under the age of 5 years."
+        }
+      ]
+    },
+    {
+      "asWritten": "Alendronic acid 70mg",
+      "normalised": "alendronic acid",
+      "slug": "alendronic-acid",
+      "aliasKind": "exact",
+      "letters": ["04"],
+      "state": "no-urgent-guidance",
+      "urgent": []
+    },
+    {
+      "asWritten": "Amlodipine 5mg",
+      "normalised": "amlodipine",
+      "slug": "amlodipine",
+      "aliasKind": "exact",
+      "letters": ["04", "05"],
+      "state": "found",
+      "urgent": [
+        {
+          "aspect": "UsageOrScheduleHealthAspect",
+          "headline": "Call NHS 111 if:",
+          "text": "you've taken more than your prescribed dose of amlodipine"
+        },
+        {
+          "aspect": "SideEffectsHealthAspect",
+          "headline": "Call NHS 111 if:",
+          "text": "you're taking amlodipine and think you might be having serious side effects"
+        }
+      ]
+    },
+    {
+      "asWritten": "Enoxaparin 40mg",
+      "normalised": "enoxaparin",
+      "slug": null,
+      "aliasKind": "absent",
+      "letters": ["04"],
+      "state": "absent",
+      "urgent": []
+    },
+    {
+      "asWritten": "Oxycodone IR 5mg",
+      "normalised": "oxycodone",
+      "slug": "oxycodone",
+      "aliasKind": "exact",
+      "letters": ["04"],
+      "state": "found",
+      "urgent": [
+        {
+          "aspect": "UsageOrScheduleHealthAspect",
+          "headline": "Get help from NHS 111 if:",
+          "text": "you've taken more than your prescribed dose of oxycodone You can call 111 or get help from 111 online ."
+        },
+        {
+          "aspect": "SideEffectsHealthAspect",
+          "headline": "Call NHS 111 if:",
+          "text": "you're taking oxycodone and think you might be having serious side effects"
+        }
+      ]
+    },
+    {
+      "asWritten": "Paracetamol 1g",
+      "normalised": "paracetamol",
+      "slug": "paracetamol-for-adults",
+      "aliasKind": "exact",
+      "letters": ["04", "05"],
+      "state": "found",
+      "urgent": [
+        {
+          "aspect": "UsageOrScheduleHealthAspect",
+          "headline": "Get help from NHS 111 if:",
+          "text": "you've taken more paracetamol than it says on the packet or leaflet You can call 111 or get help from 111 online ."
+        },
+        {
+          "aspect": "SideEffectsHealthAspect",
+          "headline": "Call NHS 111 if:",
+          "text": "you're taking paracetamol and think you might be having serious side effects"
+        }
+      ]
+    },
+    {
+      "asWritten": "Omeprazole 20mg",
+      "normalised": "omeprazole",
+      "slug": "omeprazole",
+      "aliasKind": "exact",
+      "letters": ["05"],
+      "state": "found",
+      "urgent": [
+        {
+          "aspect": "UsageOrScheduleHealthAspect",
+          "headline": "Get help from NHS 111 if:",
+          "text": "you or your child have had more omeprazole than it says on the packet, leaflet or prescription You can call 111 or get help from 111 online . Call 111 for a child under 5 years old."
+        },
+        {
+          "aspect": "SideEffectsHealthAspect",
+          "headline": "Call NHS 111 if:",
+          "text": "you're taking omeprazole and think you might be having serious side effects"
+        }
+      ]
+    },
+    {
+      "asWritten": "Prednisolone 30mg",
+      "normalised": "prednisolone",
+      "slug": "prednisolone",
+      "aliasKind": "exact",
+      "letters": ["05"],
+      "state": "no-urgent-guidance",
+      "urgent": []
+    },
+    {
+      "asWritten": "Spiolto Respimat",
+      "normalised": "spiolto respimat",
+      "slug": "tiotropium-inhalers",
+      "aliasKind": "partial",
+      "letters": ["05"],
+      "state": "found",
+      "urgent": [
+        {
+          "aspect": "UsageOrScheduleHealthAspect",
+          "headline": "Contact 111 for advice now if:",
+          "text": "you use more than your prescribed dose of tiotropium and have a faster heartbeat or blurred vision. Call 111 or get help from 111 online ."
+        }
+      ]
+    }
+  ]
+}

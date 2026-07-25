@@ -1,0 +1,125 @@
+{
+  "patient_details": {
+    "surname": "Sinclair",
+    "forename": "Margaret",
+    "sex": "Female",
+    "date_of_birth": "03/01/1947",
+    "nhs_or_hospital_number": "654 128 7743",
+    "address": "45 Cedar Court (sheltered housing), Fleet, GU51 3RJ",
+    "telephone": "01252 334 5567 / NOK 07890 123456"
+  },
+  "admission_and_gp_details": {
+    "discharging_consultant": "Mr A. Chalmers",
+    "discharging_speciality_department": "T&O/Orthogeriatrics",
+    "method_of_admission": "Emergency - ambulance (fall)",
+    "date_of_admission": "14/07/2026",
+    "date_of_discharge": "25/07/2026",
+    "gp_details": "Dr L. Marsh, Fleet Road Surgery"
+  },
+  "diagnosis_at_discharge": "Left displaced intracapsular fractured neck of femur. PMH: osteoporosis, hypertension, mild cognitive impairment.",
+  "operations_and_procedures": "Left cemented hemiarthroplasty (15/07/2026) under spinal anaesthetic, uncomplicated.",
+  "reason_for_admission_and_presenting_complaints": "Found on the floor at home by carer after a mechanical fall, unable to weight-bear on the left leg; leg shortened and externally rotated. No head injury, no loss of consciousness.",
+  "clinical_narrative": "79F with osteoporosis and mild cognitive impairment sustained a mechanical fall at home; radiographs confirmed a displaced left intracapsular NOF fracture. Admitted under the orthogeriatric joint-care pathway and underwent left cemented hemiarthroplasty within 36 hours, per NICE hip fracture standards. Post-operative course satisfactory, mobilised with physiotherapy from day 1, progressing from frame to elbow crutches. Wound healing well with staples in situ. Bone health assessed, bisphosphonate/vitamin D started. Cognition mildly abnormal but unchanged from baseline per family; no delirium.",
+  "relevant_investigations_and_results": "Hb 108 (transfused 1U). Bone profile: Ca 2.28, vit D 32 (low). X-ray: satisfactory hemiarthroplasty position.",
+  "discharge_destination": "Community rehabilitation bed (Fleet Grange) for ongoing physiotherapy before planned return home.",
+  "relevant_legal_information": "Mild cognitive impairment but retained capacity to consent to surgery/discharge planning; no DoLS or IMCA required. Family involved with patient's agreement.",
+  "information_given_to_patient_or_representative": "Fracture, surgery and rehabilitation plan discussed with patient and son. Both counselled on hip precautions, falls-prevention at home, and bone-health medication compliance. Advised to seek urgent review for worsening pain, wound issues, fevers or new inability to weight-bear.",
+  "physical_ability_and_cognitive_function": {
+    "physical": {
+      "on_admission": "Unable to WB",
+      "at_discharge": "Mobilising with elbow crutches/frame, physio ongoing"
+    },
+    "cognitive": {
+      "on_admission": "Mild impaired",
+      "at_discharge": "Unchanged from baseline; no delirium"
+    },
+    "other": {
+      "on_admission": "Pain, deformed",
+      "at_discharge": "Wound healing well, staples in situ for removal"
+    }
+  },
+  "advice_recommendations_and_future_plans": {
+    "gp_actions": "Arrange staple removal by 27/07/2026 if not done at rehab unit.",
+    "advice_and_recommendations": "For GP: continue bone protection (alendronic acid + AdCal D3) long-term; arrange DEXA if not already booked; falls clinic referral made. Counselling given as above re hip precautions, falls prevention and bone-health medication compliance.",
+    "strategies_for_potential_problems": "Family/rehab staff aware of falls and cognitive history; escalation plan discussed with son."
+  },
+  "actions_and_outstanding_investigations": {
+    "hospital": {
+      "action": "Orthopaedic OP follow-up in 6 weeks with hip X-ray; Fracture Liaison Service follow-up for osteoporosis.",
+      "person_responsible": "Mr Chalmers' team / FLS",
+      "date": "~05/09/2026"
+    },
+    "community_and_specialist_services": {
+      "action": "Rehab unit physiotherapy/OT; staple removal; falls referral.",
+      "person_responsible": "Fleet Grange / District nurses",
+      "date": "Ongoing"
+    }
+  },
+  "medications_stopped_or_changed": {
+    "status": "Yes",
+    "details": "Amlodipine dose reduced (postural hypotension). Co-codamol changed to paracetamol+short course oxycodone post-op, to be weaned."
+  },
+  "allergies_risks_and_warnings": "Penicillin - rash. Allergy band applied.",
+  "discharge_medications": [
+    {
+      "name": "Paracetamol 1g",
+      "dose": "1 tab",
+      "frequency": "QDS",
+      "route": "Oral",
+      "duration": "Regular",
+      "quantity_supplied": "28 tabs"
+    },
+    {
+      "name": "Oxycodone IR 5mg",
+      "dose": "1 tab",
+      "frequency": "QDS PRN",
+      "route": "Oral",
+      "duration": "1 week then review",
+      "quantity_supplied": "20 tabs"
+    },
+    {
+      "name": "Alendronic acid 70mg",
+      "dose": "1 tab",
+      "frequency": "Weekly",
+      "route": "Oral",
+      "duration": "Ongoing",
+      "quantity_supplied": "4 tabs"
+    },
+    {
+      "name": "Adcal-D3",
+      "dose": "1 tab",
+      "frequency": "BD",
+      "route": "Oral",
+      "duration": "Ongoing",
+      "quantity_supplied": "56 tabs"
+    },
+    {
+      "name": "Amlodipine 5mg",
+      "dose": "1 tab",
+      "frequency": "OD",
+      "route": "Oral",
+      "duration": "Ongoing (reduced)",
+      "quantity_supplied": "28 tabs"
+    },
+    {
+      "name": "Enoxaparin 40mg",
+      "dose": "1 inj",
+      "frequency": "OD",
+      "route": "SC",
+      "duration": "To day 28 post-op",
+      "quantity_supplied": "14 syringes"
+    }
+  ],
+  "pharmacy": {
+    "compliance_aid": "Dossette",
+    "supplying_pharmacy": "Hospital Pharmacy",
+    "dispensed_by": "K.B.",
+    "checked_by": "F.O.",
+    "date": "25/07/2026"
+  },
+  "discharging_doctor": {
+    "print_name": "Mr A. Chalmers (ST5)",
+    "date": "25/07/2026",
+    "bleep_no": "4456"
+  }
+}

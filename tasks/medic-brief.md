@@ -16,10 +16,10 @@ you actually wrote.
 ## 2. Your JSON is a test fixture, not the thing we ingest.
 
 To be clear on how we'll use it: we ingest the **letters** (photos / PDFs). Your
-JSON is what we check our extraction *against* — the answer key. If we ingested
+JSON is what we check our extraction _against_ — the answer key. If we ingested
 your JSON directly we'd be skipping the entire extraction step, which is the
 hardest and most impressive part of the build. So the JSON doesn't need to be
-pretty; it needs to be *correct for the letters you wrote*.
+pretty; it needs to be _correct for the letters you wrote_.
 
 ## 3. The clot-preventer must be apixaban or rivaroxaban.
 
@@ -72,11 +72,11 @@ Two-minute job for you: for whatever scenario you pick, which drugs are the
 **Relative dates are fine — good, even.** Real advice sheets say "14 days after
 your operation", "around 6 weeks". Write it exactly how a real letter would. We
 resolve offsets to real dates in code. One thing though: if you write
-"approximately 6 weeks", we will *not* render a specific date, because that would
+"approximately 6 weeks", we will _not_ render a specific date, because that would
 invent precision you didn't write.
 
 **Red flags come in pairs, and contacts vary.** For each red flag we need both the
-symptom *and* the action, verbatim. And if different times of day route to
+symptom _and_ the action, verbatim. And if different times of day route to
 different numbers (one trust we looked at had three numbers for one symptom list,
 split by hours), write it that way — we handle it, and it makes the letter more
 realistic.

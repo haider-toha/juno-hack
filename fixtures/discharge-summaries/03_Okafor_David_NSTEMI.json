@@ -1,0 +1,133 @@
+{
+  "patient_details": {
+    "surname": "Okafor",
+    "forename": "David",
+    "sex": "Male",
+    "date_of_birth": "09/05/1965",
+    "nhs_or_hospital_number": "765 233 9081",
+    "address": "22 Elmfield Road, Woking, GU22 7TN",
+    "telephone": "01483 556 9012"
+  },
+  "admission_and_gp_details": {
+    "discharging_consultant": "Dr R. Fenwick",
+    "discharging_speciality_department": "Cardiology",
+    "method_of_admission": "Emergency - ambulance via A&E",
+    "date_of_admission": "19/07/2026",
+    "date_of_discharge": "23/07/2026",
+    "gp_details": "Dr H. Iqbal, Woking Health Centre"
+  },
+  "diagnosis_at_discharge": "NSTEMI; single-vessel coronary disease (proximal RCA). PMH: hypertension, T2DM, hypercholesterolaemia, ex-smoker.",
+  "operations_and_procedures": "Coronary angiogram + PCI to proximal RCA with drug-eluting stent (20/07/2026), radial access, uncomplicated.",
+  "reason_for_admission_and_presenting_complaints": "Acute onset central crushing chest pain radiating to left arm and jaw with sweating and nausea, at rest. Pre-hospital ECG showed ST depression inferolaterally.",
+  "clinical_narrative": "61M with hypertension, T2DM, hypercholesterolaemia and prior smoking history (quit 2019) presented with typical cardiac chest pain. Troponin markedly elevated (peak 4500ng/L) with dynamic ECG changes, diagnosed with NSTEMI. Commenced on dual antiplatelets, fondaparinux, high-dose statin and beta-blocker per ACS pathway. Angiography demonstrated a severe proximal RCA stenosis, successfully treated with a single drug-eluting stent via radial approach. Recovery uncomplicated, radial band removed without haematoma. Echo showed preserved LV function (EF 55%). Referred to cardiac rehabilitation; glucose control optimised with diabetes team input.",
+  "relevant_investigations_and_results": "Trop T 4500 (peak). Echo: EF 55%, no RWMA. Angiogram: severe proximal RCA stenosis, stented. HbA1c 68, LDL 3.9.",
+  "discharge_destination": "Home, lives with wife, fully independent, no care needs.",
+  "relevant_legal_information": "No safeguarding or Mental Capacity Act concerns; full capacity.",
+  "information_given_to_patient_or_representative": "Diagnosis, PCI outcome and secondary prevention discussed with patient and wife. Counselled on dual antiplatelet compliance, DVLA driving restriction (1 week), cardiac rehab, and lifestyle changes. Advised to call 999 for recurrent chest pain unrelieved by GTN.",
+  "physical_ability_and_cognitive_function": {
+    "physical": {
+      "on_admission": "Independent",
+      "at_discharge": "Independent, mobilising well"
+    },
+    "cognitive": {
+      "on_admission": "Normal",
+      "at_discharge": "Normal"
+    },
+    "other": {
+      "on_admission": "Chest pain",
+      "at_discharge": "Asymptomatic, radial puncture site clean"
+    }
+  },
+  "advice_recommendations_and_future_plans": {
+    "gp_actions": "Check U&E and lipid profile in 4-6 weeks; review diabetes control.",
+    "advice_and_recommendations": "For GP: continue dual antiplatelets 12 months post-PCI - do not stop early without cardiology input. Up-titrate ACEi/beta-blocker; recheck lipids in 6-8 weeks (target LDL<1.4); HbA1c 68 - arrange diabetes review. Counselling given as above. Leaflet on heart attack, stenting and dual antiplatelet therapy provided.",
+    "strategies_for_potential_problems": "GTN spray provided with instructions; wife aware of symptoms to watch for."
+  },
+  "actions_and_outstanding_investigations": {
+    "hospital": {
+      "action": "Cardiology OP follow-up in 6 weeks with repeat lipids/U&E; cardiac rehabilitation referral.",
+      "person_responsible": "Dr Fenwick's team",
+      "date": "~03/09/2026"
+    },
+    "community_and_specialist_services": {
+      "action": "GP to monitor BP and diabetes control.",
+      "person_responsible": "GP practice",
+      "date": "Ongoing"
+    }
+  },
+  "medications_stopped_or_changed": {
+    "status": "Yes",
+    "details": "Amlodipine stopped, switched to bisoprolol for rate/BP control post-MI. Ramipril newly started for cardioprotection."
+  },
+  "allergies_risks_and_warnings": "NKDA",
+  "discharge_medications": [
+    {
+      "name": "Aspirin 75mg",
+      "dose": "1 tab",
+      "frequency": "OD",
+      "route": "Oral",
+      "duration": "Ongoing",
+      "quantity_supplied": "28 tabs"
+    },
+    {
+      "name": "Ticagrelor 90mg",
+      "dose": "1 tab",
+      "frequency": "BD",
+      "route": "Oral",
+      "duration": "12 months",
+      "quantity_supplied": "56 tabs"
+    },
+    {
+      "name": "Atorvastatin 80mg",
+      "dose": "1 tab",
+      "frequency": "Nocte",
+      "route": "Oral",
+      "duration": "Ongoing",
+      "quantity_supplied": "28 tabs"
+    },
+    {
+      "name": "Bisoprolol 2.5mg",
+      "dose": "1 tab",
+      "frequency": "OD",
+      "route": "Oral",
+      "duration": "Ongoing",
+      "quantity_supplied": "28 tabs"
+    },
+    {
+      "name": "Ramipril 2.5mg",
+      "dose": "1 tab",
+      "frequency": "OD",
+      "route": "Oral",
+      "duration": "Ongoing",
+      "quantity_supplied": "28 tabs"
+    },
+    {
+      "name": "Metformin 1g",
+      "dose": "1 tab",
+      "frequency": "BD",
+      "route": "Oral",
+      "duration": "Ongoing",
+      "quantity_supplied": "56 tabs"
+    },
+    {
+      "name": "GTN spray 400mcg",
+      "dose": "1-2spr",
+      "frequency": "PRN",
+      "route": "Sublingual",
+      "duration": "Ongoing",
+      "quantity_supplied": "1 spray"
+    }
+  ],
+  "pharmacy": {
+    "compliance_aid": "N/A",
+    "supplying_pharmacy": "Hospital Pharmacy",
+    "dispensed_by": "T.W.",
+    "checked_by": "S.N.",
+    "date": "23/07/2026"
+  },
+  "discharging_doctor": {
+    "print_name": "Dr R. Fenwick (Consultant)",
+    "date": "23/07/2026",
+    "bleep_no": "1187"
+  }
+}

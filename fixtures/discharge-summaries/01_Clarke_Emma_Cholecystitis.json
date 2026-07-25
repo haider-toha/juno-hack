@@ -1,0 +1,93 @@
+{
+  "patient_details": {
+    "surname": "Clarke",
+    "forename": "Emma",
+    "sex": "Female",
+    "date_of_birth": "14/03/1998",
+    "nhs_or_hospital_number": "943 762 5810",
+    "address": "14 Birchwood Close, Reading, RG6 1PL",
+    "telephone": "0118 496 2233"
+  },
+  "admission_and_gp_details": {
+    "discharging_consultant": "Mr J. Whitmore",
+    "discharging_speciality_department": "General Surgery",
+    "method_of_admission": "Emergency - via A&E",
+    "date_of_admission": "21/07/2026",
+    "date_of_discharge": "23/07/2026",
+    "gp_details": "Dr S. Ahmed, Thameside Medical Practice, Reading"
+  },
+  "diagnosis_at_discharge": "Acute cholecystitis with cholelithiasis.",
+  "operations_and_procedures": "Laparoscopic cholecystectomy (21/07/2026), uncomplicated.",
+  "reason_for_admission_and_presenting_complaints": "2-day history of severe constant RUQ pain radiating to the right shoulder tip, with fever, nausea and vomiting. Positive Murphy's sign on examination, no jaundice.",
+  "clinical_narrative": "Previously fit and well, presented with biliary colic progressing to acute cholecystitis. Bloods showed raised WCC/CRP with normal LFTs and bilirubin. USS confirmed cholelithiasis with gallbladder wall thickening and pericholecystic fluid. Commenced on IV co-amoxiclav and analgesia, underwent laparoscopic cholecystectomy on day of admission without complication. Post-op recovery uncomplicated - tolerating diet, mobilising independently, pain controlled on oral analgesia, wounds clean and dry.",
+  "relevant_investigations_and_results": "WCC 14.2, CRP 88, LFTs/bilirubin normal. USS: cholelithiasis, GB wall thickening, pericholecystic fluid.",
+  "discharge_destination": "Home, lives with partner. Fully independent with ADLs.",
+  "relevant_legal_information": "No safeguarding or Mental Capacity Act concerns. Patient has full capacity.",
+  "information_given_to_patient_or_representative": "Advised on wound care, signs of infection and return precautions. Counselled on activity/lifting restrictions and driving. Told to return to A&E if fever, worsening pain, jaundice or wound discharge/redness.",
+  "physical_ability_and_cognitive_function": {
+    "physical": {
+      "on_admission": "Independent",
+      "at_discharge": "Independent, mobile"
+    },
+    "cognitive": {
+      "on_admission": "Normal",
+      "at_discharge": "Normal"
+    },
+    "other": {
+      "on_admission": "N/A",
+      "at_discharge": "N/A"
+    }
+  },
+  "advice_recommendations_and_future_plans": {
+    "gp_actions": "Suture/glue check at day 5 if any concerns; no bloods required.",
+    "advice_and_recommendations": "For GP: review in 2 weeks if concerns; no further imaging needed; stop analgesia as pain settles. Patient counselled on post-op recovery, wound care and activity/driving restrictions (see above) and safety-netted to return to A&E for fever, worsening pain, jaundice or wound problems. Patient information leaflet on laparoscopic cholecystectomy and gallstone disease provided.",
+    "strategies_for_potential_problems": "Safety-netting given; patient has the surgical assessment unit contact number."
+  },
+  "actions_and_outstanding_investigations": {
+    "hospital": {
+      "action": "None - no routine surgical follow-up required.",
+      "person_responsible": "N/A",
+      "date": "N/A"
+    },
+    "community_and_specialist_services": {
+      "action": "None required.",
+      "person_responsible": "N/A",
+      "date": "N/A"
+    }
+  },
+  "medications_stopped_or_changed": {
+    "status": "No",
+    "details": "N/A - no regular medications."
+  },
+  "allergies_risks_and_warnings": "NKDA",
+  "discharge_medications": [
+    {
+      "name": "Co-codamol 30/500mg",
+      "dose": "2 tabs",
+      "frequency": "QDS PRN",
+      "route": "Oral",
+      "duration": "5 days",
+      "quantity_supplied": "40 tabs"
+    },
+    {
+      "name": "Ibuprofen 400mg",
+      "dose": "1 tab",
+      "frequency": "TDS PRN",
+      "route": "Oral",
+      "duration": "5 days",
+      "quantity_supplied": "15 tabs"
+    }
+  ],
+  "pharmacy": {
+    "compliance_aid": "N/A",
+    "supplying_pharmacy": "Hospital Pharmacy",
+    "dispensed_by": "R.K.",
+    "checked_by": "L.T.",
+    "date": "23/07/2026"
+  },
+  "discharging_doctor": {
+    "print_name": "Mr J. Whitmore (Consultant)",
+    "date": "23/07/2026",
+    "bleep_no": "3421"
+  }
+}
