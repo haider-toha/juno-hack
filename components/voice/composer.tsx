@@ -1,6 +1,7 @@
 import { type FormEvent, useEffect, useRef, useState } from "react";
 
 import { IconClose, IconMic, IconPlus, IconSend } from "@/components/icons";
+import type { Dictionary } from "@/lib/i18n/en";
 
 // The docked input bar: a pill capsule for typed questions plus the end-session
 // X. It owns only its own draft; the submitted text goes straight to `onSubmit`,
@@ -9,10 +10,12 @@ export function Composer({
   onSubmit,
   onEnd,
   autoFocus,
+  t,
 }: {
   onSubmit: (text: string) => void;
   onEnd: () => void;
   autoFocus: boolean;
+  t: Dictionary["composer"];
 }) {
   const [draft, setDraft] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
@@ -50,8 +53,8 @@ export function Composer({
             ref={inputRef}
             value={draft}
             onChange={(e) => setDraft(e.target.value)}
-            placeholder="Ask anything"
-            aria-label="Ask anything"
+            placeholder={t.placeholder}
+            aria-label={t.placeholder}
             enterKeyHint="send"
             autoComplete="off"
             className="h-11 min-w-0 flex-1 bg-transparent text-base text-ink outline-none placeholder:text-ink-faint"
@@ -65,7 +68,7 @@ export function Composer({
             // state: a mic at rest (voice is always live) that becomes a send
             // arrow once there is text to send.
             disabled={empty}
-            aria-label={empty ? "Voice input" : "Send"}
+            aria-label={empty ? t.voiceInput : t.send}
             className="grid size-9 shrink-0 place-items-center rounded-pill transition-opacity duration-150 ease-out active:opacity-60"
           >
             {empty ? (
@@ -78,7 +81,7 @@ export function Composer({
         <button
           type="button"
           onClick={onEnd}
-          aria-label="End conversation"
+          aria-label={t.end}
           className="grid size-11 shrink-0 place-items-center rounded-full bg-surface-invert text-ink-invert transition-opacity duration-150 ease-out active:opacity-80"
         >
           <IconClose className="size-4" />

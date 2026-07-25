@@ -1,7 +1,7 @@
 # Task runner for the Next.js app.
 SHELL := /bin/bash
 
-.PHONY: help setup install dev build format lint typecheck clean eval e2e
+.PHONY: help setup install dev build format lint typecheck clean eval e2e seed
 
 .DEFAULT_GOAL := help
 
@@ -39,3 +39,6 @@ eval: ## Score extraction against the medic's gold labels (needs `make dev`)
 
 e2e: ## Drive the demo arc in a real browser (needs a running app)
 	node --env-file-if-exists=.env --env-file-if-exists=.env.local scripts/e2e-demo.ts
+
+seed: ## Reset the demo to a known state (dev server must be running)
+	curl -fsS -X POST http://localhost:3000/api/seed && echo
