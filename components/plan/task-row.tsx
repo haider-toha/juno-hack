@@ -1,7 +1,6 @@
 import type { ReactNode } from "react";
 
 import { IconAlert, IconCheck } from "@/components/icons";
-import type { Medication } from "@/lib/plan/schema";
 import type { LogEntry } from "@/lib/store/log";
 import type { TimelineItem } from "@/lib/timeline/schedule";
 
@@ -26,25 +25,29 @@ export function TaskRow({ item, status, dateLabel, check }: Props) {
 
   return (
     <li className="flex min-h-11 items-start gap-3 py-3">
-      {check ?? <StatusMark status={status} />}
+      {/* A mark only where there is something to mark. A row with no tick and
+          no answer gets nothing: an empty ring on an appointment or on
+          "Coming up" looks like a control that does not work. */}
+      {check ?? (status === null ? null : <StatusMark status={status} />)}
       <div className="min-w-0 flex-1">
         {dateLabel === undefined ? null : (
-          <p className="tnum text-sm text-ink-muted">{dateLabel}</p>
+          <p className="tnum text-base text-ink-muted">{dateLabel}</p>
         )}
-        <p className="text-base font-semibold leading-snug text-ink">
-          {detail.title}
-        </p>
-        <p className="mt-0.5 max-w-[46ch] text-sm leading-relaxed text-ink-muted">
+        {/* No size class: this is the app's 17px body baseline, and the
+            medicine name is the string on this screen most often read at
+            arm's length. */}
+        <p className="font-semibold leading-snug text-ink">{detail.title}</p>
+        <p className="mt-0.5 text-base leading-relaxed text-ink-muted">
           {detail.line}
         </p>
         {detail.purpose === null ? null : (
-          <p className="mt-1 max-w-[46ch] text-sm leading-relaxed text-ink-muted">
+          <p className="mt-1 text-base leading-relaxed text-ink-muted">
             {detail.purpose}
           </p>
         )}
       </div>
       {detail.tag === null ? null : (
-        <span className="mt-0.5 shrink-0 rounded-tactile bg-mist px-2 py-1 text-xs font-medium text-ink-muted">
+        <span className="mt-0.5 shrink-0 rounded-tactile bg-mist px-2 py-1 text-sm font-medium text-ink-muted">
           {detail.tag}
         </span>
       )}
@@ -52,11 +55,11 @@ export function TaskRow({ item, status, dateLabel, check }: Props) {
   );
 }
 
-function StatusMark({ status }: { status: LogEntry["status"] | null }) {
+function StatusMark({ status }: { status: LogEntry["status"] }) {
   switch (status) {
     case "taken":
       return (
-        <span className="mt-0.5 flex size-6 shrink-0 items-center justify-center rounded-pill bg-success text-white">
+        <span className="mt-0.5 flex size-6 shrink-0 items-center justify-center rounded-pill bg-success text-ink-invert">
           <IconCheck className="size-3.5" />
           <span className="sr-only">Marked as taken</span>
         </span>
@@ -67,13 +70,6 @@ function StatusMark({ status }: { status: LogEntry["status"] | null }) {
           <IconAlert className="size-4.5" />
           <span className="sr-only">Marked as missed</span>
         </span>
-      );
-    case null:
-      return (
-        <span
-          aria-hidden
-          className="mt-0.5 size-6 shrink-0 rounded-pill border border-ink-faint"
-        />
       );
   }
 }
@@ -93,7 +89,9 @@ function describe(item: TimelineItem): Described {
         title: medication.nameAsWritten,
         line: medication.doseDirectionsVerbatim,
         purpose: medication.purposePlain,
-        tag: frequency(medication.schedule),
+        // No frequency chip: the directions beside it already say "BD", and
+        // the same fact twice, once as chrome, is not hierarchy.
+        tag: null,
       };
     }
     case "instruction": {
@@ -117,16 +115,4 @@ function describe(item: TimelineItem): Described {
       };
     }
   }
-}
-
-const PER_DAY = ["", "Once a day", "Twice a day", "Three times a day"];
-
-// Derived from the structured schedule, never from re-reading the frequency
-// shorthand. A drug with neither a daily count nor an interval was written
-// "PRN" or left blank, and gets no tag at all.
-function frequency(schedule: Medication["schedule"]): string | null {
-  if (schedule.everyDays === 7) return "Once a week";
-  if (schedule.everyDays !== null) return `Every ${schedule.everyDays} days`;
-  if (schedule.timesPerDay === null) return null;
-  return PER_DAY[schedule.timesPerDay] ?? `${schedule.timesPerDay} times a day`;
 }

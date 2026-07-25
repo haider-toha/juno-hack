@@ -20,10 +20,16 @@ export type TimelineItem =
 export type TimelineDay = {
   date: string;
   // Days since discharge. 0 is the day he came home, which is how the letter
-  // itself counts ("2 days", "in 1 week").
-  dayNumber: number;
+  // itself counts ("2 days", "in 1 week"). Null when the letter carries no
+  // discharge date: there is nothing to count from, and labelling every day
+  // "Discharge day" is a claim about the letter that the letter did not make.
+  dayNumber: number | null;
   items: TimelineItem[];
 };
+
+// The episode's two anchor dates. Both are extracted; an offset counts from
+// whichever one it names.
+type Episode = ExtractedBundle["episode"];
 
 // An anchor that cannot be placed on a calendar. A `conditional` anchor
 // ("until your mobility returns to normal") has no day by definition, and an
@@ -47,15 +53,31 @@ export function daysBetween(from: string, to: string): number {
   return Math.round(ms / 86_400_000);
 }
 
-function place(anchor: DateAnchor, dischargeDate: string | null): Placement {
+// With no base date there is nothing honest to count from, so the anchor stays
+// undated rather than being counted from a guess.
+function offsetBase(
+  anchor: Extract<DateAnchor, { kind: "offset" }>,
+  episode: Episode,
+): string | null {
+  switch (anchor.from) {
+    case "discharge":
+      return episode.dischargeDate;
+    // "6 weeks after your operation" — surgical letters count from the
+    // procedure, and its date is extracted and sitting right here.
+    case "procedure":
+      return episode.procedureDate;
+    // Nothing in the bundle records when the letter was photographed.
+    case "upload":
+      return null;
+  }
+}
+
+function place(anchor: DateAnchor, episode: Episode): Placement {
   switch (anchor.kind) {
     case "date":
       return { kind: "day", date: anchor.date };
     case "offset": {
-      // Every offset in the corpus counts from discharge; the other two bases
-      // are in the schema because other letters use them. With no base date
-      // there is nothing honest to count from.
-      const base = anchor.from === "discharge" ? dischargeDate : null;
+      const base = offsetBase(anchor, episode);
       if (base === null) return { kind: "undated" };
       const from = addDays(base, anchor.days);
       return anchor.daysUntil === null
@@ -64,6 +86,20 @@ function place(anchor: DateAnchor, dischargeDate: string | null): Placement {
     }
     case "conditional":
       return { kind: "undated" };
+  }
+}
+
+// The last day a placement covers. A window closes on its `to` — "for 2 to 3
+// weeks" ends at three weeks, not never — and only `undated` ("until your
+// mobility returns to normal") genuinely has no calendar end.
+function lastDay(placement: Placement): string | null {
+  switch (placement.kind) {
+    case "day":
+      return placement.date;
+    case "window":
+      return placement.to;
+    case "undated":
+      return null;
   }
 }
 
@@ -79,29 +115,27 @@ function isScheduled(medication: Medication): boolean {
 
 function medicationRuns(
   medication: Medication,
-  dischargeDate: string | null,
+  episode: Episode,
 ): { from: string; to: string | null } | null {
   if (!isScheduled(medication)) return null;
   // Withheld or stopped drugs have no start, so there is no day they belong on.
   if (medication.duration.start === null) return null;
 
-  const start = place(medication.duration.start, dischargeDate);
+  const start = place(medication.duration.start, episode);
   if (start.kind === "undated") return null;
   const from = start.kind === "day" ? start.date : start.from;
 
   if (medication.duration.end === null) return { from, to: null };
-  const end = place(medication.duration.end, dischargeDate);
-  if (end.kind === "undated") return { from, to: null };
-  return { from, to: end.kind === "day" ? end.date : end.to };
+  return { from, to: lastDay(place(medication.duration.end, episode)) };
 }
 
 function medicationsOn(
   bundle: ExtractedBundle,
   date: string,
-  dischargeDate: string | null,
+  episode: Episode,
 ): TimelineItem[] {
   return bundle.medications.flatMap((medication) => {
-    const run = medicationRuns(medication, dischargeDate);
+    const run = medicationRuns(medication, episode);
     if (run === null) return [];
     if (date < run.from) return [];
     if (run.to !== null && date > run.to) return [];
@@ -133,11 +167,11 @@ function occursOn(placement: Placement, date: string): boolean {
 function instructionsOn(
   bundle: ExtractedBundle,
   date: string,
-  dischargeDate: string | null,
+  episode: Episode,
 ): TimelineItem[] {
   return bundle.instructions.flatMap((instruction) => {
     if (instruction.anchor === null) return [];
-    const anchored = place(instruction.anchor, dischargeDate);
+    const anchored = place(instruction.anchor, episode);
     if (anchored.kind === "undated") return [];
 
     const item = {
@@ -154,8 +188,7 @@ function instructionsOn(
     if (daysBetween(first, date) % recurrence.everyDays !== 0) return [];
 
     if (recurrence.until !== null) {
-      const until = place(recurrence.until, dischargeDate);
-      const last = until.kind === "day" ? until.date : null;
+      const last = lastDay(place(recurrence.until, episode));
       if (last !== null && date > last) return [];
     }
     return [item];
@@ -165,21 +198,21 @@ function instructionsOn(
 function appointmentsOn(
   bundle: ExtractedBundle,
   date: string,
-  dischargeDate: string | null,
+  episode: Episode,
 ): TimelineItem[] {
   return bundle.appointments.flatMap((appointment) =>
-    occursOn(place(appointment.when, dischargeDate), date)
+    occursOn(place(appointment.when, episode), date)
       ? [{ kind: "appointment" as const, id: appointment.id, appointment }]
       : [],
   );
 }
 
 function itemsOn(bundle: ExtractedBundle, date: string): TimelineItem[] {
-  const dischargeDate = bundle.episode.dischargeDate;
+  const episode = bundle.episode;
   return [
-    ...medicationsOn(bundle, date, dischargeDate),
-    ...instructionsOn(bundle, date, dischargeDate),
-    ...appointmentsOn(bundle, date, dischargeDate),
+    ...medicationsOn(bundle, date, episode),
+    ...instructionsOn(bundle, date, episode),
+    ...appointmentsOn(bundle, date, episode),
   ];
 }
 
@@ -190,20 +223,21 @@ export function buildTimeline(
   bundle: ExtractedBundle,
   today: string,
 ): TimelineDay[] {
-  const dischargeDate = bundle.episode.dischargeDate;
-  const dates = datedBounds(bundle, dischargeDate);
+  const episode = bundle.episode;
+  const dischargeDate = episode.dischargeDate;
+  const dates = datedBounds(bundle, episode);
   const first = dischargeDate ?? dates.earliest ?? today;
-  const last = [dates.latest ?? today, today].sort().at(-1) ?? today;
+  const latest = dates.latest ?? today;
+  const wanted = latest > today ? latest : today;
+  const horizon = addDays(first, MAX_DAYS - 1);
+  const last = wanted < horizon ? wanted : horizon;
 
   const days: TimelineDay[] = [];
-  for (
-    let date = first;
-    date <= last && days.length <= MAX_DAYS;
-    date = addDays(date, 1)
-  ) {
+  for (let date = first; date <= last; date = addDays(date, 1)) {
     days.push({
       date,
-      dayNumber: dischargeDate === null ? 0 : daysBetween(dischargeDate, date),
+      dayNumber:
+        dischargeDate === null ? null : daysBetween(dischargeDate, date),
       items: itemsOn(bundle, date),
     });
   }
@@ -211,12 +245,14 @@ export function buildTimeline(
 }
 
 // A discharge letter that projects further than a year is a data error, not a
-// recovery plan. Bounding the loop keeps a bad date from hanging the render.
+// recovery plan. The range is clamped to this many days up front rather than
+// cut off mid-loop, so every day the caller receives is a real day and the
+// count is the one this name promises.
 const MAX_DAYS = 400;
 
 function datedBounds(
   bundle: ExtractedBundle,
-  dischargeDate: string | null,
+  episode: Episode,
 ): { earliest: string | null; latest: string | null } {
   const anchors: DateAnchor[] = [
     ...bundle.appointments.map((appointment) => appointment.when),
@@ -231,7 +267,7 @@ function datedBounds(
   ];
 
   const dates = anchors
-    .map((anchor) => place(anchor, dischargeDate))
+    .map((anchor) => place(anchor, episode))
     .flatMap((placement) => {
       switch (placement.kind) {
         case "day":
@@ -259,22 +295,22 @@ export function dueToday(
 // screen — dropping them would quietly lose "finish the antibiotics" and the
 // reliever inhaler.
 export function standingItems(bundle: ExtractedBundle): TimelineItem[] {
-  const dischargeDate = bundle.episode.dischargeDate;
+  const episode = bundle.episode;
   return [
     ...bundle.medications.flatMap((medication) =>
-      medicationRuns(medication, dischargeDate) === null &&
+      medicationRuns(medication, episode) === null &&
       medication.changeStatus !== "stopped"
         ? [{ kind: "medication" as const, id: medication.id, medication }]
         : [],
     ),
     ...bundle.instructions.flatMap((instruction) =>
       instruction.anchor === null ||
-      place(instruction.anchor, dischargeDate).kind === "undated"
+      place(instruction.anchor, episode).kind === "undated"
         ? [{ kind: "instruction" as const, id: instruction.id, instruction }]
         : [],
     ),
     ...bundle.appointments.flatMap((appointment) =>
-      place(appointment.when, dischargeDate).kind === "undated"
+      place(appointment.when, episode).kind === "undated"
         ? [{ kind: "appointment" as const, id: appointment.id, appointment }]
         : [],
     ),

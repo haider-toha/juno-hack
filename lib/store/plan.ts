@@ -24,5 +24,5 @@ export async function writePlan(
   patientId: string,
   bundle: ExtractedBundle,
 ): Promise<void> {
-  await redis().set(planKey(patientId), ExtractedBundle.parse(bundle));
+  await redis().set(planKey(patientId), bundle);
 }

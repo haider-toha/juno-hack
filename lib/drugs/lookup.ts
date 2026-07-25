@@ -27,6 +27,11 @@ export type Provenance = {
   // ISO date the content was read from NHS.uk. Drives the "as at" the licence
   // requires on anything not refreshed.
   retrievedOn: string;
+  // True only where this copy stood in for a live read that failed, so the card
+  // can say so instead of rendering an outage as a healthy answer. Demo mode's
+  // seed reads are the sanctioned source rather than a stand-in, and are never
+  // stale.
+  stale: boolean;
 };
 
 // Four states, never a bare null. "The page exists but carries no urgent
@@ -44,17 +49,46 @@ export type DrugGuidance =
   | { kind: "absent" }
   | { kind: "unavailable"; detail: string };
 
-const SeedEntry = z.object({
-  normalised: z.string(),
-  slug: z.string().nullable(),
-  aliasKind: z.enum(["exact", "partial", "absent"]),
-  state: z.enum(["found", "no-urgent-guidance", "absent", "unavailable"]),
-  urgent: z
-    .array(
-      z.object({ aspect: z.string(), headline: z.string(), text: z.string() }),
-    )
-    .nullable(),
-});
+const SeedBlocks = z.array(
+  z.object({ aspect: z.string(), headline: z.string(), text: z.string() }),
+);
+
+// The fixture's four states as a union, not four independent columns. Its whole
+// point is that "we never read this drug" and "this drug carries no urgent
+// advice" are different answers, and a flat object lets a regeneration commit
+// rows that blur them — `found` with no blocks, `unavailable` with an empty
+// list. Here those rows cannot be spelled.
+const SeedEntry = z.discriminatedUnion("state", [
+  z.object({
+    state: z.literal("found"),
+    normalised: z.string(),
+    slug: z.string(),
+    aliasKind: z.enum(["exact", "partial"]),
+    urgent: SeedBlocks.min(1),
+  }),
+  z.object({
+    state: z.literal("no-urgent-guidance"),
+    normalised: z.string(),
+    slug: z.string(),
+    aliasKind: z.enum(["exact", "partial"]),
+    urgent: SeedBlocks.max(0),
+  }),
+  z.object({
+    state: z.literal("absent"),
+    normalised: z.string(),
+    slug: z.null(),
+    aliasKind: z.literal("absent"),
+  }),
+  z.object({
+    state: z.literal("unavailable"),
+    normalised: z.string(),
+    slug: z.string(),
+    aliasKind: z.enum(["exact", "partial"]),
+    urgent: z.null(),
+  }),
+]);
+
+type SeedEntry = z.infer<typeof SeedEntry>;
 
 const SeedMap = z.object({
   generated: z.iso.date(),
@@ -80,18 +114,34 @@ export async function lookupDrug(
   if (env.NEXT_PUBLIC_PORTICO_MODE === "demo") {
     return seeded === undefined
       ? { kind: "absent" }
-      : fromSeed(seeded, seed.generated);
+      : fromSeed(seeded, {
+          origin: "seed",
+          retrievedOn: seed.generated,
+          stale: false,
+        });
   }
 
   const resolved = await resolveSlug(name, seeded);
-  if (resolved === null) return { kind: "absent" };
+  if (resolved.kind !== "slug") return resolved;
 
   const cached = await readCache(resolved.slug);
-  if (cached !== null) {
-    return shape(resolved, cached.urgent, {
-      origin: "cache",
-      retrievedOn: cached.retrievedOn,
-    });
+  switch (cached.kind) {
+    case "hit":
+      return shape(resolved, cached.urgent, {
+        origin: "cache",
+        retrievedOn: cached.retrievedOn,
+        stale: false,
+      });
+    // A cache entry we cannot read says nothing about the medicine. It is not a
+    // miss either: re-fetching would quietly overwrite the evidence that
+    // something is writing bad values.
+    case "corrupt":
+      return {
+        kind: "unavailable",
+        detail: `the cached NHS copy of ${resolved.slug} could not be read`,
+      };
+    case "miss":
+      break;
   }
 
   const live = await fetchGuidance(resolved.slug);
@@ -101,16 +151,26 @@ export async function lookupDrug(
       return shape(resolved, live.urgent, {
         origin: "nhs",
         retrievedOn: live.retrievedOn,
+        stale: false,
       });
     case "missing":
       return { kind: "absent" };
+    // A page we fetched but could not read is not a page with no urgent advice.
+    // Never cached: a parser broken by a markup change would otherwise pin
+    // "this medicine carries no urgent advice" for a day.
+    case "unreadable":
+      return { kind: "unavailable", detail: live.detail };
     case "failed":
       // Last resort, and labelled as one — never dressed up as a live NHS
       // answer, and never downgraded to "not listed", which would tell a
       // patient their drug has no guidance when it does.
       return seeded === undefined
         ? { kind: "unavailable", detail: live.detail }
-        : fromSeed(seeded, seed.generated);
+        : fromSeed(seeded, {
+            origin: "seed",
+            retrievedOn: seed.generated,
+            stale: true,
+          });
   }
 }
 
@@ -132,52 +192,73 @@ function shape(
       };
 }
 
-function fromSeed(
-  entry: z.infer<typeof SeedEntry>,
-  retrievedOn: string,
-): DrugGuidance {
-  if (entry.slug === null) return { kind: "absent" };
-  return shape(
-    {
-      slug: entry.slug,
-      match: entry.aliasKind === "partial" ? "partial" : "exact",
-    },
-    entry.urgent ?? [],
-    { origin: "seed", retrievedOn },
-  );
+// The fixture's own state is the answer, not something to re-derive from the
+// block count: a row recorded as `unavailable` means the regeneration could not
+// read that page, and rendering it as "carries no urgent advice" would state a
+// clinical fact nobody established.
+function fromSeed(entry: SeedEntry, provenance: Provenance): DrugGuidance {
+  switch (entry.state) {
+    case "found":
+      return {
+        kind: "found",
+        slug: entry.slug,
+        match: entry.aliasKind,
+        urgent: entry.urgent,
+        provenance,
+      };
+    case "no-urgent-guidance":
+      return { kind: "no-urgent-guidance", slug: entry.slug, provenance };
+    case "absent":
+      return { kind: "absent" };
+    case "unavailable":
+      return {
+        kind: "unavailable",
+        detail: `the recorded NHS copy of ${entry.normalised} is incomplete`,
+      };
+  }
 }
+
+type SlugOutcome =
+  | { kind: "slug"; slug: string; match: "exact" | "partial" }
+  | { kind: "absent" }
+  | { kind: "unavailable"; detail: string };
 
 // The committed map is the alias layer: a naive name-to-slug fails on nine of
 // the corpus's twenty-five drugs. Anything it does not know falls back to the
 // live A-Z index.
 async function resolveSlug(
   name: string,
-  seeded: z.infer<typeof SeedEntry> | undefined,
-): Promise<Resolved | null> {
+  seeded: SeedEntry | undefined,
+): Promise<SlugOutcome> {
   if (seeded !== undefined) {
-    return seeded.slug === null
-      ? null
-      : {
-          slug: seeded.slug,
-          match: seeded.aliasKind === "partial" ? "partial" : "exact",
-        };
+    return seeded.state === "absent"
+      ? { kind: "absent" }
+      : { kind: "slug", slug: seeded.slug, match: seeded.aliasKind };
   }
 
-  const slugs = await readIndex();
+  const index = await readIndex();
+  if (index.kind === "failed") {
+    return { kind: "unavailable", detail: index.detail };
+  }
+
+  const slugs = index.slugs;
   const hyphenated = name.replace(/\s+/g, "-");
-  if (slugs.includes(hyphenated)) return { slug: hyphenated, match: "exact" };
+  if (slugs.includes(hyphenated)) {
+    return { kind: "slug", slug: hyphenated, match: "exact" };
+  }
 
   // Every patient in scope is an adult, and the A-Z splits several common
   // drugs that way.
   const adult = `${hyphenated}-for-adults`;
-  if (slugs.includes(adult)) return { slug: adult, match: "exact" };
+  if (slugs.includes(adult))
+    return { kind: "slug", slug: adult, match: "exact" };
 
   // A single suffixed variant is unambiguous ("salbutamol" -> the inhaler).
   // More than one is a guess, and a guess about a medicine is not worth making.
   const variants = slugs.filter((slug) => slug.startsWith(`${hyphenated}-`));
   return variants.length === 1 && variants[0] !== undefined
-    ? { slug: variants[0], match: "exact" }
-    : null;
+    ? { kind: "slug", slug: variants[0], match: "exact" }
+    : { kind: "absent" };
 }
 
 const CachedGuidance = z.object({
@@ -187,9 +268,23 @@ const CachedGuidance = z.object({
   retrievedOn: z.iso.date(),
 });
 
-async function readCache(slug: string) {
+type CacheRead =
+  | { kind: "hit"; urgent: UrgentBlock[]; retrievedOn: string }
+  | { kind: "miss" }
+  | { kind: "corrupt" };
+
+async function readCache(slug: string): Promise<CacheRead> {
   const stored = await redis().get<unknown>(nhsMedicineKey(slug));
-  return stored === null ? null : CachedGuidance.parse(stored);
+  if (stored === null) return { kind: "miss" };
+
+  const parsed = CachedGuidance.safeParse(stored);
+  return parsed.success
+    ? {
+        kind: "hit",
+        urgent: parsed.data.urgent,
+        retrievedOn: parsed.data.retrievedOn,
+      }
+    : { kind: "corrupt" };
 }
 
 async function writeCache(
@@ -204,99 +299,184 @@ async function writeCache(
   );
 }
 
-async function readIndex(): Promise<string[]> {
-  const stored = await redis().get<unknown>(nhsIndexKey());
-  if (stored !== null) return z.array(z.string()).parse(stored);
+// The A-Z lists 260 medicines. A scrape that returns a handful is a regex that
+// has stopped matching NHS.uk's markup, not a shorter index — and cached for a
+// day it would tell a patient their listed medicine is "not in the NHS
+// medicines A to Z", which is the one thing a drug lookup must never invent.
+const MIN_INDEX_SLUGS = 200;
 
-  const response = await fetch(NHS_MEDICINES, { cache: "no-store" });
-  if (!response.ok) {
-    throw new Error(`NHS medicines index returned ${response.status}`);
-  }
-  const slugs = [
-    ...new Set(
-      [
-        ...(await response.text()).matchAll(
-          /href="\/medicines\/([a-z0-9-]+)\/"/g,
-        ),
-      ]
-        .map((match) => match[1])
-        .filter((slug): slug is string => slug !== undefined),
-    ),
-  ];
-  await redis().set(nhsIndexKey(), slugs, { ex: CACHE_TTL_SECONDS });
-  return slugs;
-}
-
-type FetchOutcome =
-  | { kind: "page"; urgent: UrgentBlock[]; retrievedOn: string }
-  | { kind: "missing" }
+type IndexRead =
+  | { kind: "index"; slugs: string[] }
   | { kind: "failed"; detail: string };
 
-async function fetchGuidance(slug: string): Promise<FetchOutcome> {
-  let response: Response;
+async function readIndex(): Promise<IndexRead> {
+  const stored = await redis().get<unknown>(nhsIndexKey());
+  if (stored !== null) {
+    const cached = z.array(z.string()).min(MIN_INDEX_SLUGS).safeParse(stored);
+    return cached.success
+      ? { kind: "index", slugs: cached.data }
+      : { kind: "failed", detail: "the cached A-Z index could not be read" };
+  }
+
+  let html: string;
   try {
-    response = await fetch(`${NHS_MEDICINES}${slug}/`, { cache: "no-store" });
+    const response = await fetch(NHS_MEDICINES, { cache: "no-store" });
+    if (!response.ok) {
+      return {
+        kind: "failed",
+        detail: `the NHS medicines index returned ${response.status}`,
+      };
+    }
+    html = await response.text();
   } catch (error) {
     return {
       kind: "failed",
       detail: error instanceof Error ? error.message : String(error),
     };
   }
-  if (response.status === 404) return { kind: "missing" };
-  if (!response.ok) {
-    return { kind: "failed", detail: `NHS.uk returned ${response.status}` };
+
+  const slugs = [
+    ...new Set(
+      [...html.matchAll(/href="\/medicines\/([a-z0-9-]+)\/"/g)]
+        .map((match) => match[1])
+        .filter((slug): slug is string => slug !== undefined),
+    ),
+  ];
+  if (slugs.length < MIN_INDEX_SLUGS) {
+    return {
+      kind: "failed",
+      detail: `the NHS medicines index scraped to ${slugs.length} entries`,
+    };
   }
-  return {
-    kind: "page",
-    urgent: urgentBlocks(await response.text()),
-    retrievedOn: new Date().toISOString().slice(0, 10),
-  };
+
+  await redis().set(nhsIndexKey(), slugs, { ex: CACHE_TTL_SECONDS });
+  return { kind: "index", slugs };
 }
 
-const LdJson = z.object({
-  hasPart: z
-    .array(
-      z.object({
-        hasHealthAspect: z.string().nullish(),
-        hasPart: z
-          .array(
-            z.object({
-              identifier: z.string().nullish(),
-              headline: z.string().nullish(),
-              text: z.string().nullish(),
-            }),
-          )
-          .nullish(),
-      }),
-    )
-    .nullish(),
+type FetchOutcome =
+  | { kind: "page"; urgent: UrgentBlock[]; retrievedOn: string }
+  | { kind: "missing" }
+  | { kind: "unreadable"; detail: string }
+  | { kind: "failed"; detail: string };
+
+async function fetchGuidance(slug: string): Promise<FetchOutcome> {
+  try {
+    const response = await fetch(`${NHS_MEDICINES}${slug}/`, {
+      cache: "no-store",
+    });
+    if (response.status === 404) return { kind: "missing" };
+    if (!response.ok) {
+      return { kind: "failed", detail: `NHS.uk returned ${response.status}` };
+    }
+
+    const read = urgentBlocks(await response.text());
+    return read.kind === "unreadable"
+      ? read
+      : {
+          kind: "page",
+          urgent: read.urgent,
+          retrievedOn: new Date().toISOString().slice(0, 10),
+        };
+  } catch (error) {
+    return {
+      kind: "failed",
+      detail: error instanceof Error ? error.message : String(error),
+    };
+  }
+}
+
+// `hasPart` is required and its elements must be objects. A drug page's JSON-LD
+// is one of several blocks — the A-Z index's own block has no `hasPart` at all —
+// and a schema loose enough to accept any object accepts a breadcrumb, which
+// then yields zero urgent blocks and reads as a clean answer.
+const MedicinePage = z.object({
+  hasPart: z.array(
+    z.object({
+      hasHealthAspect: z.string().nullish(),
+      hasPart: z
+        .array(
+          z.object({
+            identifier: z.string().nullish(),
+            headline: z.string().nullish(),
+            text: z.string().nullish(),
+          }),
+        )
+        .nullish(),
+    }),
+  ),
 });
 
-function urgentBlocks(html: string): UrgentBlock[] {
-  const script = html.match(
-    /<script[^>]*type="application\/ld\+json"[^>]*>([\s\S]*?)<\/script>/,
-  )?.[1];
-  if (script === undefined) return [];
+type PageRead =
+  | { kind: "read"; urgent: UrgentBlock[] }
+  | { kind: "unreadable"; detail: string };
 
-  const document = LdJson.safeParse(JSON.parse(script));
-  if (!document.success) return [];
+function urgentBlocks(html: string): PageRead {
+  const scripts = [
+    ...html.matchAll(
+      /<script[^>]*type="application\/ld\+json"[^>]*>([\s\S]*?)<\/script>/g,
+    ),
+  ]
+    .map((match) => match[1])
+    .filter((script): script is string => script !== undefined);
 
   const blocks: UrgentBlock[] = [];
-  // The urgent blocks are one level deeper than the health aspects:
-  // hasPart[] (HealthTopicContent) -> hasPart[] (WebPageElement). Scanning only
-  // the top level finds none, on every drug. And the overdose warning lives
-  // under the usage aspect, not side-effects, so every aspect is scanned.
-  for (const aspect of document.data.hasPart ?? []) {
-    for (const element of aspect.hasPart ?? []) {
-      if (element.identifier !== "urgent") continue;
-      blocks.push({
-        aspect: (aspect.hasHealthAspect ?? "").split("/").at(-1) ?? "",
-        headline: element.headline ?? "",
-        text: plainText(element.text ?? ""),
-      });
+  // The health aspects are the proof we read the medicine's block rather than
+  // the page furniture around it. Without one, "no urgent advice" would be a
+  // claim about our parser, not about the drug.
+  let sawHealthAspect = false;
+
+  for (const script of scripts) {
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(script);
+    } catch {
+      // One malformed block among several; the medicine's may still parse.
+      // Throwing here would blank the whole plan screen behind the error
+      // boundary.
+      continue;
+    }
+
+    const document = MedicinePage.safeParse(parsed);
+    if (!document.success) continue;
+
+    // The urgent blocks are one level deeper than the health aspects:
+    // hasPart[] (HealthTopicContent) -> hasPart[] (WebPageElement). Scanning
+    // only the top level finds none, on every drug. And the overdose warning
+    // lives under the usage aspect, not side-effects, so every aspect is
+    // scanned.
+    for (const aspect of document.data.hasPart) {
+      const health = aspect.hasHealthAspect;
+      if (health === null || health === undefined) continue;
+      sawHealthAspect = true;
+
+      for (const element of aspect.hasPart ?? []) {
+        if (element.identifier !== "urgent") continue;
+        // A block that says it is urgent but whose words will not read is not
+        // an empty warning — it renders as a blank line under the medicine
+        // name, which is worse than saying we could not read the page.
+        if (
+          element.headline === null ||
+          element.headline === undefined ||
+          element.text === null ||
+          element.text === undefined
+        ) {
+          return {
+            kind: "unreadable",
+            detail: "an urgent block on the page carried no text",
+          };
+        }
+        blocks.push({
+          aspect: health.slice(health.lastIndexOf("/") + 1),
+          headline: element.headline,
+          text: plainText(element.text),
+        });
+      }
     }
   }
-  return blocks;
+
+  return sawHealthAspect
+    ? { kind: "read", urgent: blocks }
+    : { kind: "unreadable", detail: "the page carried no health aspects" };
 }
 
 // The JSON-LD carries HTML. The text is shown to a patient as the NHS's own

@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState, useTransition } from "react";
+import { startTransition, useOptimistic, useState } from "react";
 
 import { logStep } from "@/app/(phone)/plan/actions";
 import { IconAlert, IconCheck } from "@/components/icons";
@@ -17,29 +17,27 @@ type Props = {
   status: Status | null;
 };
 
-// The one client leaf in an otherwise server-rendered timeline. Tick
-// optimistically so the tap feels instant, persist, then refresh so the server
-// is the thing that decides what is on screen.
+// The one client leaf in an otherwise server-rendered timeline. `useOptimistic`
+// holds the tick for the life of the transition — the write and the refresh it
+// triggers — and then drops it, so what stays on screen afterwards is the
+// server's answer and never this component's memory of the tap. A failed write
+// unwinds the same way: the tick goes back to what was last recorded rather
+// than showing a tick for something that was never saved.
 export function TaskCheck({ patientId, itemId, day, label, status }: Props) {
   const router = useRouter();
-  const [, startTransition] = useTransition();
-  const [optimistic, setOptimistic] = useState<Status | null>(null);
+  const [shown, showOptimistically] = useOptimistic(status);
   const [failed, setFailed] = useState(false);
 
-  const shown = optimistic ?? status;
   const next: Status = shown === "taken" ? "missed" : "taken";
 
   function answer() {
-    setOptimistic(next);
-    setFailed(false);
     startTransition(async () => {
+      showOptimistically(next);
+      setFailed(false);
       try {
         await logStep({ patientId, itemId, day, status: next });
         router.refresh();
       } catch {
-        // Roll the tick back rather than leave a tick on screen for something
-        // that was never recorded — a false tick is worse than no tick.
-        setOptimistic(null);
         setFailed(true);
       }
     });
@@ -51,7 +49,7 @@ export function TaskCheck({ patientId, itemId, day, label, status }: Props) {
         type="button"
         onClick={answer}
         aria-label={describe(shown, label)}
-        className="-m-2.5 flex size-11 items-center justify-center rounded-pill transition-opacity duration-150 ease-out focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent active:opacity-60"
+        className="-m-2.5 flex size-11 items-center justify-center rounded-pill transition-opacity duration-150 ease-out hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent active:opacity-80"
       >
         <Mark status={shown} />
       </button>
@@ -61,9 +59,9 @@ export function TaskCheck({ patientId, itemId, day, label, status }: Props) {
       {failed ? (
         <span
           role="alert"
-          className="mt-1 w-max rounded-tactile bg-surface px-1.5 py-0.5 text-xs font-medium text-error"
+          className="mt-1 max-w-24 rounded-tactile bg-surface px-1.5 py-0.5 text-center text-sm font-medium leading-snug text-error"
         >
-          Not saved
+          Not saved. Tap again.
         </span>
       ) : null}
     </span>
@@ -74,7 +72,7 @@ function Mark({ status }: { status: Status | null }) {
   switch (status) {
     case "taken":
       return (
-        <span className="flex size-6 items-center justify-center rounded-pill bg-success text-white">
+        <span className="flex size-6 items-center justify-center rounded-pill bg-success text-ink-invert">
           <IconCheck className="size-3.5" />
         </span>
       );

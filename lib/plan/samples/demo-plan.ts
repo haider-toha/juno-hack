@@ -5,10 +5,16 @@ import type { ExtractedBundle, SourceRef } from "@/lib/plan/schema";
 //
 // Provenance rule: the JSON supplies FACTS and field mapping, the PDF supplies
 // STRINGS. Around 9% of the JSON's values do not appear in the PDF's text at
-// all — the form's two-column header joins cells that pdftotext reads as
-// separate runs — so every `*Verbatim` value and every `SourceRef.quote` here
-// is copied from the PDF. Lifting them from the JSON would put unverifiable
-// quotes behind "tap to see where it says that".
+// all — the form's two-column layout interleaves label cells with value cells,
+// so a value that reads as one sentence on the page is not one contiguous run
+// of text — and lifting those would put unverifiable quotes behind "tap to see
+// where it says that".
+//
+// So every `SourceRef.quote` is a contiguous run of the PDF, sometimes shorter
+// than the field it locates. The display fields are allowed to be assembled
+// from adjacent cells, and the ones that are say so where they are defined:
+// `doseDirectionsVerbatim` on all seven medications, `episode.titleVerbatim`,
+// the GP contact's label, and the community appointment's `withVerbatim`.
 //
 // What the letter does NOT contain is as load-bearing as what it does. It has
 // no per-drug directions sentence, no indication column, no callable clinical
@@ -501,10 +507,11 @@ export const DEMO_PLAN = {
       isBooked: false,
       contactIds: ["contact-community-services"],
       enteredBy: "extracted",
-      source: onPage(
-        2,
-        "District nursing POC review; community falls team referral.",
-      ),
+      // Stops at "community": the form's label column ("Services (e.g.
+      // nursing, therapy)") is interleaved between this line and "falls team
+      // referral.", so the full sentence is not a contiguous run of the
+      // document and would not survive the "show me where it says that" check.
+      source: onPage(2, "District nursing POC review; community"),
     },
   ],
 

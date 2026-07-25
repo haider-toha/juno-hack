@@ -17,7 +17,10 @@ export async function GET(
   if (patientId === null)
     return new Response("Name a patient.", { status: 400 });
 
-  const pathname = (await params).path.map(decodeURIComponent).join("/");
+  // Next decodes catch-all segments before it fills `params`. Decoding again
+  // resolves a literal "%" in a camera filename to the wrong key, or throws
+  // URIError outright.
+  const pathname = (await params).path.join("/");
   const bundle = await readPlan(patientId);
   const known = bundle?.documents.some(
     (document) => document.blobPathname === pathname,

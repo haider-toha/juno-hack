@@ -1,3 +1,4 @@
+import { PlanCard } from "@/components/plan/plan-card";
 import { TaskCheck } from "@/components/plan/task-check";
 import { TaskRow } from "@/components/plan/task-row";
 import type { LogEntry } from "@/lib/store/log";
@@ -21,11 +22,15 @@ export function DaySection({
   answerable,
   statuses,
 }: Props) {
+  const counted = dayLabel(day.dayNumber);
+  const meta = isToday
+    ? counted === null
+      ? formatDay(day.date)
+      : `${formatDay(day.date)} · ${counted}`
+    : counted;
+
   return (
-    <section
-      aria-labelledby={`day-${day.date}`}
-      className={`rounded-card px-5 py-4 ${isToday ? "bg-lavender" : "bg-surface shadow-card"}`}
-    >
+    <PlanCard today={isToday} labelledBy={`day-${day.date}`}>
       {/* h2, not h3: a day is a top-level section of the timeline, level with
           "Coming up" and "Changed in hospital". As an h3 it read as a subsection
           of the red-flag card above it, and skipped a level entirely on a plan
@@ -37,11 +42,9 @@ export function DaySection({
         <span className="font-display text-lg font-semibold tracking-tight text-ink">
           {isToday ? "Today" : formatDay(day.date)}
         </span>
-        <span className="tnum text-sm text-ink-muted">
-          {isToday
-            ? `${formatDay(day.date)} · ${dayLabel(day.dayNumber)}`
-            : dayLabel(day.dayNumber)}
-        </span>
+        {meta === null ? null : (
+          <span className="tnum text-base text-ink-muted">{meta}</span>
+        )}
       </h2>
 
       <ul className="mt-1 divide-y divide-rule">
@@ -71,7 +74,7 @@ export function DaySection({
           );
         })}
       </ul>
-    </section>
+    </PlanCard>
   );
 }
 
@@ -100,8 +103,10 @@ function answerLabel(item: TimelineItem): string {
 }
 
 // The letter counts from the day he came home ("2 days", "in 1 week"), so the
-// plan counts the same way.
-function dayLabel(dayNumber: number): string {
+// plan counts the same way — and says nothing at all where the letter gave no
+// discharge date to count from.
+function dayLabel(dayNumber: number | null): string | null {
+  if (dayNumber === null) return null;
   return dayNumber === 0 ? "Discharge day" : `Day ${dayNumber}`;
 }
 

@@ -1,17 +1,19 @@
 import "server-only";
 
+import { anthropic } from "@ai-sdk/anthropic";
 import { get } from "@vercel/blob";
-import { generateText, NoObjectGeneratedError, Output } from "ai";
+import { generateText } from "ai";
 import { z } from "zod";
 
 import { blobEnv, env, llmEnv } from "../env";
 import { DEMO_PLAN } from "../plan/samples/demo-plan";
 import { ExtractedBundle, ExtractedBundleFromModel } from "../plan/schema";
 
-// Verified against the gateway's live model list, not remembered. Recorded on
-// every bundle as `extraction.modelId`, so a plan on screen can always name
-// what read it.
-const MODEL_ID = "anthropic/claude-opus-5";
+// Straight to the Anthropic API rather than through a gateway. Haiku is the
+// cheapest model that reads a two-page discharge PDF, and `make eval` is what
+// says whether it reads one well enough. Recorded on every bundle as
+// `extraction.modelId`, so a plan on screen can always name what read it.
+const MODEL_ID = "claude-haiku-4-5";
 
 // What the browser tells us it uploaded. A trust boundary — this arrives from a
 // client that could send anything — so it is parsed before a single byte is
@@ -34,20 +36,30 @@ export type ExtractionResult =
   | { kind: "unreadable"; detail: string }
   | { kind: "invalid"; detail: string };
 
+// The provider's strict structured-output mode refuses this schema: every
+// clinical field is `.nullable()`, which compiles to 51 union-typed parameters
+// and exceeds its ceiling. The constraint producing those unions is the one
+// that makes absence representable, so the schema stays frozen and the shape is
+// asked for in the prompt instead — generation is still schema-guided, and both
+// 422 surfaces are raised in this file rather than by the SDK.
+const OUTPUT_CONTRACT = `Reply with one JSON object and nothing else: no sentence before or after it, and no markdown fence. It must validate against this JSON Schema.
+
+${JSON.stringify(z.toJSONSchema(ExtractedBundleFromModel, { target: "draft-7" }))}`;
+
 export async function extractBundle(
   documents: UploadedDocument[],
 ): Promise<ExtractionResult> {
   // Demo mode is a human-set config switch, and this is the only place it is
-  // read. It is checked BEFORE the gateway call, never after one fails: no
-  // catch below may reach the baked bundle, or a live failure would quietly
-  // serve a plan belonging to a different patient. The bundle records
+  // read. It is checked BEFORE the model call, never after one fails: no catch
+  // below may reach the baked bundle, or a live failure would quietly serve a
+  // plan belonging to a different patient. The bundle records
   // `modelId: "seed/…"`, so what is on screen names what produced it.
   if (env.NEXT_PUBLIC_PORTICO_MODE === "demo") {
     return { kind: "extracted", bundle: DEMO_PLAN };
   }
 
-  // Asserted here, at the config boundary, rather than left to surface as a
-  // gateway 401 halfway through a patient's upload.
+  // Asserted here, at the config boundary, rather than left to surface as an
+  // Anthropic 401 halfway through a patient's upload.
   llmEnv();
 
   const ided = documents.map((document, index) => ({
@@ -56,38 +68,51 @@ export async function extractBundle(
   }));
   const files = await Promise.all(ided.map(readBytes));
 
-  let output: unknown;
+  // The contract goes last, after the pages, because it is the instruction the
+  // model acts on immediately.
+  const result = await generateText({
+    model: anthropic(MODEL_ID),
+    system: SYSTEM_PROMPT,
+    maxOutputTokens: 24000,
+    messages: [
+      {
+        role: "user",
+        content: [
+          { type: "text", text: documentManifest(ided) },
+          ...files.map((file) => ({
+            type: "file" as const,
+            data: file.bytes,
+            mediaType: file.mediaType,
+            filename: file.filename,
+          })),
+          { type: "text", text: OUTPUT_CONTRACT },
+        ],
+      },
+    ],
+  });
+
+  // Models fence JSON even when told not to. That is a formatting habit, not a
+  // failure to read the letter, so the fence comes off before the parse instead
+  // of becoming a 422.
+  const text = result.text.trim();
+  const json = /^```(?:json)?\s*\n([\s\S]*?)\n?```$/.exec(text)?.[1] ?? text;
+
+  let candidate: unknown;
   try {
-    const result = await generateText({
-      model: MODEL_ID,
-      system: SYSTEM_PROMPT,
-      output: Output.object({ schema: ExtractedBundleFromModel }),
-      messages: [
-        {
-          role: "user",
-          content: [
-            { type: "text", text: documentManifest(ided) },
-            ...files.map((file) => ({
-              type: "file" as const,
-              data: file.bytes,
-              mediaType: file.mediaType,
-              filename: file.filename,
-            })),
-          ],
-        },
-      ],
-    });
-    output = result.output;
+    candidate = JSON.parse(json);
   } catch (error) {
-    // The SDK validates inside `Output.object` and throws rather than handing
-    // back a parse result, so this is the only place the "nothing
-    // schema-shaped came back" case is observable. Anything else — a gateway
-    // outage, a bad key — is not an unreadable letter and is left to throw.
-    if (!NoObjectGeneratedError.isInstance(error)) throw error;
-    return { kind: "unreadable", detail: error.message };
+    return {
+      kind: "unreadable",
+      detail: error instanceof Error ? error.message : String(error),
+    };
   }
 
-  const merged = mergeStorageIdentity(output, ided);
+  const output = ExtractedBundleFromModel.safeParse(candidate);
+  if (!output.success) {
+    return { kind: "unreadable", detail: describeIssues(output.error) };
+  }
+
+  const merged = mergeStorageIdentity(output.data, ided);
   if (!merged.success) return { kind: "invalid", detail: merged.detail };
 
   const parsed = ExtractedBundle.safeParse(merged.bundle);
@@ -146,6 +171,21 @@ function mergeStorageIdentity(
     return { success: false, detail: describeIssues(base.error) };
   }
 
+  // Checked in both directions. A model that returns only the first page of a
+  // four-page bundle parses cleanly and silently drops three — and on an NHS
+  // discharge form the whole medication table is on page 2.
+  const returned = new Set(base.data.documents.map((document) => document.id));
+  const missing = uploaded.filter((document) => !returned.has(document.id));
+  if (missing.length > 0) {
+    const names = missing
+      .map((document) => `"${document.displayName}"`)
+      .join(", ");
+    return {
+      success: false,
+      detail: `The model read ${returned.size} of the ${uploaded.length} pages we uploaded and left out ${names}.`,
+    };
+  }
+
   const byId = new Map(uploaded.map((document) => [document.id, document]));
   const documents = [];
   for (const document of base.data.documents) {
@@ -192,6 +232,9 @@ VERBATIM FIELDS
 Every field whose name ends in "Verbatim", and every SourceRef.quote, is copied character for character from the document. Do not correct spelling, expand abbreviations, fix punctuation, or tidy spacing inside them. If the letter writes "Ramipril withheld due to AKI - GP to review/restart once renal function stable.", that hyphen and that wording are what you write.
 
 Plain-language fields (titlePlain, purposePlain, and the red-flag French) are yours to write, in clear everyday English or French, at the reading level of an anxious eighty-year-old. Never put clinical jargon in a Plain field, and never put your own words in a Verbatim one.
+
+PATIENT IDENTITY
+patient.givenName is the patient's first name and nothing else. The letter also carries their surname, date of birth, NHS number, address and telephone number. Read them, store none of them, and list the field NAME of each one the letter carries in patient.redactedByPolicy, using exactly these spellings: "surname", "dateOfBirth", "nhsNumber", "address", "telephone". That array holds names, never values — a value written into it is the leak the field exists to prevent.
 
 SOURCE REFS
 Every source ref carries a quote that appears in the document it names, and the page that quote is on. The quote is what the patient will be shown when they tap "where does it say that", so a quote that is not on the page is a broken promise, not a formatting slip. Prefer a short, distinctive, contiguous run of text over a long one that spans a column break.

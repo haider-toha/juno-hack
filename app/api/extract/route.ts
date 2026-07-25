@@ -10,10 +10,16 @@ const Body = z.object({
 });
 
 export async function POST(request: Request) {
-  const body = Body.safeParse(await request.json());
+  // The read is inside the boundary it is validated at: `request.json()`
+  // rejects on a body that is not JSON, and that is the same 400 as a body that
+  // is JSON of the wrong shape — not a 500.
+  const body = Body.safeParse(await request.json().catch(() => null));
   if (!body.success) {
     return Response.json(
-      { message: "That request did not name any uploaded pages." },
+      {
+        message:
+          "That request did not name a patient and at least one uploaded page.",
+      },
       { status: 400 },
     );
   }

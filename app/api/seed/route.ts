@@ -1,3 +1,9 @@
+import { readFile } from "node:fs/promises";
+import { basename, join } from "node:path";
+
+import { put } from "@vercel/blob";
+
+import { blobEnv, env } from "@/lib/env";
 import {
   DEMO_MISSED_ITEM_ID,
   DEMO_PATIENT,
@@ -21,12 +27,33 @@ const HISTORY_DAYS = 7;
 // before he left the ward.
 const DEMO_DAYS_SINCE_DISCHARGE = 2;
 
+// The letters the demo plan quotes. `DEMO_PLAN` already names where each one
+// lives in the store and each store pathname ends in the filename of the
+// fixture it was transcribed from, so both are read off the bundle rather than
+// repeated here — a seed that drifts from the plan it seeds is the bug.
+const DEMO_LETTERS = DEMO_PLAN.documents.map(
+  (document) => document.blobPathname,
+);
+const FIXTURES = join(process.cwd(), "fixtures/discharge-summaries");
+
 // Resets the demo to a known state: the Whitfield plan, his daughter as next of
 // kin, the clock parked on a day where the plan has history, and two missed
 // doses of a high-stakes anticoagulant already on the record. The escalation is
 // armed by real log entries that `assess()` computes over — it is not scripted,
 // and it would otherwise take three real days to accrue.
 export async function POST() {
+  // The seed overwrites `portico:plan:demo`, which is the key a real uploaded
+  // letter writes to. In live mode that would replace a patient's own extracted
+  // plan with Harold Whitfield's, with nothing on screen saying so.
+  if (env.NEXT_PUBLIC_PORTICO_MODE !== "demo") {
+    return Response.json(
+      {
+        message: `The seed overwrites the stored plan with the demo bundle, and this app is running in ${env.NEXT_PUBLIC_PORTICO_MODE} mode, so it has not run.`,
+      },
+      { status: 403 },
+    );
+  }
+
   const today = addDays(
     DEMO_PLAN.episode.dischargeDate,
     DEMO_DAYS_SINCE_DISCHARGE,
@@ -44,6 +71,18 @@ export async function POST() {
   await Promise.all([
     writePlan(DEMO_PATIENT_ID, DEMO_PLAN),
     writePatient(DEMO_PATIENT),
+    // The plan's source refs point at blobs. Without this the demo is only
+    // half-seeded: on a fresh or rotated store, "tap to see where it says that"
+    // 404s with nothing explaining why.
+    ...DEMO_LETTERS.map(async (pathname) =>
+      put(pathname, await readFile(join(FIXTURES, basename(pathname))), {
+        access: "private",
+        addRandomSuffix: false,
+        allowOverwrite: true,
+        contentType: "application/pdf",
+        token: blobEnv().BLOB_READ_WRITE_TOKEN,
+      }),
+    ),
   ]);
 
   const missedDays = [addDays(today, -1), addDays(today, -2)];
@@ -64,6 +103,7 @@ export async function POST() {
   return Response.json({
     patientId: DEMO_PATIENT_ID,
     today,
+    letters: DEMO_LETTERS,
     plan: DEMO_PLAN.extraction.modelId,
     medications: DEMO_PLAN.medications.length,
     redFlags: DEMO_PLAN.redFlags.length,

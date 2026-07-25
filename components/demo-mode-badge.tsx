@@ -7,7 +7,7 @@ export function DemoModeBadge() {
   if (env.NEXT_PUBLIC_PORTICO_MODE !== "demo") return null;
 
   return (
-    <p className="rounded-tactile bg-lavender px-3 py-2 text-sm leading-snug text-accent">
+    <p className="rounded-tactile bg-mist px-3 py-2 text-sm leading-snug text-ink-muted">
       Demo mode. The letter and the medicine guidance are recorded, not fetched
       live.
     </p>

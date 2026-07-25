@@ -286,16 +286,16 @@ const bundleShape = z.object({
 
 type BundleShape = z.infer<typeof bundleShape>;
 
-type DocumentRef = { path: Array<string | number>; documentId: string };
+type Reference = { path: Array<string | number>; id: string };
 
 // Every document reference in the bundle, wherever it lives.
-function documentRefs(bundle: BundleShape): DocumentRef[] {
-  const refs: DocumentRef[] = [];
+function documentRefs(bundle: BundleShape): Reference[] {
+  const refs: Reference[] = [];
 
   if (bundle.episode.source) {
     refs.push({
       path: ["episode", "source", "documentId"],
-      documentId: bundle.episode.source.documentId,
+      id: bundle.episode.source.documentId,
     });
   }
   const sourced = [
@@ -309,7 +309,7 @@ function documentRefs(bundle: BundleShape): DocumentRef[] {
     items.forEach((item, i) => {
       refs.push({
         path: [key, i, "source", "documentId"],
-        documentId: item.source.documentId,
+        id: item.source.documentId,
       });
     });
   }
@@ -317,7 +317,7 @@ function documentRefs(bundle: BundleShape): DocumentRef[] {
     if (item.documentId) {
       refs.push({
         path: ["extraction", "unresolved", i, "documentId"],
-        documentId: item.documentId,
+        id: item.documentId,
       });
     }
   });
@@ -325,7 +325,7 @@ function documentRefs(bundle: BundleShape): DocumentRef[] {
     conflict.positions.forEach((position, j) => {
       refs.push({
         path: ["extraction", "conflicts", i, "positions", j, "documentId"],
-        documentId: position.documentId,
+        id: position.documentId,
       });
     });
   });
@@ -333,17 +333,68 @@ function documentRefs(bundle: BundleShape): DocumentRef[] {
   return refs;
 }
 
-// Referential integrity. A dangling `documentId` parses cleanly and only fails
-// on stage, when "tap to see where it says that" resolves to nothing.
-export const ExtractedBundle = bundleShape.superRefine((bundle, ctx) => {
-  const known = new Set(bundle.documents.map((document) => document.id));
-  for (const ref of documentRefs(bundle)) {
-    if (!known.has(ref.documentId)) {
-      ctx.addIssue({
-        code: "custom",
-        path: ref.path,
-        message: `documentId "${ref.documentId}" is not in documents[]`,
+// Every contact reference. Three shapes carry one, and all three render the
+// same way.
+function contactRefs(bundle: BundleShape): Reference[] {
+  const refs: Reference[] = [];
+  const referring = [
+    ["instructions", bundle.instructions],
+    ["appointments", bundle.appointments],
+    ["redFlags", bundle.redFlags],
+  ] as const;
+  for (const [key, items] of referring) {
+    items.forEach((item, i) => {
+      item.contactIds.forEach((id, j) => {
+        refs.push({ path: [key, i, "contactIds", j], id });
       });
+    });
+  }
+  return refs;
+}
+
+function medicationRefs(bundle: BundleShape): Reference[] {
+  return bundle.redFlags.flatMap((flag, i) =>
+    flag.relatedMedicationIds.map((id, j) => ({
+      path: ["redFlags", i, "relatedMedicationIds", j],
+      id,
+    })),
+  );
+}
+
+// Referential integrity. A dangling id parses cleanly and only fails on stage.
+// A `documentId` fails visibly — "tap to see where it says that" resolves to
+// nothing. A `contactId` fails invisibly, and worse: the red-flag card prints
+// "your letter does not say who to contact for this", the same sentence it
+// prints when the letter genuinely named nobody, over a flag whose action is
+// "call the ward on 0123 456 7890".
+export const ExtractedBundle = bundleShape.superRefine((bundle, ctx) => {
+  const collections = [
+    [
+      "documents",
+      new Set(bundle.documents.map((document) => document.id)),
+      documentRefs(bundle),
+    ],
+    [
+      "contacts",
+      new Set(bundle.contacts.map((contact) => contact.id)),
+      contactRefs(bundle),
+    ],
+    [
+      "medications",
+      new Set(bundle.medications.map((medication) => medication.id)),
+      medicationRefs(bundle),
+    ],
+  ] as const;
+
+  for (const [name, known, refs] of collections) {
+    for (const ref of refs) {
+      if (!known.has(ref.id)) {
+        ctx.addIssue({
+          code: "custom",
+          path: ref.path,
+          message: `"${ref.id}" is not in ${name}[]`,
+        });
+      }
     }
   }
 });

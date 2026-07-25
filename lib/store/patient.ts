@@ -33,5 +33,5 @@ export async function readPatient(
 }
 
 export async function writePatient(record: PatientRecord): Promise<void> {
-  await redis().set(patientKey(record.id), PatientRecord.parse(record));
+  await redis().set(patientKey(record.id), record);
 }

@@ -31,21 +31,21 @@ export function serverEnv() {
   });
 }
 
-// One function per integration, not one fat schema: a missing AI Gateway key
+// One function per integration, not one fat schema: a missing Anthropic key
 // must not stop the Redis-only parts of the app from booting. Each is called at
 // the first line of the code that needs it, so a misconfiguration fails at the
 // config boundary with the variable's name — never as a third-party 401 in the
 // middle of an extraction.
 
 const llmSchema = z.object({
-  AI_GATEWAY_API_KEY: z.string().min(1),
+  ANTHROPIC_API_KEY: z.string().min(1),
 });
 
-// The AI SDK reads AI_GATEWAY_API_KEY from process.env itself, so nothing
+// The provider reads ANTHROPIC_API_KEY from process.env itself, so nothing
 // forces this call. Extraction calls it anyway — that is the whole point.
 export function llmEnv() {
   return llmSchema.parse({
-    AI_GATEWAY_API_KEY: process.env.AI_GATEWAY_API_KEY,
+    ANTHROPIC_API_KEY: process.env.ANTHROPIC_API_KEY,
   });
 }
 

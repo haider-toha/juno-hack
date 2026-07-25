@@ -12,6 +12,9 @@ next-env.d.ts
 .env.local
 .env*.local
 
+# End-to-end screenshots
+.e2e/
+
 # OS
 .DS_Store
 .vercel

@@ -163,27 +163,6 @@ export function IconPlus({ className }: IconProps) {
   );
 }
 
-// A tablet on the diagonal — marks a medication row in the recovery plan.
-export function IconPill({ className }: IconProps) {
-  return (
-    <svg
-      viewBox="0 0 16 16"
-      aria-hidden
-      className={className ?? "size-4"}
-      fill="none"
-      stroke="currentColor"
-      strokeWidth={1.5}
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <g transform="rotate(-45 8 8)">
-        <rect x="1.9" y="5.9" width="12.2" height="4.2" rx="2.1" />
-        <path d="M8 5.9v4.2" />
-      </g>
-    </svg>
-  );
-}
-
 // Ticked-off step. A shade heavier than its neighbours so it still reads at
 // 14px inside a status circle.
 export function IconCheck({ className }: IconProps) {
