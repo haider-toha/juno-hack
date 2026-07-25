@@ -1,7 +1,7 @@
 # Task runner for the Next.js app.
 SHELL := /bin/bash
 
-.PHONY: help setup install dev build format lint typecheck clean
+.PHONY: help setup install dev build format lint typecheck clean eval e2e
 
 .DEFAULT_GOAL := help
 
@@ -33,3 +33,9 @@ typecheck: ## Type-check (tsc)
 
 clean: ## Remove build artifacts and tool caches
 	rm -rf .next *.tsbuildinfo
+
+eval: ## Score extraction against the medic's gold labels (needs `make dev`)
+	node --env-file-if-exists=.env --env-file-if-exists=.env.local scripts/eval-extraction.ts
+
+e2e: ## Drive the demo arc in a real browser (needs a running app)
+	node --env-file-if-exists=.env --env-file-if-exists=.env.local scripts/e2e-demo.ts

@@ -2,6 +2,8 @@ import "server-only";
 
 import { z } from "zod";
 
+import { env } from "../env";
+
 import { demoTodayKey } from "./keys";
 import { redis } from "./redis";
 
@@ -13,6 +15,12 @@ const Day = z.iso.date();
 // app's clock at once. A day-by-day recovery plan is otherwise not demonstrable
 // inside a sixty-second video.
 export async function getDemoToday(): Promise<string> {
+  // Only the mode that admits it is a demo may move the clock. In live mode
+  // there is no badge on screen to explain a shifted "today", so a leftover
+  // override would silently put every dose row on the wrong day and tick every
+  // answer into the wrong day's key.
+  if (env.NEXT_PUBLIC_PORTICO_MODE !== "demo") return realToday();
+
   const stored = await redis().get<unknown>(demoTodayKey());
   // Unset is the normal case: the demo clock has simply never been moved.
   // A stored value that is not a date is corruption, and throws.

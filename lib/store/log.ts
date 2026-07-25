@@ -35,9 +35,8 @@ export type LogEntry = z.infer<typeof LogEntry>;
 // escalation. Both write paths — the voice tool and the manual tick — come
 // through here, so there is one place that rule lives.
 export async function appendLogEntry(entry: LogEntry): Promise<void> {
-  const valid = LogEntry.parse(entry);
-  await redis().hset(logKey(valid.patientId, valid.day), {
-    [valid.itemId]: valid,
+  await redis().hset(logKey(entry.patientId, entry.day), {
+    [entry.itemId]: entry,
   });
 }
 
