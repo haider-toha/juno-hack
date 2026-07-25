@@ -2,11 +2,13 @@
 // than a spinner, so nothing jumps when the plan arrives.
 export default function PlanLoading() {
   return (
-    <main
-      aria-busy
-      aria-label="Loading your recovery plan"
-      className="flex min-h-0 flex-1 flex-col bg-mist px-5 pt-12"
-    >
+    <main aria-busy className="flex min-h-0 flex-1 flex-col bg-mist px-5 pt-12">
+      {/* A live region rather than a name on the landmark: "Loading your
+          recovery plan" is a state, not what this part of the page is called,
+          and as a status it is actually announced when the skeleton appears. */}
+      <p role="status" className="sr-only">
+        Loading your recovery plan
+      </p>
       <div className="shrink-0 pb-5">
         <Bar className="h-8 w-2/3" />
         <Bar className="mt-3 h-4 w-4/5" />

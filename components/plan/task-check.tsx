@@ -55,8 +55,14 @@ export function TaskCheck({ patientId, itemId, day, label, status }: Props) {
       >
         <Mark status={shown} />
       </button>
+      {/* On its own white chip because `error` is 4.29:1 on lavender and fails
+          AA there — and lavender is today's card, where nearly every tick
+          happens. On the white cards the chip is invisible. */}
       {failed ? (
-        <span role="alert" className="mt-1 w-max text-xs text-error">
+        <span
+          role="alert"
+          className="mt-1 w-max rounded-tactile bg-surface px-1.5 py-0.5 text-xs font-medium text-error"
+        >
           Not saved
         </span>
       ) : null}
@@ -78,8 +84,11 @@ function Mark({ status }: { status: Status | null }) {
           <IconAlert className="size-4.5" />
         </span>
       );
+    // `ink-faint`, not `rule`: this ring is the only thing showing there is a
+    // control here, and `rule` is 1.23:1 on white — effectively invisible, and
+    // below the 3:1 WCAG asks of a user-interface component's boundary.
     case null:
-      return <span className="size-6 rounded-pill border border-rule" />;
+      return <span className="size-6 rounded-pill border border-ink-faint" />;
   }
 }
 

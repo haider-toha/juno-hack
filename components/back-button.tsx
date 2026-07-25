@@ -13,7 +13,7 @@ export function BackButton({
     <Link
       href={href}
       aria-label={label}
-      className="grid size-10 place-items-center text-ink-muted transition-opacity duration-150 ease-out active:opacity-60"
+      className="grid size-11 place-items-center rounded-pill text-ink-muted transition-opacity duration-150 ease-out focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent active:opacity-60"
     >
       <svg
         viewBox="0 0 16 16"

@@ -72,7 +72,7 @@ function StatusMark({ status }: { status: LogEntry["status"] | null }) {
       return (
         <span
           aria-hidden
-          className="mt-0.5 size-6 shrink-0 rounded-pill border border-rule"
+          className="mt-0.5 size-6 shrink-0 rounded-pill border border-ink-faint"
         />
       );
   }

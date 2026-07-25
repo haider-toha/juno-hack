@@ -70,9 +70,10 @@ export function UploadPanel({ patientId }: { patientId: string }) {
 
   return (
     <div className="flex flex-col gap-4">
+      {/* No `aria-disabled` here — a label has no role to be disabled, and the
+          input it points at already carries the real `disabled`. */}
       <label
         htmlFor={inputId}
-        aria-disabled={busy}
         className={`flex min-h-11 items-center justify-center gap-2.5 rounded-tactile bg-accent px-5 py-3.5 text-base font-semibold text-white transition-opacity duration-150 ease-out focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-accent ${
           busy ? "opacity-60" : "cursor-pointer active:opacity-70"
         }`}
@@ -119,9 +120,12 @@ function StateMessage({ state }: { state: State }) {
           Reading your letter. This takes a few seconds.
         </span>
       );
+    // No `role="alert"` — this already sits inside the polite live region
+    // above, and an assertive region nested in a polite one gets announced
+    // twice, or not at all, depending on the screen reader.
     case "failed":
       return (
-        <span role="alert" className="text-error">
+        <span className="text-error">
           We could not read that letter, so nothing has been saved.{" "}
           {state.message}
         </span>

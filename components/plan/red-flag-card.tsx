@@ -27,7 +27,10 @@ export function RedFlagCard({
 }: Props) {
   return (
     <section
-      aria-labelledby={`flag-${flag.id}`}
+      // Named by the heading AND the trigger: a letter with several red flags
+      // would otherwise give every card the identical name "Get help if", and a
+      // list of identically-named regions is no help at all.
+      aria-labelledby={`flag-${flag.id} flag-${flag.id}-trigger`}
       className="rounded-card bg-surface shadow-card"
     >
       <div className="flex items-start gap-3 px-5 pt-4">
@@ -47,7 +50,10 @@ export function RedFlagCard({
             clinician's English correctly and browser auto-translate cannot
             rewrite a clinical instruction behind the patient's back. */}
         <blockquote lang="en" translate="no" className="max-w-[46ch]">
-          <p className="text-lg font-semibold leading-snug text-ink">
+          <p
+            id={`flag-${flag.id}-trigger`}
+            className="text-lg font-semibold leading-snug text-ink"
+          >
             {flag.triggerVerbatim}
           </p>
           <p className="mt-2 text-base leading-relaxed text-ink">
@@ -197,9 +203,12 @@ function SourceTrace({
       className="mt-4 flex min-h-11 items-center text-base font-semibold text-accent underline underline-offset-4 transition-opacity duration-150 ease-out focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent active:opacity-70"
     >
       {locale === "fr" ? "Voir où c’est écrit" : "See where it says that"}
-      {page === null
-        ? ""
-        : ` — ${locale === "fr" ? "page" : "page"} ${String(page)}`}
+      {page === null ? "" : ` — page ${String(page)}`}
+      <span className="sr-only">
+        {locale === "fr"
+          ? " (s’ouvre dans un nouvel onglet)"
+          : " (opens in a new tab)"}
+      </span>
     </a>
   );
 }
@@ -305,6 +314,7 @@ function Attribution({
         className="underline underline-offset-2"
       >
         Open Government Licence v3.0
+        <span className="sr-only"> (opens in a new tab)</span>
       </a>
       .
     </p>

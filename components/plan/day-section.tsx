@@ -26,7 +26,11 @@ export function DaySection({
       aria-labelledby={`day-${day.date}`}
       className={`rounded-card px-5 py-4 ${isToday ? "bg-lavender" : "bg-surface shadow-card"}`}
     >
-      <h3
+      {/* h2, not h3: a day is a top-level section of the timeline, level with
+          "Coming up" and "Changed in hospital". As an h3 it read as a subsection
+          of the red-flag card above it, and skipped a level entirely on a plan
+          with no red flags. */}
+      <h2
         id={`day-${day.date}`}
         className="flex flex-wrap items-baseline gap-x-2"
       >
@@ -38,7 +42,7 @@ export function DaySection({
             ? `${formatDay(day.date)} · ${dayLabel(day.dayNumber)}`
             : dayLabel(day.dayNumber)}
         </span>
-      </h3>
+      </h2>
 
       <ul className="mt-1 divide-y divide-rule">
         {day.items.map((item) => {
@@ -54,7 +58,11 @@ export function DaySection({
                     patientId={patientId}
                     itemId={item.id}
                     day={day.date}
-                    label={answerLabel(item)}
+                    // The day belongs in the tick's name: the same medicine
+                    // repeats on every card, so without it three days of ticks
+                    // announce identically and a screen reader user cannot tell
+                    // which day they are answering for.
+                    label={`${answerLabel(item)}, ${isToday ? "today" : formatDay(day.date)}`}
                     status={status}
                   />
                 ) : undefined
