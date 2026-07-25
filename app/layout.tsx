@@ -30,17 +30,17 @@ export const viewport: Viewport = {
 
 export const metadata: Metadata = {
   title: {
-    default: "Juno",
-    template: "%s · Juno",
+    default: "Portico",
+    template: "%s · Portico",
   },
   description:
-    "Juno turns a hospital discharge letter into a living, day-by-day recovery plan — and calls to check you're on track.",
-  applicationName: "Juno",
+    "Portico turns a hospital discharge letter into a living, day-by-day recovery plan — and checks in to see you're on track.",
+  applicationName: "Portico",
   openGraph: {
-    title: "Juno",
+    title: "Portico",
     description:
       "A living day-by-day recovery plan for the thirty days after you leave hospital.",
-    siteName: "Juno",
+    siteName: "Portico",
     type: "website",
   },
 };

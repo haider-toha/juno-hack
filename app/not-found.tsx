@@ -8,7 +8,7 @@ export default function NotFound() {
           href="/"
           className="font-display text-base font-semibold tracking-tight text-ink transition-opacity duration-150 ease-out hover:opacity-70"
         >
-          Juno
+          Portico
         </Link>
       </header>
       <div className="flex flex-1 flex-col justify-center py-24">

@@ -21,7 +21,7 @@ export default function HomePage() {
     <main className="flex min-h-0 flex-1 flex-col px-6">
       <header className="shrink-0 pt-8 pb-3">
         <span className="font-display text-xl font-semibold tracking-tight text-ink">
-          Juno
+          Portico
         </span>
       </header>
 

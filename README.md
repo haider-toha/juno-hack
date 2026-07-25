@@ -1,8 +1,11 @@
-# Juno
+# Portico
 
 A post-discharge companion that turns a hospital discharge letter into a living,
-day-by-day recovery plan — with a voice agent that calls to check you're on
+day-by-day recovery plan — with a voice agent that checks in to see you're on
 track. See [`plan/initial-idea.md`](plan/initial-idea.md) for the concept.
+
+**Portico** is the product. **Juno** is the hackathon host (repo/Vercel may still
+use the `juno-hack` slug). Locked decision: `audit/…/00-locked-decisions.md` D10.
 
 This repo is currently the **skeleton**: the phone shell, the design system, and
 a working ElevenLabs voice session with an audio-paced streaming transcript.

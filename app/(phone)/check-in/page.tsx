@@ -12,7 +12,7 @@ export default function CheckInPage() {
       title="Let's check in."
       blurb="Tell me how today has gone and I'll walk you through what's left."
       systemPrompt={CHECK_IN_PROMPT}
-      firstMessage="Hello, it's Juno. How are you feeling today?"
+      firstMessage="Hello, it's Portico. How are you feeling today?"
       suggestedQuestions={SUGGESTED_QUESTIONS}
     />
   );
