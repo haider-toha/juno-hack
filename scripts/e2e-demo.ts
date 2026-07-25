@@ -15,6 +15,7 @@ import { z } from "zod";
 // everything it knows it learns over HTTP or off the rendered DOM, which is what
 // lets the same script point at a deployment.
 //
+//   pnpm exec playwright install chromium   # once
 //   make e2e
 //   PORTICO_URL=https://… make e2e
 
@@ -26,17 +27,17 @@ const BASE_URL = (process.env.PORTICO_URL ?? "http://localhost:3000").replace(
 );
 const SHOTS = ".e2e";
 
-// Mirrors `lib/env.ts`: unset means live. The badge is asserted in BOTH
-// directions off this — present in demo, absent in live — because a demo build
-// that forgets to say so is the failure the badge exists to prevent.
+// Mirrors `lib/env.ts`: unset means live. Two assertions read it in BOTH
+// directions — the demo badge and the seed's refusal — because a demo build
+// that does not say it is one is the failure both exist to prevent.
 const MODE = z
   .enum(["live", "demo"])
   .default("live")
   .parse(process.env.NEXT_PUBLIC_PORTICO_MODE);
 
-// The empty-state step clears the stored plan and puts it back, so the harness
-// needs the same Redis the app reads. Parsed here rather than at the call site
-// so a misconfiguration fails by name before a browser is launched.
+// The empty-state step takes the stored plan away and puts it back, so the
+// harness needs the same Redis the app reads. Parsed here rather than at the
+// call site so a misconfiguration fails by name before a browser is launched.
 const REDIS = z
   .object({
     UPSTASH_REDIS_REST_URL: z.url(),
@@ -44,12 +45,13 @@ const REDIS = z
   })
   .parse(process.env);
 
+// There is one patient in this build and `/plan` is hardcoded to it, so the key
+// is fixed. Spelled out rather than imported because `lib/store/keys.ts` is
+// `server-only` and would throw in a plain Node process.
+const PLAN_KEY = "portico:plan:demo";
+
 const PHONE = { width: 390, height: 844 };
 const DESKTOP = { width: 1440, height: 900 };
-
-// Established by the seed step; every later assertion is written against it.
-let today = "";
-let patientId = "";
 
 // Console errors, uncaught page errors and failing requests, attributed to the
 // step that was running when they happened.
@@ -61,7 +63,7 @@ let currentStep = "startup";
 // ── Assertions ──────────────────────────────────────────────────────────────
 
 // Every failure carries the screen it failed against. A red row that does not
-// say what was on the page costs a second run to diagnose, which is the whole
+// say what was on the page costs a second run to diagnose, which is most of the
 // reason to have a harness.
 function must(ok: boolean, expectation: string, screen: string): void {
   if (ok) return;
@@ -71,10 +73,29 @@ function must(ok: boolean, expectation: string, screen: string): void {
   );
 }
 
-// The plan screen's own grouping: "Coming up", "Any time", "Changed in
-// hospital" are each a <section> named by their heading.
+// `/plan` streams: `goto` resolves on the skeleton, whose <main> is `aria-busy`.
+// Waiting for a settled <main> is the difference between asserting on the plan
+// and asserting on its loading state.
+async function open(page: Page, path: string): Promise<string> {
+  await page.goto(`${BASE_URL}${path}`);
+  const main = page.locator("main:not([aria-busy])");
+  await main.waitFor();
+  return main.innerText();
+}
+
+// The plan screen's own grouping: "Coming up", "Any time" and "Changed in
+// hospital" are each a <section> named by its heading.
 function group(page: Page, title: string): Locator {
   return page.locator(`section:has(h2:text-is("${title}"))`);
+}
+
+// Today's card, found by the word the screen itself uses rather than by a date
+// the harness computed. The app's "today" is the real day in live mode and the
+// parked demo day in demo mode, and none of these assertions should care which.
+function todayCard(page: Page): Locator {
+  return page.locator(
+    'section[aria-labelledby^="day-"]:has(span:text-is("Today"))',
+  );
 }
 
 const TICK_STATES = {
@@ -84,7 +105,7 @@ const TICK_STATES = {
 } as const;
 
 // The tick's accessible name is its state — there is no other text on it — so
-// polling the label is both the user-visible check and the screen-reader one.
+// polling the label is both the sighted check and the screen-reader one.
 async function waitForTick(
   tick: Locator,
   state: keyof typeof TICK_STATES,
@@ -171,23 +192,11 @@ async function shot(page: Page, name: string): Promise<void> {
   await page.screenshot({ path: `${SHOTS}/${ordinal}-${name}.png` });
 }
 
-const Seeded = z.object({
-  patientId: z.string().min(1),
-  today: z.iso.date(),
-  plan: z.string().min(1),
-});
-
-async function seed(): Promise<z.infer<typeof Seeded>> {
-  const response = await fetch(`${BASE_URL}/api/seed`, { method: "POST" });
-  const raw = await response.text();
-  if (!response.ok) {
-    // An infrastructure failure is left to throw inside the route, so the body
-    // is Next's HTML error page — thousands of lines whose useful part is the
-    // first one.
-    const detail = raw.trim().split("\n")[0]?.slice(0, 200) ?? "(empty body)";
-    throw new Error(`POST /api/seed → HTTP ${response.status}: ${detail}`);
-  }
-  return Seeded.parse(JSON.parse(raw));
+function redis(): Redis {
+  return new Redis({
+    url: REDIS.UPSTASH_REDIS_REST_URL,
+    token: REDIS.UPSTASH_REDIS_REST_TOKEN,
+  });
 }
 
 // ── Steps ───────────────────────────────────────────────────────────────────
@@ -196,18 +205,39 @@ type Step = { name: string; run: (page: Page) => Promise<void> };
 
 const STEPS: Step[] = [
   {
-    name: "Seed the demo",
+    name: "The seed primes the demo, and refuses in live mode",
     run: async () => {
-      const seeded = await seed();
-      today = seeded.today;
-      patientId = seeded.patientId;
+      const response = await fetch(`${BASE_URL}/api/seed`, { method: "POST" });
+      const raw = await response.text();
+
+      // The seed overwrites the one key a real uploaded letter writes to, so
+      // refusing outside demo mode is the correct answer. The harness asserts
+      // the refusal rather than working around it, and reads the plan already
+      // in the store instead.
+      if (MODE === "live") {
+        must(
+          response.status === 403,
+          `POST /api/seed must refuse to overwrite a live plan; it answered HTTP ${response.status}`,
+          raw,
+        );
+        return;
+      }
+
+      must(
+        response.ok,
+        `POST /api/seed → HTTP ${response.status}`,
+        raw.trim().split("\n")[0] ?? "(empty body)",
+      );
       // Every later assertion names a fact off this exact bundle, so a
       // different plan behind the same endpoint has to fail here and say so
-      // rather than surface as a missing drug five steps later.
+      // rather than surface as a missing drug four steps later.
+      const seeded = z
+        .object({ plan: z.string(), today: z.iso.date() })
+        .parse(JSON.parse(raw));
       must(
         seeded.plan === "seed/02-whitfield",
         `the demo arc is written against the Whitfield seed; /api/seed served "${seeded.plan}"`,
-        JSON.stringify(seeded),
+        raw,
       );
     },
   },
@@ -215,8 +245,7 @@ const STEPS: Step[] = [
   {
     name: "Home offers the two ways in",
     run: async (page) => {
-      await page.goto(`${BASE_URL}/`);
-      const text = await page.locator("body").innerText();
+      const text = await open(page, "/");
       must(text.includes("Portico"), "home should be branded Portico", text);
       must(
         text.includes("How are you doing today?"),
@@ -249,8 +278,7 @@ const STEPS: Step[] = [
   {
     name: "/plan renders the seeded timeline",
     run: async (page) => {
-      await page.goto(`${BASE_URL}/plan`);
-      const text = await page.locator("body").innerText();
+      const text = await open(page, "/plan");
       must(
         text.includes("Your recovery plan"),
         "/plan should be headed with the plan title",
@@ -258,18 +286,13 @@ const STEPS: Step[] = [
       );
       await shot(page, "plan-top");
 
-      const todayCard = page.locator(`section[aria-labelledby="day-${today}"]`);
+      const card = todayCard(page);
       must(
-        (await todayCard.count()) === 1,
-        `the timeline should carry one card for today (${today}), found ${await todayCard.count()}`,
+        (await card.count()) === 1,
+        `the timeline should carry exactly one card headed "Today", found ${await card.count()}`,
         text,
       );
-      const todayText = await todayCard.innerText();
-      must(
-        todayText.startsWith("Today"),
-        `today's card should be headed "Today"`,
-        todayText,
-      );
+      const cardText = await card.innerText();
 
       for (const [drug, directions] of [
         ["Apixaban 5mg", "1 tab, BD, Oral, Ongoing"],
@@ -278,30 +301,34 @@ const STEPS: Step[] = [
         ["Tiotropium 18mcg", "1 puff, OD, Inhaled, Ongoing"],
       ] as const) {
         must(
-          todayText.includes(drug),
+          cardText.includes(drug),
           `today's card should list ${drug}`,
-          todayText,
+          cardText,
         );
         must(
-          todayText.includes(directions),
+          cardText.includes(directions),
           `${drug} should carry its dose directions "${directions}"`,
-          todayText,
+          cardText,
         );
       }
 
-      // The two-day antibiotic course: on the discharge-day cards, and expired
-      // by today. A plan that still asks for it today is the failure worth
-      // catching.
+      // Two tablets, one a day, from the day he came home: the course has to
+      // land on exactly two cards. A repeat prescription rendered forever, or a
+      // course silently dropped, both fail here.
       must(
-        text.includes("Doxycycline 100mg") &&
-          text.includes("1 tab, OD, Oral, 2 days (complete)"),
-        "the doxycycline course should be on the timeline with its directions",
+        text.includes("1 tab, OD, Oral, 2 days (complete)"),
+        "the doxycycline course should carry its directions",
         text,
       );
+      const courseDays = await page
+        .locator(
+          'section[aria-labelledby^="day-"]:has-text("Doxycycline 100mg")',
+        )
+        .count();
       must(
-        !todayText.includes("Doxycycline"),
-        "the doxycycline course ended before today, so it should be off today's card",
-        todayText,
+        courseDays === 2,
+        `the two-day doxycycline course should sit on exactly two day cards, it is on ${courseDays}`,
+        text,
       );
 
       const comingUp = await group(page, "Coming up").innerText();
@@ -352,12 +379,12 @@ const STEPS: Step[] = [
   {
     name: "The red-flag card traces back to the letter",
     run: async (page) => {
-      await page.goto(`${BASE_URL}/plan`);
+      const text = await open(page, "/plan");
       const card = page.locator('section[aria-labelledby^="flag-"]');
       must(
         (await card.count()) === 1,
         `/plan should carry the letter's one red flag, found ${await card.count()} cards`,
-        await page.locator("body").innerText(),
+        text,
       );
 
       await card.scrollIntoViewIfNeeded();
@@ -378,7 +405,7 @@ const STEPS: Step[] = [
         cardText,
       );
       // The letter names nobody to call. Saying so is the honest render; a 999
-      // that the doctor never wrote would be the app speaking.
+      // the doctor never wrote would be the app speaking over them.
       must(
         cardText.includes("Your letter does not say who to contact for this."),
         "the card should say the letter names no recipient rather than invent one",
@@ -386,9 +413,7 @@ const STEPS: Step[] = [
       );
       await shot(page, "red-flag-card");
 
-      const link = card.getByRole("link", {
-        name: /See where it says that/,
-      });
+      const link = card.getByRole("link", { name: /See where it says that/ });
       const href = await link.getAttribute("href");
       if (href === null) {
         throw new Error(`the "see where it says that" link carries no href`);
@@ -422,9 +447,8 @@ const STEPS: Step[] = [
   {
     name: "A tick is optimistic and survives a reload",
     run: async (page) => {
-      await page.goto(`${BASE_URL}/plan`);
-      const todayCard = page.locator(`section[aria-labelledby="day-${today}"]`);
-      const tick = todayCard.getByRole("button", {
+      await open(page, "/plan");
+      const tick = todayCard(page).getByRole("button", {
         name: /^Metformin 500mg, today/,
       });
       await tick.scrollIntoViewIfNeeded();
@@ -465,8 +489,7 @@ const STEPS: Step[] = [
   {
     name: "/upload takes a photo or a file",
     run: async (page) => {
-      await page.goto(`${BASE_URL}/upload`);
-      const text = await page.locator("body").innerText();
+      const text = await open(page, "/upload");
       must(
         text.includes("Add your discharge letter"),
         "/upload should be headed with its purpose",
@@ -518,44 +541,56 @@ const STEPS: Step[] = [
   {
     name: "/plan with no plan shows the named empty state",
     run: async (page) => {
-      const redis = new Redis({
-        url: REDIS.UPSTASH_REDIS_REST_URL,
-        token: REDIS.UPSTASH_REDIS_REST_TOKEN,
-      });
-      await redis.del(`portico:plan:${patientId}`);
+      // Taken away and put back byte for byte rather than reseeded: `/api/seed`
+      // refuses outside demo mode, and a snapshot restores whatever this
+      // instance actually had — including ticks — instead of Harold's.
+      const store = redis();
+      const stored = await store.get<unknown>(PLAN_KEY);
+      if (stored === null) {
+        throw new Error(
+          `nothing is stored at ${PLAN_KEY}, so there is no plan to take away — seed the demo first`,
+        );
+      }
+      await store.del(PLAN_KEY);
 
-      await page.goto(`${BASE_URL}/plan`);
-      const text = await page.locator("body").innerText();
-      must(
-        text.includes("No plan yet"),
-        "/plan without a stored plan should name the empty state",
-        text,
-      );
-      must(
-        text.includes("Your recovery plan is built from your discharge letter"),
-        "the empty state should explain where a plan comes from",
-        text,
-      );
-      must(
-        (await page.locator('section[aria-labelledby^="day-"]').count()) === 0,
-        "the empty state should replace the timeline, not sit above an empty column",
-        text,
-      );
-      const cta = page.getByRole("link", { name: /Add your discharge letter/ });
-      must(
-        (await cta.getAttribute("href")) === "/upload",
-        `the empty state should route to /upload, not ${await cta.getAttribute("href")}`,
-        text,
-      );
-      await shot(page, "plan-empty");
+      try {
+        const text = await open(page, "/plan");
+        must(
+          text.includes("No plan yet"),
+          "/plan without a stored plan should name the empty state",
+          text,
+        );
+        must(
+          text.includes(
+            "Your recovery plan is built from your discharge letter",
+          ),
+          "the empty state should explain where a plan comes from",
+          text,
+        );
+        must(
+          (await page.locator('section[aria-labelledby^="day-"]').count()) === 0,
+          "the empty state should replace the timeline, not sit above an empty column",
+          text,
+        );
+        const cta = page.getByRole("link", {
+          name: /Add your discharge letter/,
+        });
+        must(
+          (await cta.getAttribute("href")) === "/upload",
+          `the empty state should route to /upload, not ${await cta.getAttribute("href")}`,
+          text,
+        );
+        await shot(page, "plan-empty");
+      } finally {
+        // The next person to open this URL is presenting off it, so the plan
+        // goes back whether or not the assertions above held.
+        await store.set(PLAN_KEY, stored);
+      }
 
-      // Leave the demo primed: the next person to open this URL is presenting.
-      await seed();
-      await page.goto(`${BASE_URL}/plan`);
-      const primed = await page.locator("body").innerText();
+      const primed = await open(page, "/plan");
       must(
         primed.includes("Your recovery plan") && primed.includes("Apixaban"),
-        "reseeding should put the timeline back",
+        "the timeline should be back once the plan is restored",
         primed,
       );
     },
@@ -569,8 +604,7 @@ const STEPS: Step[] = [
         ["desktop", DESKTOP, true],
       ] as const) {
         await page.setViewportSize(viewport);
-        await page.goto(`${BASE_URL}/plan`);
-        const text = await page.locator("body").innerText();
+        const text = await open(page, "/plan");
 
         const offenders = await horizontalOverflow(page);
         must(
@@ -641,10 +675,7 @@ async function main() {
   page.setDefaultNavigationTimeout(60_000);
 
   page.on("pageerror", (error) => {
-    problems.push({
-      step: currentStep,
-      detail: `page error: ${error.message}`,
-    });
+    problems.push({ step: currentStep, detail: `page error: ${error.message}` });
   });
   page.on("console", (message) => {
     if (message.type() !== "error") return;
