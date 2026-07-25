@@ -52,8 +52,7 @@ export function UploadPanel({ patientId }: { patientId: string }) {
         body: JSON.stringify({ patientId, documents }),
       });
       if (!response.ok) {
-        const problem: unknown = await response.json();
-        setState({ phase: "failed", message: describeProblem(problem) });
+        setState({ phase: "failed", message: await describeProblem(response) });
         return;
       }
       router.push("/plan");
@@ -130,7 +129,15 @@ function StateMessage({ state }: { state: State }) {
   }
 }
 
-function describeProblem(problem: unknown): string {
+// The two 422s answer in JSON with a sentence. An infrastructure failure is
+// left to throw inside the route, so its body is Next's error page — say that
+// plainly rather than showing a JSON parse error about the error.
+async function describeProblem(response: Response): Promise<string> {
+  const raw = await response.text();
+  if (!raw.startsWith("{")) {
+    return `The server failed with a ${response.status}. Please try again in a moment.`;
+  }
+  const problem: unknown = JSON.parse(raw);
   return typeof problem === "object" &&
     problem !== null &&
     "message" in problem &&
