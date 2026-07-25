@@ -23,8 +23,12 @@ type VoiceSessionProps = {
   title: string;
   blurb: string;
   // Sent as a per-session override, so it replaces the agent's dashboard prompt
-  // for this call. The agent must have prompt overrides enabled in its
-  // ElevenLabs security settings or this is silently ignored.
+  // for this call. Every overridden field must be enabled in the agent's
+  // ElevenLabs Security settings. A disallowed field is NOT ignored and does NOT
+  // throw: the server refuses the session — the socket closes 1008, naming the
+  // field, after conversation_initiation_metadata. The try/catch in connect()
+  // cannot see that; it arrives via onError and must stay visible in the
+  // role="alert" banner below.
   systemPrompt: string;
   firstMessage: string;
   suggestedQuestions: readonly string[];

@@ -70,11 +70,17 @@ session with that.
 
 Two things to know:
 
-- **The agent must allow prompt overrides.** `VoiceSession` sends
-  `overrides.agent.prompt` on every `startSession`, which _replaces_ the agent's
-  dashboard prompt for that session. If overrides are disabled in the agent's
-  security settings, it is silently ignored and you get the dashboard prompt
-  instead.
+- **The agent must allow every override the session sends.** `VoiceSession` sends
+  `overrides.agent.prompt`, `.language`, `.firstMessage` and `overrides.tts` on
+  every `startSession`, and the prompt override _replaces_ the agent's dashboard
+  prompt for that session. Each field has to be enabled in the agent's Security
+  settings. A disallowed field does **not** get quietly dropped and it does
+  **not** throw: the server **refuses the session** — the WebSocket closes with
+  code `1008` and a reason naming the offending field, _after_
+  `conversation_initiation_metadata`. That is asynchronous, so the `try/catch`
+  around `connect()` never sees it; it arrives through the SDK's `onError`
+  callback and renders in the screen's `role="alert"` banner. Keep it there —
+  never downgrade that path to a `console.error` or a silent no-op.
 - **The streaming text is paced by the audio, not by the LLM.** Deltas from
   `onAgentChatResponsePart` accumulate the target text, but `onAudioAlignment`
   builds a per-character timeline of when each char is actually voiced, and a
