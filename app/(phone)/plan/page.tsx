@@ -4,7 +4,9 @@ import { BackButton } from "@/components/back-button";
 import { DemoModeBadge } from "@/components/demo-mode-badge";
 import { IconUpload } from "@/components/icons";
 import { formatDay } from "@/components/plan/day-section";
+import { RedFlagCard } from "@/components/plan/red-flag-card";
 import { Timeline } from "@/components/plan/timeline";
+import { lookupDrug } from "@/lib/drugs/lookup";
 import { getDemoToday } from "@/lib/store/clock";
 import { DEMO_PATIENT_ID } from "@/lib/store/keys";
 import { readLog } from "@/lib/store/log";
@@ -44,6 +46,39 @@ export default async function PlanPage() {
       medication.changeStatus === "amended",
   );
 
+  // Every red flag's related medicines, looked up at once. The lookup is
+  // cache-first, so this is usually a Redis read rather than a round trip to
+  // NHS.uk, and in demo mode it never leaves the process.
+  const relatedNames = [
+    ...new Set(
+      bundle.redFlags.flatMap((flag) =>
+        flag.relatedMedicationIds.flatMap((id) => {
+          const medication = bundle.medications.find(
+            (candidate) => candidate.id === id,
+          );
+          return medication?.lookupKey === null ||
+            medication?.lookupKey === undefined
+            ? []
+            : [
+                [
+                  id,
+                  medication.nameAsWritten,
+                  medication.lookupKey.normalisedName,
+                ] as const,
+              ];
+        }),
+      ),
+    ),
+  ];
+  const guidance = new Map(
+    await Promise.all(
+      relatedNames.map(
+        async ([id, name, normalised]) =>
+          [id, { name, guidance: await lookupDrug(normalised) }] as const,
+      ),
+    ),
+  );
+
   return (
     <main className="flex min-h-0 flex-1 flex-col bg-mist px-5">
       <div className="-ml-2.5 shrink-0 pt-2">
@@ -74,7 +109,30 @@ export default async function PlanPage() {
         standing={standingItems(bundle)}
         changed={changed}
         today={today}
+        patientId={DEMO_PATIENT_ID}
         statuses={statuses}
+        redFlags={
+          <div className="flex flex-col gap-3">
+            {bundle.redFlags.map((flag) => (
+              <RedFlagCard
+                key={flag.id}
+                flag={flag}
+                contacts={bundle.contacts}
+                document={bundle.documents.find(
+                  (candidate) => candidate.id === flag.source.documentId,
+                )}
+                patientId={DEMO_PATIENT_ID}
+                medicines={flag.relatedMedicationIds.flatMap((id) => {
+                  const medicine = guidance.get(id);
+                  return medicine === undefined ? [] : [medicine];
+                })}
+                // English until B1's `getLocale()` lands; that is the one line
+                // that switches this card into its dual EN+FR render.
+                locale="en"
+              />
+            ))}
+          </div>
+        }
       />
     </main>
   );

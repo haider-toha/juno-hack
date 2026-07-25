@@ -1,15 +1,26 @@
+import { TaskCheck } from "@/components/plan/task-check";
 import { TaskRow } from "@/components/plan/task-row";
 import type { LogEntry } from "@/lib/store/log";
-import type { TimelineDay } from "@/lib/timeline/schedule";
+import type { TimelineDay, TimelineItem } from "@/lib/timeline/schedule";
 
 type Props = {
   day: TimelineDay;
   isToday: boolean;
+  patientId: string;
+  // A day in the future has nothing to answer about yet, so its rows are not
+  // tickable.
+  answerable: boolean;
   // Keyed `${date}:${itemId}` so a day only ever picks up its own answers.
   statuses: ReadonlyMap<string, LogEntry["status"]>;
 };
 
-export function DaySection({ day, isToday, statuses }: Props) {
+export function DaySection({
+  day,
+  isToday,
+  patientId,
+  answerable,
+  statuses,
+}: Props) {
   return (
     <section
       aria-labelledby={`day-${day.date}`}
@@ -30,16 +41,54 @@ export function DaySection({ day, isToday, statuses }: Props) {
       </h3>
 
       <ul className="mt-1 divide-y divide-rule">
-        {day.items.map((item) => (
-          <TaskRow
-            key={item.id}
-            item={item}
-            status={statuses.get(`${day.date}:${item.id}`) ?? null}
-          />
-        ))}
+        {day.items.map((item) => {
+          const status = statuses.get(`${day.date}:${item.id}`) ?? null;
+          return (
+            <TaskRow
+              key={item.id}
+              item={item}
+              status={status}
+              check={
+                answerable && isAnswerable(item) ? (
+                  <TaskCheck
+                    patientId={patientId}
+                    itemId={item.id}
+                    day={day.date}
+                    label={answerLabel(item)}
+                    status={status}
+                  />
+                ) : undefined
+              }
+            />
+          );
+        })}
       </ul>
     </section>
   );
+}
+
+// Only things the patient does. An appointment is not a dose, and an
+// instruction addressed to the GP is not his to tick.
+function isAnswerable(item: TimelineItem): boolean {
+  switch (item.kind) {
+    case "medication":
+      return true;
+    case "instruction":
+      return item.instruction.actor === "patient";
+    case "appointment":
+      return false;
+  }
+}
+
+function answerLabel(item: TimelineItem): string {
+  switch (item.kind) {
+    case "medication":
+      return item.medication.nameAsWritten;
+    case "instruction":
+      return item.instruction.titlePlain ?? item.instruction.detailVerbatim;
+    case "appointment":
+      return item.appointment.withVerbatim;
+  }
 }
 
 // The letter counts from the day he came home ("2 days", "in 1 week"), so the

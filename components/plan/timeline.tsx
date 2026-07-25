@@ -11,7 +11,9 @@ type Props = {
   standing: TimelineItem[];
   changed: Medication[];
   today: string;
+  patientId: string;
   statuses: ReadonlyMap<string, LogEntry["status"]>;
+  redFlags: ReactNode;
 };
 
 // Two days back, so a dose logged as missed is still on screen next to the day
@@ -21,7 +23,15 @@ type Props = {
 const LOOKBACK_DAYS = 2;
 const FORWARD_DAYS = 4;
 
-export function Timeline({ days, standing, changed, today, statuses }: Props) {
+export function Timeline({
+  days,
+  standing,
+  changed,
+  today,
+  patientId,
+  statuses,
+  redFlags,
+}: Props) {
   const todayIndex = days.findIndex((day) => day.date === today);
   const start = Math.max(todayIndex - LOOKBACK_DAYS, 0);
   const end = (todayIndex === -1 ? 0 : todayIndex) + FORWARD_DAYS + 1;
@@ -36,12 +46,16 @@ export function Timeline({ days, standing, changed, today, statuses }: Props) {
 
   return (
     <div className="flex flex-col gap-8 pb-10">
+      {redFlags}
+
       <div className="flex flex-col gap-3">
         {nearTerm.map((day) => (
           <DaySection
             key={day.date}
             day={day}
             isToday={day.date === today}
+            patientId={patientId}
+            answerable={day.date <= today}
             statuses={statuses}
           />
         ))}

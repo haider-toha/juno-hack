@@ -1,3 +1,5 @@
+import type { ReactNode } from "react";
+
 import { IconAlert, IconCheck } from "@/components/icons";
 import type { Medication } from "@/lib/plan/schema";
 import type { LogEntry } from "@/lib/store/log";
@@ -9,18 +11,22 @@ type Props = {
   // Set when the row appears outside a day section and has to carry its own
   // date — the "coming up" list, weeks after the day-by-day view ends.
   dateLabel?: string;
+  // The interactive tick, passed in rather than built here so the client
+  // boundary stays at the leaf and this row stays a server component. Absent on
+  // rows there is nothing to answer about yet: a future day, an appointment.
+  check?: ReactNode;
 };
 
 // One line of the plan. Everything on it is either the letter's own words or a
 // rendering of a structured field — nothing here is inferred. Where the letter
 // did not say (no indication, no time of day), the row simply stays quiet
 // rather than filling the gap.
-export function TaskRow({ item, status, dateLabel }: Props) {
+export function TaskRow({ item, status, dateLabel, check }: Props) {
   const detail = describe(item);
 
   return (
     <li className="flex min-h-11 items-start gap-3 py-3">
-      <StatusMark status={status} />
+      {check ?? <StatusMark status={status} />}
       <div className="min-w-0 flex-1">
         {dateLabel === undefined ? null : (
           <p className="tnum text-sm text-ink-muted">{dateLabel}</p>
