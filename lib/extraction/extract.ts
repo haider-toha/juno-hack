@@ -4,7 +4,8 @@ import { get } from "@vercel/blob";
 import { generateText, NoObjectGeneratedError, Output } from "ai";
 import { z } from "zod";
 
-import { blobEnv, llmEnv } from "../env";
+import { blobEnv, env, llmEnv } from "../env";
+import { DEMO_PLAN } from "../plan/samples/demo-plan";
 import { ExtractedBundle, ExtractedBundleFromModel } from "../plan/schema";
 
 // Verified against the gateway's live model list, not remembered. Recorded on
@@ -36,6 +37,15 @@ export type ExtractionResult =
 export async function extractBundle(
   documents: UploadedDocument[],
 ): Promise<ExtractionResult> {
+  // Demo mode is a human-set config switch, and this is the only place it is
+  // read. It is checked BEFORE the gateway call, never after one fails: no
+  // catch below may reach the baked bundle, or a live failure would quietly
+  // serve a plan belonging to a different patient. The bundle records
+  // `modelId: "seed/…"`, so what is on screen names what produced it.
+  if (env.NEXT_PUBLIC_PORTICO_MODE === "demo") {
+    return { kind: "extracted", bundle: DEMO_PLAN };
+  }
+
   // Asserted here, at the config boundary, rather than left to surface as a
   // gateway 401 halfway through a patient's upload.
   llmEnv();

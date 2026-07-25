@@ -7,11 +7,16 @@ import { z } from "zod";
 const schema = z.object({
   NEXT_PUBLIC_AGENT_ID: z.string().min(1),
   NEXT_PUBLIC_XI_VOICE_ID: z.string().min(1),
+  // Public by design: the UI has to render it, because a demo mode you cannot
+  // see is indistinguishable from a lie. Unset means live; a value that is
+  // neither throws here rather than quietly resolving to one of them.
+  NEXT_PUBLIC_PORTICO_MODE: z.enum(["live", "demo"]).default("live"),
 });
 
 export const env = schema.parse({
   NEXT_PUBLIC_AGENT_ID: process.env.NEXT_PUBLIC_AGENT_ID,
   NEXT_PUBLIC_XI_VOICE_ID: process.env.NEXT_PUBLIC_XI_VOICE_ID,
+  NEXT_PUBLIC_PORTICO_MODE: process.env.NEXT_PUBLIC_PORTICO_MODE,
 });
 
 const serverSchema = z.object({

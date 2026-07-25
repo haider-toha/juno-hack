@@ -1,5 +1,6 @@
 import { z } from "zod";
 
+import { env } from "@/lib/env";
 import { extractBundle, UploadedDocument } from "@/lib/extraction/extract";
 import { writePlan } from "@/lib/store/plan";
 
@@ -43,6 +44,9 @@ export async function POST(request: Request) {
       await writePlan(body.data.patientId, result.bundle);
       return Response.json({
         patientId: body.data.patientId,
+        // Returned so the mode is answerable from the response as well as from
+        // the screen; `modelId` is how it is recorded on the stored bundle.
+        mode: env.NEXT_PUBLIC_PORTICO_MODE,
         modelId: result.bundle.extraction.modelId,
         medications: result.bundle.medications.length,
         redFlags: result.bundle.redFlags.length,

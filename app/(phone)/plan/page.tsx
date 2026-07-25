@@ -1,6 +1,7 @@
 import Link from "next/link";
 
 import { BackButton } from "@/components/back-button";
+import { DemoModeBadge } from "@/components/demo-mode-badge";
 import { IconUpload } from "@/components/icons";
 import { formatDay } from "@/components/plan/day-section";
 import { Timeline } from "@/components/plan/timeline";
@@ -63,6 +64,9 @@ export default async function PlanPage() {
             Home since {formatDay(bundle.episode.dischargeDate)}
           </p>
         )}
+        <div className="mt-4 empty:mt-0">
+          <DemoModeBadge />
+        </div>
       </header>
 
       <Timeline

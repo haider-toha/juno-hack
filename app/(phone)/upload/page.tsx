@@ -1,4 +1,5 @@
 import { BackButton } from "@/components/back-button";
+import { DemoModeBadge } from "@/components/demo-mode-badge";
 import { UploadPanel } from "@/components/upload/upload-panel";
 import { DEMO_PATIENT_ID } from "@/lib/store/keys";
 
@@ -21,7 +22,11 @@ export default function UploadPage() {
           what the letter actually says.
         </p>
 
-        <div className="mt-8">
+        <div className="mt-6 empty:mt-0">
+          <DemoModeBadge />
+        </div>
+
+        <div className="mt-6">
           <UploadPanel patientId={DEMO_PATIENT_ID} />
         </div>
       </div>
