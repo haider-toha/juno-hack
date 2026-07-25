@@ -87,6 +87,24 @@
     line-height: 1.05;
     letter-spacing: -0.02em;
   }
+  /* The focus floor. Several interactive elements carried no focus style at
+     all, so this gives every one of them a visible ring by default rather than
+     leaving it to be remembered per component. :where() keeps the specificity
+     at zero and it sits in the base layer, so any component that needs a
+     different treatment still wins. tabindex="-1" is excluded: those are
+     pointer targets (the menu's click-away catcher), never keyboard stops. */
+  :where(
+    a,
+    button,
+    input,
+    select,
+    textarea,
+    summary,
+    [tabindex]:not([tabindex="-1"])
+  ):focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 2px;
+  }
   ::selection {
     background-color: var(--color-accent-soft);
     color: var(--color-ink);
@@ -96,4 +114,22 @@
 /* Tabular figures without a monospace font */
 .tnum {
   font-feature-settings: "tnum" 1;
+}
+
+/* Someone who has asked their system to reduce motion gets no orb pulse, no
+   listening dots, no blinking caret and no 500ms morph between states.
+   Nothing is hidden by this: the orb still changes size, brightness and
+   opacity per state, and the state is named in text by the aria-live label
+   beneath it, so the conversation stays as legible as it is with motion on.
+   Written as a sweep rather than a list of selectors so a component added
+   later cannot reintroduce motion by forgetting this file. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  ::before,
+  ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
