@@ -33,3 +33,11 @@ typecheck: ## Type-check (tsc)
 
 clean: ## Remove build artifacts and tool caches
 	rm -rf .next *.tsbuildinfo
+
+# --- Track B ---------------------------------------------------------------
+# Appended at the end so Track A's targets and these never collide.
+
+.PHONY: seed
+
+seed: ## Reset the demo to a known state (dev server must be running)
+	curl -fsS -X POST http://localhost:3000/api/seed && echo
