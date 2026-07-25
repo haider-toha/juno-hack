@@ -568,7 +568,8 @@ const STEPS: Step[] = [
           text,
         );
         must(
-          (await page.locator('section[aria-labelledby^="day-"]').count()) === 0,
+          (await page.locator('section[aria-labelledby^="day-"]').count()) ===
+            0,
           "the empty state should replace the timeline, not sit above an empty column",
           text,
         );
@@ -675,7 +676,10 @@ async function main() {
   page.setDefaultNavigationTimeout(60_000);
 
   page.on("pageerror", (error) => {
-    problems.push({ step: currentStep, detail: `page error: ${error.message}` });
+    problems.push({
+      step: currentStep,
+      detail: `page error: ${error.message}`,
+    });
   });
   page.on("console", (message) => {
     if (message.type() !== "error") return;
