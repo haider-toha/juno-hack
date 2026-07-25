@@ -17,6 +17,26 @@ make dev       # http://localhost:3000
 
 `make help` lists the rest.
 
+## Making changes
+
+`main` is protected: it takes no direct pushes, from anyone. Branch off it and
+open a pull request back.
+
+```bash
+git switch -c my-change main
+# ...work...
+make format          # do this before pushing — CI checks it
+git push -u origin my-change
+gh pr create
+```
+
+CI runs `prettier --check` on every pull request into `main`, and the `format`
+check must pass before the PR can merge. No review approval is required. Nothing
+deploys from CI.
+
+Type-checking (`make typecheck`) and linting (`make lint`) are not in CI yet —
+run them locally.
+
 ## What's here
 
 ```
