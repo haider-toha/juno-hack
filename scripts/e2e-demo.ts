@@ -98,17 +98,31 @@ function todayCard(page: Page): Locator {
   );
 }
 
-const TICK_STATES = {
+const STATES = ["unanswered", "taken", "missed"] as const;
+type TickState = (typeof STATES)[number];
+
+// The tick's accessible name is its state — there is no other text on it — so
+// reading the label is both the sighted check and the screen-reader one.
+const TICK_STATES: Record<TickState, string> = {
   unanswered: "tap to record as taken.",
   taken: "recorded as taken. Tap to change to missed.",
   missed: "recorded as missed. Tap to change to taken.",
-} as const;
+};
 
-// The tick's accessible name is its state — there is no other text on it — so
-// polling the label is both the sighted check and the screen-reader one.
+async function tickState(tick: Locator): Promise<TickState> {
+  const label = (await tick.getAttribute("aria-label")) ?? "";
+  const state = STATES.find((candidate) =>
+    label.endsWith(TICK_STATES[candidate]),
+  );
+  if (state === undefined) {
+    throw new Error(`the tick announces something unrecognised: "${label}"`);
+  }
+  return state;
+}
+
 async function waitForTick(
   tick: Locator,
-  state: keyof typeof TICK_STATES,
+  state: TickState,
   timeout: number,
 ): Promise<void> {
   const expected = TICK_STATES[state];
@@ -452,37 +466,53 @@ const STEPS: Step[] = [
         name: /^Metformin 500mg, today/,
       });
       await tick.scrollIntoViewIfNeeded();
-      await waitForTick(tick, "unanswered", 5_000);
+
+      // The control toggles taken/missed, so the pair a run exercises depends
+      // on where it starts — and where it starts depends on whether the last
+      // run's answer is still on the record, which is the whole point. Reading
+      // it rather than assuming keeps the harness re-runnable without a reseed,
+      // and either order still puts the missed state through a reload.
+      const first = (await tickState(tick)) === "taken" ? "missed" : "taken";
+      const second = first === "taken" ? "missed" : "taken";
 
       // Hold the server action open: the mark must flip anyway. If it only
       // flips once the write lands then it is not optimistic, and the tap feels
       // dead on the connection an elderly patient actually has.
+      let heldTheAction = false;
       await page.route(`${BASE_URL}/plan`, async (route) => {
         if (route.request().headers()["next-action"] !== undefined) {
+          heldTheAction = true;
           await new Promise((done) => setTimeout(done, 2_000));
         }
         await route.continue();
       });
       await tick.click();
-      await waitForTick(tick, "taken", 750);
+      await waitForTick(tick, first, 750);
       await page.unrouteAll({ behavior: "wait" });
+      // Without this the 750ms above proves nothing: a write that was never
+      // held could simply have been fast.
+      if (!heldTheAction) {
+        throw new Error(
+          `no server action was intercepted on ${BASE_URL}/plan, so the tick flipping inside 750ms is not evidence of optimism`,
+        );
+      }
 
-      await waitForTick(tick, "taken", 15_000);
-      await shot(page, "tick-taken");
+      await waitForTick(tick, first, 15_000);
+      await shot(page, `tick-${first}`);
 
       await page.reload();
       await tick.scrollIntoViewIfNeeded();
-      await waitForTick(tick, "taken", 15_000);
-      await shot(page, "tick-taken-after-reload");
+      await waitForTick(tick, first, 15_000);
+      await shot(page, `tick-${first}-after-reload`);
 
       await tick.click();
-      await waitForTick(tick, "missed", 15_000);
-      await shot(page, "tick-missed");
+      await waitForTick(tick, second, 15_000);
+      await shot(page, `tick-${second}`);
 
       await page.reload();
       await tick.scrollIntoViewIfNeeded();
-      await waitForTick(tick, "missed", 15_000);
-      await shot(page, "tick-missed-after-reload");
+      await waitForTick(tick, second, 15_000);
+      await shot(page, `tick-${second}-after-reload`);
     },
   },
 
