@@ -6,19 +6,32 @@ import { useEffect, useRef, useState } from "react";
 import { z } from "zod";
 
 import { IconKeyboard, IconMenu, IconMic } from "@/components/icons";
-import { LanguageGlobe } from "@/components/language-picker";
+import { LanguagePicker } from "@/components/language-picker";
 import { Composer } from "@/components/voice/composer";
 import { OrbDock, OrbSphere, VoiceStatusLine } from "@/components/voice/orb";
 import { SuggestedQuestions } from "@/components/voice/suggested-questions";
 import { Transcript, type Turn } from "@/components/voice/transcript";
 import { env } from "@/lib/env";
+import type { Dictionary } from "@/lib/i18n/en";
+import type { Locale } from "@/lib/i18n/locales";
 
 // The two internal view-states of a voice screen. The provider + session live
 // across both, mounted once; entering the conversation never unmounts the
 // session. These are NOT sub-routes and read no URL state.
 type Phase = "idle" | "conversation";
 
+// Only the slices this tree renders, never the whole dictionary — every prop
+// handed to a client component is serialised into the page payload.
+export type VoiceStrings = Pick<
+  Dictionary,
+  "voice" | "composer" | "transcript" | "suggestions" | "languagePicker"
+>;
+
 type VoiceSessionProps = {
+  // Drives the UI language AND the agent's spoken language from one value, so a
+  // French screen cannot end up answered by an English voice [Locked D9].
+  locale: Locale;
+  strings: VoiceStrings;
   // Idle-screen copy — what the user sees before they tap to start.
   title: string;
   blurb: string;
@@ -59,12 +72,15 @@ export function VoiceSession(props: VoiceSessionProps) {
 }
 
 function Session({
+  locale,
+  strings,
   title,
   blurb,
   systemPrompt,
   firstMessage,
   suggestedQuestions,
 }: VoiceSessionProps) {
+  const t = strings.voice;
   const [phase, setPhase] = useState<Phase>("idle");
   // How the conversation was entered: "voice" via the primary CTA, "text" via
   // "Type instead". Voice entry keeps the prominent orb; the typed path drops it
@@ -217,7 +233,7 @@ function Session({
     setError(null);
     try {
       await navigator.mediaDevices.getUserMedia({ audio: true });
-      const signedUrl = await fetchSignedUrl();
+      const signedUrl = await fetchSignedUrl(t.errorStart);
       startSession({
         signedUrl,
         overrides: {
@@ -226,14 +242,18 @@ function Session({
             // the persona + concision rules must travel with whatever data they
             // operate on or they never apply at runtime.
             prompt: { prompt: systemPrompt },
-            language: "en",
+            // Selects the agent's language preset, and with it the TTS model
+            // pinned for that locale: `en` uses the base eleven_flash_v2,
+            // `fr` uses language_presets.fr's eleven_flash_v2_5. The model is
+            // not client-overridable, so this prop cannot drift it.
+            language: locale,
             firstMessage,
           },
           tts: { voiceId: env.NEXT_PUBLIC_XI_VOICE_ID },
         },
       });
     } catch (e) {
-      setError(messageOf(e));
+      setError(messageOf(e, t));
     }
   }
 
@@ -276,6 +296,8 @@ function Session({
   if (phase === "idle") {
     return (
       <IdleView
+        locale={locale}
+        strings={strings}
         title={title}
         blurb={blurb}
         error={error}
@@ -287,17 +309,15 @@ function Session({
 
   return (
     <div className="relative flex min-h-0 flex-1 flex-col bg-surface">
-      {/* relative: the LanguageGlobe dropdown anchors to this row. Without it the
-          menu anchors to the full-height column below and the frame clips it. */}
-      <div className="relative flex shrink-0 items-center justify-between px-4 pt-4 pb-2">
+      <div className="flex shrink-0 items-center justify-between px-4 pt-3 pb-2">
         <Link
           href="/"
-          aria-label="Menu"
-          className="grid size-10 place-items-center text-ink-muted transition-opacity duration-150 ease-out active:opacity-60"
+          aria-label={t.menu}
+          className="grid size-11 place-items-center rounded-tactile text-ink-muted transition-colors duration-150 ease-out hover:bg-mist focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent active:opacity-60"
         >
           <IconMenu className="size-5" />
         </Link>
-        <LanguageGlobe />
+        <LanguagePicker locale={locale} t={strings.languagePicker} />
       </div>
 
       <div
@@ -315,12 +335,12 @@ function Session({
         ) : null}
 
         {transcript.length === 0 && agentLive === "" && error === null ? (
-          <p className="mt-8 text-center text-base text-ink-faint">
+          <p className="mt-8 text-center text-base text-ink-muted">
             {status === "connecting"
-              ? "Connecting…"
+              ? t.connecting
               : status === "connected"
-                ? "Getting ready…"
-                : "Starting…"}
+                ? t.gettingReady
+                : t.starting}
           </p>
         ) : null}
 
@@ -329,6 +349,7 @@ function Session({
           live={agentLive}
           revealedCount={revealedCount}
           thinking={agentThinking}
+          thinkingLabel={strings.transcript.thinking}
         />
       </div>
 
@@ -337,16 +358,22 @@ function Session({
           questions={suggestedQuestions}
           onAsk={ask}
           disabled={!sessionLive}
+          heading={strings.suggestions.heading}
         />
       ) : null}
 
       {entryMode === "voice" ? (
-        <OrbDock status={status} mode={mode} />
+        <OrbDock status={status} mode={mode} t={t} />
       ) : (
-        <VoiceStatusLine status={status} mode={mode} />
+        <VoiceStatusLine status={status} mode={mode} t={t} />
       )}
 
-      <Composer onSubmit={ask} onEnd={end} autoFocus={entryMode === "text"} />
+      <Composer
+        onSubmit={ask}
+        onEnd={end}
+        autoFocus={entryMode === "text"}
+        t={strings.composer}
+      />
     </div>
   );
 }
@@ -355,12 +382,16 @@ function Session({
 // ways in. Both CTAs call `begin` directly so the mic request stays inside the
 // user's tap.
 function IdleView({
+  locale,
+  strings,
   title,
   blurb,
   error,
   onStart,
   onType,
 }: {
+  locale: Locale;
+  strings: VoiceStrings;
   title: string;
   blurb: string;
   error: string | null;
@@ -369,6 +400,11 @@ function IdleView({
 }) {
   return (
     <div className="flex min-h-0 flex-1 flex-col bg-surface px-5">
+      {/* The language control keeps the same top-right position it holds on
+          every other screen, so it is never hunted for. */}
+      <div className="flex shrink-0 justify-end pt-3">
+        <LanguagePicker locale={locale} t={strings.languagePicker} />
+      </div>
       <div className="flex flex-1 flex-col items-center justify-center gap-6 text-center">
         <OrbSphere connected speaking={false} />
         <div>
@@ -393,18 +429,18 @@ function IdleView({
         <button
           type="button"
           onClick={onStart}
-          className="flex min-h-[3.25rem] w-full items-center justify-center gap-2 rounded-tactile bg-accent px-5 font-display text-lg font-medium text-ink-invert transition-opacity duration-150 ease-out hover:opacity-90 active:opacity-80"
+          className="flex min-h-[3.25rem] w-full items-center justify-center gap-2 rounded-tactile bg-accent px-5 font-display text-lg font-medium text-ink-invert transition-opacity duration-150 ease-out hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent active:opacity-80"
         >
           <IconMic className="size-5 text-ink-invert" />
-          Start talking
+          {strings.voice.start}
         </button>
         <button
           type="button"
           onClick={onType}
-          className="mt-3 flex min-h-11 w-full items-center justify-center gap-2 px-5 font-display text-base font-medium text-ink-muted transition-opacity duration-150 ease-out hover:text-ink active:opacity-70"
+          className="mt-3 flex min-h-11 w-full items-center justify-center gap-2 rounded-tactile px-5 font-display text-base font-medium text-ink-muted transition-opacity duration-150 ease-out hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent active:opacity-70"
         >
           <IconKeyboard className="size-4 text-ink-muted" />
-          Type instead
+          {strings.voice.typeInstead}
         </button>
       </div>
     </div>
@@ -415,17 +451,19 @@ function IdleView({
 // asserting the shape.
 const signedUrlSchema = z.object({ signedUrl: z.string().min(1) });
 
-async function fetchSignedUrl(): Promise<string> {
+async function fetchSignedUrl(failureMessage: string): Promise<string> {
   const res = await fetch("/api/eleven/signed-url");
-  if (!res.ok)
-    throw new Error("Could not start the conversation. Please try again.");
+  if (!res.ok) throw new Error(failureMessage);
   return signedUrlSchema.parse(await res.json()).signedUrl;
 }
 
-function messageOf(e: unknown): string {
+function messageOf(e: unknown, t: Dictionary["voice"]): string {
   if (e instanceof DOMException && e.name === "NotAllowedError") {
-    return "Microphone access was blocked. Allow the microphone and try again.";
+    return t.errorMic;
   }
+  // An Error raised inside the SDK carries its own English text. Showing it is
+  // still right: a real fault reported in the wrong language beats a translated
+  // sentence that hides which fault it was.
   if (e instanceof Error) return e.message;
-  return "Something went wrong starting the conversation.";
+  return t.errorUnknown;
 }

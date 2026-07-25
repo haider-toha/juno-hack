@@ -88,8 +88,6 @@ export const en = {
   languagePicker: {
     label: "Language",
     change: "Change language",
-    search: "Search languages",
-    noMatch: "No languages match that search.",
   },
 
   // Locked D7. In French the red-flag card shows the French translation AND the

@@ -10,11 +10,13 @@ export function Transcript({
   live,
   revealedCount,
   thinking,
+  thinkingLabel,
 }: {
   items: Turn[];
   live: string;
   revealedCount: number;
   thinking: boolean;
+  thinkingLabel: string;
 }) {
   const visible = live.slice(0, Math.min(revealedCount, live.length));
   // Show the typing indicator only while the agent is thinking AND no audio-
@@ -28,7 +30,7 @@ export function Transcript({
           {turn.text}
         </Bubble>
       ))}
-      {showTyping ? <TypingBubble /> : null}
+      {showTyping ? <TypingBubble label={thinkingLabel} /> : null}
       {visible !== "" ? (
         <Bubble role="agent">
           {visible}
@@ -45,10 +47,10 @@ export function Transcript({
 
 // The pre-dictation placeholder: three pulsing dots in a mist bubble, shown
 // between the agent receiving the question and the first audio-aligned word.
-function TypingBubble() {
+function TypingBubble({ label }: { label: string }) {
   return (
     <p
-      aria-label="Thinking"
+      aria-label={label}
       className="max-w-[85%] self-start rounded-bubble bg-mist px-4 py-3.5 text-base leading-relaxed"
     >
       <span className="flex items-center gap-1.5">

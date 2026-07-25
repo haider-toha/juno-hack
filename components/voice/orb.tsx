@@ -1,6 +1,12 @@
 // The speaking/listening orb. Animated off the SDK `mode` axis (NOT `status`,
 // which is `connected` for both, and NOT invented from transcript deltas). It
 // must read as a soft, morphing sphere, never a hard pulsing disc.
+import type { Dictionary } from "@/lib/i18n/en";
+
+// The status captions are announced by aria-live, so they are exactly the
+// "conditional or rarely used" text that must not leak English into a French
+// screen. They arrive as a prop rather than being written here.
+type VoiceLabels = Dictionary["voice"];
 
 // The morphing sphere itself — shared by the live conversation (OrbDock) and any
 // pre-session/loading screen, so the idle state reads as the same entity that
@@ -63,9 +69,11 @@ export function OrbSphere({
 export function OrbDock({
   status,
   mode,
+  t,
 }: {
   status: string;
   mode: "speaking" | "listening";
+  t: VoiceLabels;
 }) {
   const connected = status === "connected";
   const speaking = connected && mode === "speaking";
@@ -85,7 +93,7 @@ export function OrbDock({
         </div>
       ) : null}
       <p aria-live="polite" className="font-display text-sm text-ink-muted">
-        {voiceStatusLabel(status, mode)}
+        {voiceStatusLabel(status, mode, t)}
       </p>
     </div>
   );
@@ -98,16 +106,18 @@ export function OrbDock({
 export function VoiceStatusLine({
   status,
   mode,
+  t,
 }: {
   status: string;
   mode: "speaking" | "listening";
+  t: VoiceLabels;
 }) {
   return (
     <p
       aria-live="polite"
-      className="shrink-0 px-4 pb-1.5 text-center font-display text-xs text-ink-faint"
+      className="shrink-0 px-4 pb-1.5 text-center font-display text-xs text-ink-muted"
     >
-      {voiceStatusLabel(status, mode)}
+      {voiceStatusLabel(status, mode, t)}
     </p>
   );
 }
@@ -115,9 +125,10 @@ export function VoiceStatusLine({
 function voiceStatusLabel(
   status: string,
   mode: "speaking" | "listening",
+  t: VoiceLabels,
 ): string {
-  if (status === "connecting") return "Connecting…";
-  if (status === "error") return "Connection error";
-  if (status !== "connected") return "Not connected";
-  return mode === "speaking" ? "Speaking" : "Listening";
+  if (status === "connecting") return t.connecting;
+  if (status === "error") return t.connectionError;
+  if (status !== "connected") return t.notConnected;
+  return mode === "speaking" ? t.speaking : t.listening;
 }

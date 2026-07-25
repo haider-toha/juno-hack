@@ -79,8 +79,6 @@ export const fr = {
   languagePicker: {
     label: "Langue",
     change: "Changer de langue",
-    search: "Rechercher une langue",
-    noMatch: "Aucune langue ne correspond à cette recherche.",
   },
 
   redFlag: {

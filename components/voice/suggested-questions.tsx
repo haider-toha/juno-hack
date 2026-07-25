@@ -7,15 +7,17 @@ export function SuggestedQuestions({
   questions,
   onAsk,
   disabled,
+  heading,
 }: {
   questions: readonly string[];
   onAsk: (text: string) => void;
   disabled: boolean;
+  heading: string;
 }) {
   return (
     <div className="shrink-0 border-t border-rule px-4 py-3">
       <p className="mb-2.5 px-1 font-display text-sm font-medium text-ink-muted">
-        Suggested questions
+        {heading}
       </p>
       <ul className="flex flex-col gap-2">
         {questions.map((q) => (
