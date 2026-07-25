@@ -7,11 +7,16 @@ import { z } from "zod";
 const schema = z.object({
   NEXT_PUBLIC_AGENT_ID: z.string().min(1),
   NEXT_PUBLIC_XI_VOICE_ID: z.string().min(1),
+  // Public by design: the UI has to render it, because a demo mode you cannot
+  // see is indistinguishable from a lie. Unset means live; a value that is
+  // neither throws here rather than quietly resolving to one of them.
+  NEXT_PUBLIC_PORTICO_MODE: z.enum(["live", "demo"]).default("live"),
 });
 
 export const env = schema.parse({
   NEXT_PUBLIC_AGENT_ID: process.env.NEXT_PUBLIC_AGENT_ID,
   NEXT_PUBLIC_XI_VOICE_ID: process.env.NEXT_PUBLIC_XI_VOICE_ID,
+  NEXT_PUBLIC_PORTICO_MODE: process.env.NEXT_PUBLIC_PORTICO_MODE,
 });
 
 const serverSchema = z.object({
@@ -23,5 +28,49 @@ const serverSchema = z.object({
 export function serverEnv() {
   return serverSchema.parse({
     XI_API_KEY: process.env.XI_API_KEY,
+  });
+}
+
+// One function per integration, not one fat schema: a missing Anthropic key
+// must not stop the Redis-only parts of the app from booting. Each is called at
+// the first line of the code that needs it, so a misconfiguration fails at the
+// config boundary with the variable's name — never as a third-party 401 in the
+// middle of an extraction.
+
+const llmSchema = z.object({
+  ANTHROPIC_API_KEY: z.string().min(1),
+});
+
+// The provider reads ANTHROPIC_API_KEY from process.env itself, so nothing
+// forces this call. Extraction calls it anyway — that is the whole point.
+export function llmEnv() {
+  return llmSchema.parse({
+    ANTHROPIC_API_KEY: process.env.ANTHROPIC_API_KEY,
+  });
+}
+
+const blobSchema = z.object({
+  BLOB_READ_WRITE_TOKEN: z.string().min(1),
+});
+
+// Asserted and passed explicitly. The Blob SDK would otherwise fall back to
+// OIDC (VERCEL_OIDC_TOKEN), which is short-lived and auto-rotated: a pulled
+// copy goes stale and yesterday's working upload starts failing. handleUpload
+// needs the long-lived token regardless.
+export function blobEnv() {
+  return blobSchema.parse({
+    BLOB_READ_WRITE_TOKEN: process.env.BLOB_READ_WRITE_TOKEN,
+  });
+}
+
+const redisSchema = z.object({
+  UPSTASH_REDIS_REST_URL: z.url(),
+  UPSTASH_REDIS_REST_TOKEN: z.string().min(1),
+});
+
+export function redisEnv() {
+  return redisSchema.parse({
+    UPSTASH_REDIS_REST_URL: process.env.UPSTASH_REDIS_REST_URL,
+    UPSTASH_REDIS_REST_TOKEN: process.env.UPSTASH_REDIS_REST_TOKEN,
   });
 }

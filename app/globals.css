@@ -31,7 +31,11 @@
   /* Ink */
   --color-ink: #111b32;
   --color-ink-muted: #3c4b63;
-  --color-ink-faint: #909db2;
+  /* Was #909db2, which measured 2.74:1 on white and failed AA — so the faintest
+     ink tier could not legally carry text, which is what it is for. Now 5.38:1
+     on surface, 4.89:1 on mist and 4.69:1 on lavender: AA on all three. This is
+     the one sanctioned change to this block; it is frozen after it. */
+  --color-ink-faint: #5f6b80;
   --color-ink-invert: #ffffff;
 
   /* Accent = Indigo primary */

@@ -163,6 +163,63 @@ export function IconPlus({ className }: IconProps) {
   );
 }
 
+// Ticked-off step. A shade heavier than its neighbours so it still reads at
+// 14px inside a status circle.
+export function IconCheck({ className }: IconProps) {
+  return (
+    <svg
+      viewBox="0 0 16 16"
+      aria-hidden
+      className={className ?? "size-4"}
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.8}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="m3.5 8.5 3 3 6-7" />
+    </svg>
+  );
+}
+
+// Warning triangle — the red-flag card and the missed-dose marker.
+export function IconAlert({ className }: IconProps) {
+  return (
+    <svg
+      viewBox="0 0 16 16"
+      aria-hidden
+      className={className ?? "size-4"}
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.5}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M7.15 2.4 1.4 12.25a1 1 0 0 0 .85 1.5h11.5a1 1 0 0 0 .85-1.5L8.85 2.4a1 1 0 0 0-1.7 0Z" />
+      <path d="M8 6.25v2.75M8 11.5h.01" />
+    </svg>
+  );
+}
+
+// Photograph or choose a discharge letter.
+export function IconUpload({ className }: IconProps) {
+  return (
+    <svg
+      viewBox="0 0 16 16"
+      aria-hidden
+      className={className ?? "size-4"}
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.5}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M8 10.5V2.5M5 5.5 8 2.5l3 3" />
+      <path d="M2.5 10v2.5a1 1 0 0 0 1 1h9a1 1 0 0 0 1-1V10" />
+    </svg>
+  );
+}
+
 // Padlock for the "Your data is private" reassurance card.
 export function IconLock({ className }: IconProps) {
   return (
