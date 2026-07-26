@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useId, useState } from "react";
 
 import { IconUpload } from "@/components/icons";
+import { OrbSphere } from "@/components/voice/orb";
 import type { Dictionary } from "@/lib/i18n/en";
 
 // One control for both paths. `capture` is a hint: on a phone it opens the
@@ -12,6 +13,12 @@ import type { Dictionary } from "@/lib/i18n/en";
 // input covers photographing a letter and choosing a PDF. A discharge bundle is
 // several pages, hence `multiple`.
 const ACCEPT = "image/*,application/pdf";
+
+// Demo extraction returns instantly. Without a floor the home flashes
+// "Reading…" and jumps to /plan — the orb never gets a beat to say work is
+// happening. Real model calls usually exceed this; the wait only pads the
+// short path.
+const MIN_BUSY_MS = 3200;
 
 // Its own class string rather than `primaryButton` from `components/
 // button-styles.ts`: this is the one control on the one screen a patient reaches
@@ -30,7 +37,14 @@ type State =
   | { phase: "idle" }
   | { phase: "uploading"; done: number; total: number }
   | { phase: "reading" }
+  | { phase: "building" }
   | { phase: "failed"; message: string };
+
+function sleep(ms: number) {
+  return new Promise<void>((resolve) => {
+    window.setTimeout(resolve, ms);
+  });
+}
 
 export function UploadPanel({
   patientId,
@@ -46,6 +60,7 @@ export function UploadPanel({
   async function onFiles(files: File[]) {
     if (files.length === 0) return;
 
+    const startedAt = Date.now();
     setState({ phase: "uploading", done: 0, total: files.length });
     try {
       // In parallel, which is the whole reason the input takes several files:
@@ -88,6 +103,11 @@ export function UploadPanel({
         });
         return;
       }
+
+      // Hold on "building" long enough for the orb to read as work, then leave.
+      setState({ phase: "building" });
+      const remaining = MIN_BUSY_MS - (Date.now() - startedAt);
+      if (remaining > 0) await sleep(remaining);
       router.push("/plan");
     } catch {
       // Surfaced, never swallowed: a failed upload must not leave an empty
@@ -97,7 +117,32 @@ export function UploadPanel({
     }
   }
 
-  const busy = state.phase === "uploading" || state.phase === "reading";
+  const busy =
+    state.phase === "uploading" ||
+    state.phase === "reading" ||
+    state.phase === "building";
+
+  if (busy) {
+    // Same orb as check-in: luminous while pages move, speaking-bright while
+    // we read and build. The button is gone for this stretch — a dimmed CTA
+    // that still looks tappable is the wrong story for "stay on this screen".
+    return (
+      <div className="flex flex-col items-center gap-5 py-2 text-center">
+        <OrbSphere
+          connected
+          speaking={state.phase === "reading" || state.phase === "building"}
+        />
+        <div className="flex flex-col gap-2">
+          <p className="font-display text-xl font-medium leading-snug text-ink">
+            <LabelText state={state} t={t} />
+          </p>
+          <p aria-live="polite" className="text-base leading-relaxed text-ink-muted">
+            <StateMessage state={state} t={t} />
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col gap-4">
@@ -108,15 +153,13 @@ export function UploadPanel({
           mouse click and stayed lit after the file dialog closed. */}
       <label
         htmlFor={inputId}
-        className={`${letterButton} has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-accent ${
-          busy ? "pointer-events-none opacity-60" : "cursor-pointer"
-        }`}
+        className={`${letterButton} has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-accent cursor-pointer`}
       >
         <IconUpload className="size-8 shrink-0" />
         {/* `text-balance` because the label does not fit one line at 390px and
-            an unbalanced wrap leaves "file" alone on the second. No sub-line
-            under it: "take a photo OR choose a file" already names both paths,
-            and the page above already says to photograph every page. */}
+            an unbalanced wrap leaves "PDF" alone on the second. No sub-line
+            under it: "take a photo OR upload a PDF" already names both paths;
+            the host screen names the discharge letter. */}
         <span className="min-w-0 text-balance font-display text-xl font-medium leading-snug">
           <LabelText state={state} t={t} />
         </span>
@@ -126,7 +169,6 @@ export function UploadPanel({
           accept={ACCEPT}
           capture="environment"
           multiple
-          disabled={busy}
           onChange={(event) => {
             const input = event.currentTarget;
             // Read the list before clearing: setting `value` empties `files`.
@@ -147,9 +189,6 @@ export function UploadPanel({
   );
 }
 
-// The label is the busy affordance: it already knows how many pages have
-// landed, and dimming alone through a multi-second multi-page upload says only
-// that something is disabled.
 function LabelText({ state, t }: { state: State; t: Strings }) {
   switch (state.phase) {
     case "idle":
@@ -165,24 +204,33 @@ function LabelText({ state, t }: { state: State; t: Strings }) {
       );
     case "reading":
       return t.reading;
+    case "building":
+      return t.building;
+    default: {
+      const _exhaustive: never = state;
+      return _exhaustive;
+    }
   }
 }
 
 function StateMessage({ state, t }: { state: State; t: Strings }) {
   switch (state.phase) {
-    // The privacy promise, worded as the home screen words it. The instruction
-    // to photograph every page is on the page above and does not need saying
-    // twice, differently, 100px apart.
     case "idle":
       return <span className="text-ink-muted">{t.idleNote}</span>;
     case "uploading":
       return <span className="text-ink-muted">{t.uploadingNote}</span>;
     case "reading":
       return <span className="text-ink-muted">{t.readingNote}</span>;
+    case "building":
+      return <span className="text-ink-muted">{t.buildingNote}</span>;
     // No `role="alert"` — this already sits inside the polite live region
     // above, and an assertive region nested in a polite one gets announced
     // twice, or not at all, depending on the screen reader.
     case "failed":
       return <span className="text-error">{state.message}</span>;
+    default: {
+      const _exhaustive: never = state;
+      return _exhaustive;
+    }
   }
 }

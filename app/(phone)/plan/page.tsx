@@ -2,7 +2,6 @@ import Link from "next/link";
 
 import { BackButton } from "@/components/back-button";
 import { primaryButton } from "@/components/button-styles";
-import { DemoModeBadge } from "@/components/demo-mode-badge";
 import { IconUpload } from "@/components/icons";
 import { formatDay } from "@/components/plan/day-section";
 import { RedFlagCard } from "@/components/plan/red-flag-card";
@@ -106,42 +105,29 @@ export default async function PlanPage() {
     ),
   );
 
+  // Canvas colour also lives on the phone scrollport (`layout.tsx`): this
+  // <main> alone cannot paint past its flex height when the timeline is tall.
   return (
     <main className="flex min-h-0 flex-1 flex-col bg-mist px-6">
       <div className="-ml-2.5 shrink-0 pt-2">
         <BackButton href="/" label={t.common.back} />
       </div>
 
-      {/* Four lines of preamble used to stand between the title and the first
-          thing a patient has to do. The episode and the discharge date are
-          orientation and they stay, at body size and tight together; everything
-          else about this screen is now below the fold on purpose. */}
+      {/* Title + one orientation line. The episode blurb used to sit here too —
+          a second paragraph before the first thing to do — and it pushed the
+          red flag and today's ticks down for a sentence most people skip. */}
       <header className="shrink-0 pt-2 pb-4">
         <h1 className="font-display text-3xl font-bold tracking-tight text-ink">
           {t.plan.title}
         </h1>
-        {bundle.episode.titlePlain === null ? null : (
-          // The letter's own account of the admission, and the bundle carries
-          // no French for it — so it is marked English rather than left to be
-          // read out with French phonemes under <html lang="fr">.
-          <p
-            lang="en"
-            className="mt-2 text-base leading-relaxed text-ink-muted"
-          >
-            {bundle.episode.titlePlain}
-          </p>
-        )}
         {bundle.episode.dischargeDate === null ? null : (
-          <p className="mt-1 text-base text-ink-muted">
+          <p className="mt-2 text-base text-ink-muted">
             {t.plan.homeSince.replace(
               "{date}",
               formatDay(bundle.episode.dischargeDate, locale),
             )}
           </p>
         )}
-        <div className="mt-3 empty:mt-0">
-          <DemoModeBadge text={t.common.demoMode} />
-        </div>
       </header>
 
       <Timeline
@@ -198,12 +184,10 @@ function NoPlanYet({ t }: { t: Dictionary }) {
         <p className="mt-3 leading-relaxed text-ink-muted">
           {t.plan.emptyBody}
         </p>
-        {/* The same words as the screen it leads to, from the same key — a
-            button whose label and its destination's title disagree is two
-            translations of one idea drifting apart. */}
-        <Link href="/upload" className={`${primaryButton} mt-6 w-fit`}>
+        {/* Same words as the home upload control — the letter lives on `/`. */}
+        <Link href="/" className={`${primaryButton} mt-6 w-fit`}>
           <IconUpload className="size-5" />
-          {t.upload.title}
+          {t.home.letterTitle}
         </Link>
       </div>
     </main>

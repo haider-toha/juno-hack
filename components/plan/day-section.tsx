@@ -38,9 +38,9 @@ export function DaySection({
   return (
     <PlanCard today={isToday} labelledBy={`day-${day.date}`}>
       {/* h2, not h3: a day is a top-level section of the timeline, level with
-          "Coming up" and "Changed in hospital". As an h3 it read as a subsection
-          of the red-flag card above it, and skipped a level entirely on a plan
-          with no red flags. */}
+          "Follow-ups" and "Changed in hospital". As an h3 it read as a
+          subsection of the red-flag card above it, and skipped a level entirely
+          on a plan with no red flags. */}
       <h2
         id={`day-${day.date}`}
         className="flex flex-wrap items-baseline gap-x-2"
@@ -67,7 +67,9 @@ export function DaySection({
         </p>
       ) : null}
 
-      <ul className="mt-1 divide-y divide-rule">
+      {/* Gap, not hairline rules — dividers made a short checklist read like a
+          dense settings table. Spacing alone is enough between tappable rows. */}
+      <ul className="mt-2 flex flex-col gap-1">
         {day.items.map((item) => {
           // A day that cannot be answered for cannot show an answer. The log
           // outlives the clock — the operator panel can move `today` backwards,

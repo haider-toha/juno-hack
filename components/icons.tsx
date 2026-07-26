@@ -238,23 +238,3 @@ export function IconLock({ className }: IconProps) {
     </svg>
   );
 }
-
-// Globe for the language control. Meridian and equator only: flags are banned
-// as a metaphor for language, so this plus the endonym is the whole vocabulary.
-export function IconGlobe({ className }: IconProps) {
-  return (
-    <svg
-      viewBox="0 0 16 16"
-      aria-hidden
-      className={className ?? "size-4"}
-      fill="none"
-      stroke="currentColor"
-      strokeWidth={1.5}
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <circle cx="8" cy="8" r="6" />
-      <path d="M2 8h12M8 2c1.7 1.6 2.7 3.7 2.7 6S9.7 12.4 8 14C6.3 12.4 5.3 10.3 5.3 8S6.3 3.6 8 2Z" />
-    </svg>
-  );
-}

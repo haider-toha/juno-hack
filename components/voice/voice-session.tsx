@@ -35,7 +35,6 @@ export type VoiceStrings = Pick<
   | "suggestions"
   | "languagePicker"
   | "redFlag"
-  | "common"
 >;
 
 // What `show_red_flag` puts on screen. Resolved on the server so the client

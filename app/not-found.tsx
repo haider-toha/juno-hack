@@ -1,5 +1,6 @@
 import Link from "next/link";
 
+import { PorticoWordmark } from "@/components/portico-wordmark";
 import { getDictionary, getLocale } from "@/lib/i18n/dictionary";
 
 // Root-level, so this renders in the root layout rather than the phone shell —
@@ -11,9 +12,9 @@ export default async function NotFound() {
       <header className="border-b border-rule-strong py-6">
         <Link
           href="/"
-          className="font-display text-base font-semibold tracking-tight text-ink transition-opacity duration-150 ease-out hover:opacity-70 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+          className="inline-block transition-opacity duration-150 ease-out hover:opacity-70 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
         >
-          {t.meta.title}
+          <PorticoWordmark className="text-base" />
         </Link>
       </header>
       <div className="flex flex-1 flex-col justify-center py-24">

@@ -51,7 +51,6 @@ export default async function CheckInPage() {
         suggestions: t.suggestions,
         languagePicker: t.languagePicker,
         redFlag: t.redFlag,
-        common: t.common,
       }}
       title={t.checkIn.title}
       blurb={t.checkIn.blurb}

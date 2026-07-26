@@ -24,36 +24,31 @@ export const fr = {
     checkInBlurb: "Je vous guide pas à pas.",
     planTitle: "Voir mon plan de rétablissement",
     planBlurb: "Jour par jour, depuis votre sortie.",
-    letterTitle: "Prenez votre lettre en photo",
-    letterBlurb:
-      "Photographiez chaque page, ou choisissez le fichier. Votre plan est construit à partir de là.",
+    letterTitle: "Prenez une photo ou ajoutez un PDF",
+    letterHint:
+      "Votre lettre de sortie d'hôpital. Photographiez chaque page, ou ajoutez le PDF.",
     letterAgainTitle: "Ajouter une autre lettre",
-    letterAgainBlurb: "Photographiez-la, ou choisissez le fichier.",
-    nextUp:
-      "Votre plan apparaîtra ici dès que nous aurons lu votre lettre. Ensuite, je prends de vos nouvelles chaque jour.",
+    letterAgainBlurb: "Photographiez-la, ou ajoutez le PDF.",
     privacy:
       "Vos données restent privées. Nous ne partageons vos informations de santé avec personne sans votre accord.",
   },
 
   upload: {
-    metaTitle: "Ajouter votre lettre",
-    title: "Ajouter votre lettre de sortie",
-    blurb:
-      "Photographiez chaque page. Si vous avez déjà le fichier, choisissez-le plutôt.",
-    footnote:
-      "Nous lisons les médicaments, les dates et les conseils sur votre lettre, et nous construisons votre plan à partir de ce qu'elle dit vraiment.",
     panel: {
-      cta: "Prenez une photo ou choisissez un fichier",
+      cta: "Prenez une photo ou ajoutez un PDF",
       // "Page envoyée : 0 sur 1" / "Pages envoyées : 2 sur 5". Framed as a
       // label so the participle agrees with the total, never with the running
       // count — "0 pages envoyées" is the wart this phrasing avoids.
       sentOne: "Page envoyée : {done} sur {total}",
       sentMany: "Pages envoyées : {done} sur {total}",
       reading: "Lecture de votre lettre",
+      building: "Construction de votre plan",
       idleNote: "Rien n'est partagé avec personne sans votre accord.",
       uploadingNote:
         "Gardez cet écran ouvert jusqu'à ce que les pages soient envoyées.",
-      readingNote: "Cela prend quelques secondes.",
+      readingNote:
+        "Médicaments, dates et conseils — cela prend quelques secondes.",
+      buildingNote: "Presque fini. Votre plan jour par jour arrive.",
       errorSend:
         "Nous n'avons pas pu terminer l'envoi, donc rien n'a été enregistré. Vérifiez votre connexion et réessayez.",
       errorUnreadable:
@@ -70,20 +65,21 @@ export const fr = {
     homeSince: "De retour chez vous depuis le {date}",
     emptyTitle: "Pas encore de plan",
     emptyBody:
-      "Votre plan de rétablissement est construit à partir de votre lettre de sortie. Photographiez-la, ou choisissez le fichier, et il apparaîtra ici.",
+      "Votre plan de rétablissement est construit à partir de votre lettre de sortie. Photographiez-la, ou ajoutez le PDF, et il apparaîtra ici.",
     today: "Aujourd'hui",
     todayLower: "aujourd'hui",
     dischargeDay: "Jour de la sortie",
     dayNumber: "Jour {n}",
-    tapHint: "Touchez le cercle à côté de chaque ligne quand vous l'avez fait.",
+    tapHint: "Touchez le cercle quand vous l'avez fait.",
     outsideRangeTitle: "Aujourd'hui ne fait pas partie de ce plan",
     outsideRangeBefore:
       "Il commence le {date} : rien ne peut encore être coché. Voici comment il débute.",
     outsideRangeAfter:
       "Son dernier jour est passé : plus rien ne peut être coché. Voici comment il avait commencé.",
-    comingUp: "À venir",
-    anyTime: "À tout moment",
-    anyTimeBlurb: "Ceci s'ajoute au reste du plan, sans jour précis.",
+    moreOnPlan: "Plus sur votre plan",
+    comingUp: "Suivis",
+    anyTime: "Si besoin",
+    anyTimeBlurb: "Quand vous en avez besoin — sans jour précis.",
     changed: "Modifié à l'hôpital",
     changedBlurb:
       "Ce que le service hospitalier a changé à vos médicaments habituels, dans ses propres mots.",
@@ -224,8 +220,6 @@ export const fr = {
 
   common: {
     back: "Retour",
-    demoMode:
-      "Mode démonstration. La lettre et les informations sur les médicaments sont enregistrées à l'avance, et non récupérées en direct.",
   },
 
   persona: {

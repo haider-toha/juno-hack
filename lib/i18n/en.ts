@@ -24,9 +24,10 @@ export const en = {
   },
 
   // The home screen shows the same three-step arc either way — letter, plan,
-  // check-in — and moves ONE of them into the big button depending on whether a
-  // letter has been read yet. So each step has a loud pair and a quiet pair:
-  // the loud one is written as an instruction, the quiet one as a destination.
+  // check-in — and moves ONE of them into the big control depending on whether
+  // a letter has been read yet. Before a letter exists the home IS the upload:
+  // greeting, the file control, one line naming the document, privacy. After a
+  // letter, each remaining step has a quiet pair written as a destination.
   home: {
     greeting: "Good afternoon.",
     subtitle: "How are you doing today?",
@@ -34,36 +35,32 @@ export const en = {
     checkInBlurb: "I'll talk you through it.",
     planTitle: "See my recovery plan",
     planBlurb: "Day by day, from discharge.",
-    letterTitle: "Take a photo of your letter",
-    letterBlurb:
-      "Photograph every page, or choose the file. Your plan is built from it.",
+    // Button label — opens the camera or the file picker on this screen.
+    letterTitle: "Take a photo or upload a PDF",
+    // Names the exact document so "a PDF" is not a guess.
+    letterHint:
+      "Your hospital discharge letter. Photograph every page, or upload the PDF.",
     letterAgainTitle: "Add another letter",
-    letterAgainBlurb: "Photograph it, or choose the file.",
-    nextUp:
-      "Your plan appears here once we have read your letter. Then I check in with you each day.",
+    letterAgainBlurb: "Photograph it, or upload the PDF.",
     privacy:
       "Your data stays private. We do not share your health information with anyone you have not chosen.",
   },
 
-  // The ingest screen and its one control. `panel.*` is the slice the client
-  // leaf receives — the page keeps the rest on the server.
+  // Strings for the upload control on home. The control lives on `/` — there is
+  // no separate ingest route.
   upload: {
-    metaTitle: "Add your letter",
-    title: "Add your discharge letter",
-    blurb:
-      "Take a photo of every page. If you already have the file, choose that instead.",
-    footnote:
-      "We read the medicines, dates and advice off your letter and build your plan from what it actually says.",
     panel: {
-      cta: "Take a photo or choose a file",
+      cta: "Take a photo or upload a PDF",
       // Chosen on the total, which is what the noun agrees with in both
       // languages here.
       sentOne: "Sent {done} of {total} page",
       sentMany: "Sent {done} of {total} pages",
       reading: "Reading your letter",
+      building: "Building your plan",
       idleNote: "Nothing is shared with anyone you have not chosen.",
       uploadingNote: "Keep this screen open until the pages have gone.",
-      readingNote: "This takes a few seconds.",
+      readingNote: "Medicines, dates and advice — this takes a few seconds.",
+      buildingNote: "Almost done. Your day-by-day plan is next.",
       errorSend:
         "We could not finish sending that, so nothing has been saved. Check your connection and try again.",
       // Both 422s mean the same thing to a patient and ask for the same next
@@ -84,22 +81,25 @@ export const en = {
     homeSince: "Home since {date}",
     emptyTitle: "No plan yet",
     emptyBody:
-      "Your recovery plan is built from your discharge letter. Take a photo of it, or choose the file, and it will appear here.",
+      "Your recovery plan is built from your discharge letter. Take a photo of it, or upload the PDF, and it will appear here.",
     today: "Today",
     // Lower case because it is only ever read inside a tick's name —
     // "Metformin 500mg, today" — never on its own.
     todayLower: "today",
     dischargeDay: "Discharge day",
     dayNumber: "Day {n}",
-    tapHint: "Tap the circle beside each one when you have done it.",
+    tapHint: "Tap the circle when you have done it.",
     outsideRangeTitle: "Today is not on this plan",
     outsideRangeBefore:
       "It begins on {date}, so nothing on it can be ticked yet. Below is how it starts.",
     outsideRangeAfter:
       "Its last day has passed, so nothing on it can be ticked. Below is how it started.",
-    comingUp: "Coming up",
-    anyTime: "Any time",
-    anyTimeBlurb: "These run alongside the rest of the plan.",
+    // Closed disclosure holding follow-ups, as-needed meds and ward changes —
+    // the day cards above answer "what do I do now"; this is the rest.
+    moreOnPlan: "More on your plan",
+    comingUp: "Follow-ups",
+    anyTime: "As needed",
+    anyTimeBlurb: "When you need them — not on a set day.",
     changed: "Changed in hospital",
     changedBlurb:
       "What the ward altered about your usual medicines, in their words.",
@@ -259,11 +259,6 @@ export const en = {
 
   common: {
     back: "Back",
-    // Rendered on every screen the mode changes something on. It is the one
-    // sentence that admits what is recorded, so it cannot be the one sentence
-    // that stays English on a French screen.
-    demoMode:
-      "Demo mode. The letter and the medicine guidance are recorded, not fetched live.",
   },
 
   // The voice persona, authored per language and never machine-translated. This

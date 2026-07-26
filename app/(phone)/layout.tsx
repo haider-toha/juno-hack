@@ -101,7 +101,10 @@ export default function PhoneLayout({ children }: { children: ReactNode }) {
             internal scroll + docked bars (/check-in) fill exactly and never
             trigger it. lg:pb-5 reserves the bottom safe area for the home
             indicator so it never lands on a docked footer. */}
-        <div className="flex min-h-0 flex-1 flex-col overflow-y-auto pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)] lg:pb-5">
+        {/* Mist on the scrollport itself: a page taller than the frame paints
+            past its own <main>, and without a canvas colour here the white
+            device shell showed through as a hard grey→white break mid-scroll. */}
+        <div className="flex min-h-0 flex-1 flex-col overflow-y-auto bg-mist pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)] lg:pb-5">
           {children}
         </div>
 

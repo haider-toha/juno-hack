@@ -83,10 +83,16 @@ async function open(page: Page, path: string): Promise<string> {
   return main.innerText();
 }
 
-// The plan screen's own grouping: "Coming up", "Any time" and "Changed in
-// hospital" are each a <section> named by its heading.
+// The plan screen's own grouping: "Follow-ups", "As needed" and "Changed in
+// hospital" are each a <section> named by its heading, inside "More on your
+// plan" (closed by default — open it before reading).
 function group(page: Page, title: string): Locator {
   return page.locator(`section:has(h2:text-is("${title}"))`);
+}
+
+async function openMoreOnPlan(page: Page): Promise<void> {
+  const more = page.getByText("More on your plan", { exact: true });
+  await more.click();
 }
 
 // Today's card, found by the word the screen itself uses rather than by a date
@@ -345,10 +351,12 @@ const STEPS: Step[] = [
         text,
       );
 
-      const comingUp = await group(page, "Coming up").innerText();
+      await openMoreOnPlan(page);
+
+      const comingUp = await group(page, "Follow-ups").innerText();
       must(
         comingUp.includes("Respiratory OP follow-up"),
-        `"Coming up" should carry the respiratory follow-up`,
+        `"Follow-ups" should carry the respiratory follow-up`,
         comingUp,
       );
       must(
@@ -358,16 +366,16 @@ const STEPS: Step[] = [
         comingUp,
       );
 
-      const anyTime = await group(page, "Any time").innerText();
+      const asNeeded = await group(page, "As needed").innerText();
       must(
-        anyTime.includes("Salbutamol 100mcg inh"),
-        `"Any time" should hold the as-required reliever`,
-        anyTime,
+        asNeeded.includes("Salbutamol 100mcg inh"),
+        `"As needed" should hold the as-required reliever`,
+        asNeeded,
       );
       must(
-        anyTime.includes("Finish the whole antibiotic course"),
-        `"Any time" should hold the standing advice`,
-        anyTime,
+        asNeeded.includes("Finish the whole antibiotic course"),
+        `"As needed" should hold the standing advice`,
+        asNeeded,
       );
 
       const changed = group(page, "Changed in hospital");
@@ -517,24 +525,28 @@ const STEPS: Step[] = [
   },
 
   {
-    name: "/upload takes a photo or a file",
+    name: "home upload takes a photo or a PDF",
     run: async (page) => {
-      const text = await open(page, "/upload");
+      // Seeded demos already have a plan, so the first-visit upload is reached
+      // via `?letter=1` — same control, same screen, no separate /upload route.
+      const text = await open(page, "/?letter=1");
       must(
-        text.includes("Add your discharge letter"),
-        "/upload should be headed with its purpose",
+        text.includes("Add another letter") ||
+          text.includes("Take a photo or upload a PDF"),
+        "home should name the letter control",
         text,
       );
       must(
-        text.includes("Take a photo or choose a file"),
-        "/upload should offer one control covering both paths",
+        text.includes("Photograph it, or upload the PDF.") ||
+          text.includes("Photograph every page, or upload the PDF."),
+        "home should say which document to photograph or upload",
         text,
       );
 
       const input = page.locator('input[type="file"]');
       must(
         (await input.count()) === 1,
-        `/upload should have exactly one file control, found ${await input.count()}`,
+        `home should have exactly one file control, found ${await input.count()}`,
         text,
       );
       const accept = (await input.getAttribute("accept")) ?? "";
@@ -554,17 +566,8 @@ const STEPS: Step[] = [
         text,
       );
 
-      const badges = await page.getByText("Demo mode.").count();
-      must(
-        badges === (MODE === "demo" ? 1 : 0),
-        MODE === "demo"
-          ? `the app is in demo mode, so /upload must say so; found ${badges} badges`
-          : `the app is in live mode, so /upload must not claim to be a demo; found ${badges} badges`,
-        text,
-      );
-
-      await checkTypography(page, "/upload");
-      await shot(page, "upload");
+      await checkTypography(page, "/?letter=1");
+      await shot(page, "home-letter");
     },
   },
 
@@ -604,11 +607,11 @@ const STEPS: Step[] = [
           text,
         );
         const cta = page.getByRole("link", {
-          name: /Add your discharge letter/,
+          name: /Take a photo or upload a PDF/,
         });
         must(
-          (await cta.getAttribute("href")) === "/upload",
-          `the empty state should route to /upload, not ${await cta.getAttribute("href")}`,
+          (await cta.getAttribute("href")) === "/",
+          `the empty state should route to home, not ${await cta.getAttribute("href")}`,
           text,
         );
         await shot(page, "plan-empty");

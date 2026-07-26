@@ -63,7 +63,7 @@ type Screen = {
 
 const SCREENS: Screen[] = [
   { name: "home", path: "/" },
-  { name: "upload", path: "/upload" },
+  { name: "home-letter", path: "/?letter=1" },
   { name: "plan-top", path: "/plan" },
   {
     name: "plan-today",
@@ -73,6 +73,7 @@ const SCREENS: Screen[] = [
   {
     name: "plan-scrolled",
     path: "/plan",
+    open: 'summary:has-text("More on your plan")',
     scrollTo: 'section:has(h2:text-is("Changed in hospital"))',
   },
   {

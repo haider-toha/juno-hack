@@ -58,14 +58,6 @@ export function TaskRow({ item, status, dateLabel, check, t }: Props) {
         >
           {detail.line}
         </p>
-        {detail.purpose === null ? null : (
-          <p
-            lang="en"
-            className="mt-1 text-base leading-relaxed text-ink-muted"
-          >
-            {detail.purpose}
-          </p>
-        )}
       </div>
       {/* A red triangle and nothing else asks the reader to know what red means
           here. The word is on a white chip with a red edge rather than in red
@@ -76,13 +68,11 @@ export function TaskRow({ item, status, dateLabel, check, t }: Props) {
           {t.missed}
         </span>
       ) : detail.tag === null ? null : (
-        // Capped and shrinkable, unlike the status chip beside it. "For your
-        // GP" is 11 characters and "Pour votre médecin traitant" is 27: with
-        // `shrink-0` the French chip took 60% of the row and wrapped the
-        // instruction's title into seven two-word lines. The cap costs the
-        // English render nothing — it is nowhere near 45% — and keeps the title
-        // the widest thing on the row in both languages.
-        <span className="mt-0.5 max-w-[45%] rounded-tactile bg-mist px-2 py-1 text-sm font-medium text-ink-muted">
+        // Capped and shrinkable; surface fill so the chip still reads on the
+        // mist page under "More on your plan", not only on a white day card.
+        // French "Pour votre médecin traitant" is long, so max-w keeps the
+        // title the widest thing on the row.
+        <span className="mt-0.5 max-w-[45%] rounded-tactile bg-surface px-2 py-1 text-sm font-medium text-ink-muted">
           {detail.tag}
         </span>
       )}
@@ -112,7 +102,6 @@ function StatusMark({ status, t }: { status: LogEntry["status"]; t: Strings }) {
 type Described = {
   title: string;
   line: string;
-  purpose: string | null;
   tag: string | null;
 };
 
@@ -123,9 +112,8 @@ function describe(item: TimelineItem, t: Strings): Described {
       return {
         title: medication.nameAsWritten,
         line: medication.doseDirectionsVerbatim,
-        purpose: medication.purposePlain,
-        // No frequency chip: the directions beside it already say "BD", and
-        // the same fact twice, once as chrome, is not hierarchy.
+        // Purpose lives once on the plan ("Why you take these"), not on every
+        // day the dose repeats — a checklist row is name, directions, tick.
         tag: null,
       };
     }
@@ -134,7 +122,6 @@ function describe(item: TimelineItem, t: Strings): Described {
       return {
         title: instruction.titlePlain ?? instruction.detailVerbatim,
         line: instruction.detailVerbatim,
-        purpose: null,
         // Whose job it is changes the question the check-in asks, so it is
         // worth saying on the row too.
         tag: instruction.actor === "patient" ? null : t.forGp,
@@ -145,7 +132,6 @@ function describe(item: TimelineItem, t: Strings): Described {
       return {
         title: appointment.withVerbatim,
         line: appointment.when.verbatim,
-        purpose: null,
         tag: appointment.isBooked ? t.booked : t.notBooked,
       };
     }

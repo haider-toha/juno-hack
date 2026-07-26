@@ -17,8 +17,7 @@ export type PickerLocale = Locale | ShowcaseLocale;
 export const LOCALE_COOKIE = "portico_locale";
 
 // Endonyms: every language names itself in its own words, so this map is never
-// translated. Flags are banned as a metaphor for language, so this text is the
-// only identifier a row gets [04 §L1].
+// translated.
 export const LOCALE_NAMES = {
   en: "English",
   fr: "Français",
@@ -29,6 +28,20 @@ export const LOCALE_NAMES = {
   pt: "Português",
   es: "Español",
 } satisfies Record<PickerLocale, string>;
+
+// Country-flag glyphs shown beside each endonym in the picker. English maps to
+// the UK flag (NHS / Welsh context). Portuguese and Spanish use PT and ES —
+// the usual demo shorthand, not a claim about every speaker.
+export const LOCALE_FLAGS = {
+  en: "gb",
+  fr: "fr",
+  cy: "cy",
+  pl: "pl",
+  ro: "ro",
+  tr: "tr",
+  pt: "pt",
+  es: "es",
+} as const satisfies Record<PickerLocale, string>;
 
 // Picker order: the two that work lead. Ordering the one real second locale
 // below six that do not would misrepresent what the product can do today.

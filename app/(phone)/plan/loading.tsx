@@ -1,17 +1,16 @@
 import { BackButton } from "@/components/back-button";
-import { DemoModeBadge } from "@/components/demo-mode-badge";
 import { PlanCard } from "@/components/plan/plan-card";
 import { getDictionary, getLocale } from "@/lib/i18n/dictionary";
 
 // A skeleton of the real layout — the same gutter, the same header offset, a
 // red-flag block and three day cards — rather than a spinner, so nothing jumps
-// when the plan arrives. The back button and the demo badge are the real
-// components, not placeholders: both are known at request time, and a grey bar
-// where a working control belongs is a worse trade than a moment's honesty.
+// when the plan arrives. The back button is the real component, not a
+// placeholder: it is known at request time, and a grey bar where a working
+// control belongs is a worse trade than a moment's honesty.
 //
 // Async only for the locale. Both reads it makes are request-scoped and do no
 // I/O, so the fallback still flushes with the shell rather than suspending it —
-// and the two strings on it are announced, which makes them exactly the
+// and the strings on it are announced, which makes them exactly the
 // "conditional or rarely used text" that must not leak English.
 export default async function PlanLoading() {
   const t = getDictionary(await getLocale());
@@ -33,9 +32,6 @@ export default async function PlanLoading() {
         <Bar className="h-8 w-2/3" />
         <Bar className="mt-3 h-4 w-4/5" />
         <Bar className="mt-2 h-4 w-2/5" />
-        <div className="mt-4 empty:mt-0">
-          <DemoModeBadge text={t.common.demoMode} />
-        </div>
       </header>
 
       <div className="flex flex-col gap-8 pb-10">

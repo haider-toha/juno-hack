@@ -1,15 +1,10 @@
 import Link from "next/link";
 
 import { primaryButton } from "@/components/button-styles";
-import { DemoModeBadge } from "@/components/demo-mode-badge";
-import {
-  IconChevron,
-  IconDoc,
-  IconLock,
-  IconMic,
-  IconUpload,
-} from "@/components/icons";
+import { IconDoc, IconLock, IconMic, IconUpload } from "@/components/icons";
 import { LanguagePicker } from "@/components/language-picker";
+import { PorticoWordmark } from "@/components/portico-wordmark";
+import { UploadPanel } from "@/components/upload/upload-panel";
 import { getDictionary, getLocale } from "@/lib/i18n/dictionary";
 import { DEMO_PATIENT_ID } from "@/lib/store/keys";
 import { readPlan } from "@/lib/store/plan";
@@ -24,50 +19,66 @@ export const dynamic = "force-dynamic";
 // nothing competes either. Which step is loud is read off the store rather than
 // guessed: a check-in against a plan that does not exist is a dead end, and a
 // screen that leads with it teaches the wrong thing about the product.
-export default async function HomePage() {
-  const [locale, bundle] = await Promise.all([
+//
+// Upload lives here. Before a letter: the file control is the home. After a
+// letter, `?letter=1` brings the same control back for another page — there is
+// no second route just to open a picker.
+export default async function HomePage({
+  searchParams,
+}: {
+  searchParams: Promise<{ letter?: string }>;
+}) {
+  const [params, locale, bundle] = await Promise.all([
+    searchParams,
     getLocale(),
     readPlan(DEMO_PATIENT_ID),
   ]);
   const t = getDictionary(locale);
-
-  const primary =
-    bundle === null
-      ? {
-          href: "/upload",
-          title: t.home.letterTitle,
-          blurb: t.home.letterBlurb,
-        }
-      : {
-          href: "/check-in",
-          title: t.home.checkInTitle,
-          blurb: t.home.checkInBlurb,
-        };
+  const addingLetter = params.letter === "1";
+  const showUpload = bundle === null || addingLetter;
 
   // Empty before a letter exists: "see my plan" and "check in" both land on
   // nothing, and offering a patient two doors into an empty room is worse than
-  // offering none. The sentence under the button says what happens instead.
+  // offering none. After a letter the quiet rows stay; "add another" returns
+  // here with `?letter=1` rather than leaving the home.
   const rest =
     bundle === null
       ? []
-      : [
-          { href: "/plan", title: t.home.planTitle, blurb: t.home.planBlurb },
-          {
-            href: "/upload",
-            title: t.home.letterAgainTitle,
-            blurb: t.home.letterAgainBlurb,
-          },
-        ];
+      : addingLetter
+        ? [
+            {
+              href: "/plan",
+              title: t.home.planTitle,
+              blurb: t.home.planBlurb,
+            },
+            {
+              href: "/check-in",
+              title: t.home.checkInTitle,
+              blurb: t.home.checkInBlurb,
+            },
+          ]
+        : [
+            {
+              href: "/plan",
+              title: t.home.planTitle,
+              blurb: t.home.planBlurb,
+            },
+            {
+              href: "/?letter=1",
+              title: t.home.letterAgainTitle,
+              blurb: t.home.letterAgainBlurb,
+            },
+          ];
 
+  // Surface over the shell's mist scrollport — home is white; secondary
+  // controls are mist and would disappear on a mist page.
   return (
-    <main className="flex min-h-0 flex-1 flex-col px-6">
+    <main className="flex min-h-0 flex-1 flex-col bg-surface px-6">
       {/* The language control sits top-right here and on every other screen, so
           it is always in the same place. -mr-2.5 pulls its padding back to the
           page gutter so the glyph optically aligns with the content below. */}
       <header className="flex shrink-0 items-center justify-between pt-6 pb-2">
-        <span className="font-display text-xl font-semibold tracking-tight text-ink">
-          {t.meta.title}
-        </span>
+        <PorticoWordmark className="text-xl" />
         <div className="-mr-2.5">
           <LanguagePicker locale={locale} t={t.languagePicker} />
         </div>
@@ -80,77 +91,75 @@ export default async function HomePage() {
         <p className="mt-2 text-lg text-ink-muted">{t.home.subtitle}</p>
       </div>
 
-      {/* The one thing to do next. Full width and the only filled element on the
-          screen — from across a room this IS the screen. `py-4` rather than a
-          taller `min-h`: the shared button style already sets `min-h`, and two
-          utilities for one property resolve by stylesheet order, not by which
-          was typed last. */}
-      <div className="shrink-0 pt-7">
-        <Link href={primary.href} className={`${primaryButton} w-full py-4`}>
-          {bundle === null ? (
-            <IconUpload className="size-6" />
-          ) : (
-            <IconMic className="size-6" />
-          )}
-          {primary.title}
-        </Link>
-        <p className="mt-2.5 max-w-[42ch] text-base leading-relaxed text-ink-muted">
-          {primary.blurb}
-        </p>
-      </div>
-
-      {rest.length === 0 ? (
-        <p className="mt-7 max-w-[42ch] text-base leading-relaxed text-ink-muted">
-          {t.home.nextUp}
-        </p>
+      {showUpload ? (
+        // flex-1 + justify-center drops the control into the empty middle of
+        // the column — higher than the privacy foot, lower than a header CTA
+        // that left half the phone blank. The panel owns the large tap target.
+        <div className="flex min-h-0 flex-1 flex-col justify-center py-6">
+          <UploadPanel
+            patientId={DEMO_PATIENT_ID}
+            t={{
+              ...t.upload.panel,
+              cta: addingLetter ? t.home.letterAgainTitle : t.home.letterTitle,
+              idleNote: addingLetter
+                ? t.home.letterAgainBlurb
+                : t.home.letterHint,
+            }}
+          />
+        </div>
       ) : (
-        // Rows on the page rather than cards: two more shadowed cards under the
-        // button would read as three offers of equal weight, which is the thing
-        // this screen previously got wrong. A hairline is enough to separate
-        // them, and the chevron says where they go.
-        <nav className="mt-7 flex flex-col divide-y divide-rule border-y border-rule">
+        // The one thing to do next. Full width and the only filled element on
+        // the screen — from across a room this IS the screen. `py-4` rather
+        // than a taller `min-h`: the shared button style already sets `min-h`,
+        // and two utilities for one property resolve by stylesheet order, not
+        // by which was typed last.
+        <div className="shrink-0 pt-7">
+          <Link href="/check-in" className={`${primaryButton} w-full py-4`}>
+            <IconMic className="size-6" />
+            {t.home.checkInTitle}
+          </Link>
+          <p className="mt-2.5 max-w-[42ch] text-base leading-relaxed text-ink-muted">
+            {t.home.checkInBlurb}
+          </p>
+        </div>
+      )}
+
+      {rest.length > 0 ? (
+        // Soft secondary buttons, not a bordered list. Mist fill + gap keeps
+        // them quieter than the blue check-in without the hairline table vibe.
+        <nav className="mt-7 flex flex-col gap-2.5">
           {rest.map((step) => (
             <Link
               key={step.href}
               href={step.href}
-              className="group flex min-h-16 items-center justify-between gap-4 py-3.5 transition-opacity duration-150 ease-out focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent active:opacity-70"
+              className="flex min-h-14 items-center gap-3 rounded-tactile bg-mist px-4 py-3.5 transition-opacity duration-150 ease-out focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent active:opacity-70"
             >
-              <span className="flex items-center gap-3">
-                <span
-                  aria-hidden
-                  className="flex size-10 shrink-0 items-center justify-center rounded-tactile bg-mist text-ink-muted"
-                >
-                  {step.href === "/plan" ? (
-                    <IconDoc className="size-5" />
-                  ) : (
-                    <IconUpload className="size-5" />
-                  )}
-                </span>
-                <span className="flex flex-col">
-                  <span className="font-display text-lg font-semibold tracking-tight text-ink">
-                    {step.title}
-                  </span>
-                  <span className="mt-0.5 text-base text-ink-muted">
-                    {step.blurb}
-                  </span>
-                </span>
+              <span aria-hidden className="shrink-0 text-ink-muted">
+                {step.href === "/plan" ? (
+                  <IconDoc className="size-5" />
+                ) : step.href === "/check-in" ? (
+                  <IconMic className="size-5" />
+                ) : (
+                  <IconUpload className="size-5" />
+                )}
               </span>
-              <span
-                aria-hidden
-                className="shrink-0 text-ink-muted transition-transform duration-150 ease-out group-hover:translate-x-0.5"
-              >
-                <IconChevron className="size-5" />
+              <span className="flex min-w-0 flex-1 flex-col text-left">
+                <span className="font-display text-lg font-semibold tracking-tight text-ink">
+                  {step.title}
+                </span>
+                <span className="mt-0.5 text-base text-ink-muted">
+                  {step.blurb}
+                </span>
               </span>
             </Link>
           ))}
         </nav>
-      )}
+      ) : null}
 
-      {/* Both admissions sit together at the foot: what is recorded rather than
-          live, and who the data does not go to. mt-auto pins them to the bottom
-          so the screen reads top-and-bottom instead of leaving a dead half. */}
+      {/* Privacy sits at the foot: health apps earn the upload by saying who
+          the data does not go to. mt-auto pins it so the screen reads
+          top-and-bottom instead of leaving a dead half. */}
       <footer className="mt-auto flex shrink-0 flex-col items-start gap-3 pt-10 pb-6">
-        <DemoModeBadge text={t.common.demoMode} />
         <div className="flex items-start gap-3 rounded-card bg-mist p-4">
           {/* ink-faint is the faintest tier and stays on the decorative glyph;
               the sentence takes ink-muted. */}

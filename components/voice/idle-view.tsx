@@ -1,4 +1,3 @@
-import { DemoModeBadge } from "@/components/demo-mode-badge";
 import { IconKeyboard, IconMic } from "@/components/icons";
 import { LanguagePicker } from "@/components/language-picker";
 import { OrbSphere } from "@/components/voice/orb";
@@ -87,12 +86,6 @@ export function IdleView({
           <IconKeyboard className="size-4 text-ink-muted" />
           {strings.voice.typeInstead}
         </button>
-        {/* The check-in screen was the one on-camera surface that never said it
-            was a demo. It says so under the fold of the action, where it is
-            legible without competing with the thing to tap. */}
-        <div className="mt-4 empty:mt-0">
-          <DemoModeBadge text={strings.common.demoMode} />
-        </div>
       </div>
     </div>
   );

@@ -1,10 +1,9 @@
 import type { ReactNode } from "react";
 
-// The plan's card shell. Every block on the timeline is this shape — a day, a
-// group, a notice, and the placeholders the loading skeleton stands in for them
-// — so the padding and the elevation live here instead of being retyped on each
-// screen and drifting. `today` is the only thing a card varies, and lavender is
-// the only meaning it carries on this screen.
+// The day-checklist shell only. Follow-ups / as-needed / ward changes live
+// under "More on your plan" and do not use this — a raised white card next to
+// Today made every block look like another tickable day. `today` is lavender;
+// other days are white with the same elevation.
 export function PlanCard({
   today = false,
   labelledBy,

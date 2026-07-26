@@ -1,5 +1,4 @@
 import { BackButton } from "@/components/back-button";
-import { DemoModeBadge } from "@/components/demo-mode-badge";
 import { EscalationCard, formatDay } from "@/components/family/escalation-card";
 import { RefreshPoller } from "@/components/family/refresh-poller";
 import { assess, assessmentWindow } from "@/lib/escalation/rules";
@@ -74,9 +73,6 @@ export default async function FamilyPage() {
           )}
         </div>
 
-        <div className="mt-5">
-          <DemoModeBadge text={t.common.demoMode} />
-        </div>
       </div>
     </div>
   );
