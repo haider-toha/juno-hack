@@ -40,6 +40,42 @@ export async function appendLogEntry(entry: LogEntry): Promise<void> {
   });
 }
 
+// Every day this patient has an answer on, whichever day it falls on.
+//
+// It scans rather than computing a window, because the demo clock moves: a
+// window counted backwards from today misses any entry written while the clock
+// was parked further forward. Verified in a real store — a rehearsal that had
+// advanced the clock left `portico:log:demo:2026-07-28` behind a "reset" that
+// only cleared 7 days back, which would have let a third missed dose reach
+// `assess()` and produce an escalation out of residue rather than out of the
+// seed [Locked D9].
+export async function logDays(patientId: string): Promise<string[]> {
+  const prefix = logKey(patientId, "");
+  const days: string[] = [];
+  let cursor = "0";
+
+  do {
+    const [next, keys] = await redis().scan(cursor, {
+      match: `${prefix}*`,
+      count: 200,
+    });
+    days.push(...keys.map((key) => key.slice(prefix.length)));
+    cursor = String(next);
+  } while (cursor !== "0");
+
+  return days.sort();
+}
+
+// Deletes every day this patient has an answer for, so re-seeding is a reset
+// rather than a merge with whatever the last rehearsal left behind. Returns the
+// keys it removed: between takes the operator needs to see a stale day go
+// rather than trust that it did.
+export async function clearLog(patientId: string): Promise<string[]> {
+  const keys = (await logDays(patientId)).map((day) => logKey(patientId, day));
+  if (keys.length > 0) await redis().del(...keys);
+  return keys;
+}
+
 // Reads whichever days the caller asks for: `/plan` passes one, the family
 // dashboard passes a recent window. Every value is parsed — a corrupt entry
 // throws here rather than surfacing as `undefined` inside an escalation rule.

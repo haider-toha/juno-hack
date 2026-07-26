@@ -33,3 +33,9 @@ export function nhsIndexKey() {
 export function demoTodayKey() {
   return "portico:demo:today";
 }
+
+// The raised check-in. Real state the phone polls for, so the incoming card is
+// produced by something rather than painted on a timer [Locked D9].
+export function incomingCheckInKey(patientId: string) {
+  return `portico:incoming:${patientId}`;
+}

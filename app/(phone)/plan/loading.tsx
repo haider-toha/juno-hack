@@ -1,24 +1,32 @@
 import { BackButton } from "@/components/back-button";
 import { DemoModeBadge } from "@/components/demo-mode-badge";
 import { PlanCard } from "@/components/plan/plan-card";
+import { getDictionary, getLocale } from "@/lib/i18n/dictionary";
 
 // A skeleton of the real layout — the same gutter, the same header offset, a
 // red-flag block and three day cards — rather than a spinner, so nothing jumps
 // when the plan arrives. The back button and the demo badge are the real
 // components, not placeholders: both are known at request time, and a grey bar
 // where a working control belongs is a worse trade than a moment's honesty.
-export default function PlanLoading() {
+//
+// Async only for the locale. Both reads it makes are request-scoped and do no
+// I/O, so the fallback still flushes with the shell rather than suspending it —
+// and the two strings on it are announced, which makes them exactly the
+// "conditional or rarely used text" that must not leak English.
+export default async function PlanLoading() {
+  const t = getDictionary(await getLocale());
+
   return (
     <main aria-busy className="flex min-h-0 flex-1 flex-col bg-mist px-6">
       {/* A live region rather than a name on the landmark: "Loading your
           recovery plan" is a state, not what this part of the page is called,
           and as a status it is actually announced when the skeleton appears. */}
       <p role="status" className="sr-only">
-        Loading your recovery plan
+        {t.plan.loading}
       </p>
 
       <div className="-ml-2.5 shrink-0 pt-2">
-        <BackButton href="/" />
+        <BackButton href="/" label={t.common.back} />
       </div>
 
       <header className="shrink-0 pt-2 pb-5">
@@ -26,7 +34,7 @@ export default function PlanLoading() {
         <Bar className="mt-3 h-4 w-4/5" />
         <Bar className="mt-2 h-4 w-2/5" />
         <div className="mt-4 empty:mt-0">
-          <DemoModeBadge />
+          <DemoModeBadge text={t.common.demoMode} />
         </div>
       </header>
 

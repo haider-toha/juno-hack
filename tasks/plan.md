@@ -22,6 +22,7 @@ re-open these; do not ask again mid-build.**
 | **L6** | **Demo gold letter: `02_Whitfield_Harold_Pneumonia`** (was `04_Sinclair`). | Full rationale in the Track A corpus section. Sinclair drops to QA; **05 Bradley** becomes the red-flag QA letter. |
 | **L7** | **Skip the Tier 3 Resend email escalation.** | Only if genuinely spare time remains at the end. Not a task. Blocks nothing. |
 | **L8** | **Skip `vitest`.** | Only if genuinely spare time remains. `lib/timeline/schedule.ts` and `lib/escalation/rules.ts` are then verified by running the app. Blocks nothing. |
+| **L9** | **Extraction provider: OpenAI structured outputs** (via AI Gateway preferred). | Anthropic strict structured output rejects this schema (nullable-heavy → too many union types). Use `generateText` + `Output.object` against an OpenAI model. Gold labels = medic corpus JSON; `make eval` is the gate. Demo mode keeps using the baked bundle with **no** LLM call. |
 
 **Documentation move:** `plan/` is gone. `plan/spec.md` → **`tasks/spec.md`** and
 `plan/medic-brief.md` → **`tasks/medic-brief.md`**; `initial-idea.md` and
@@ -29,6 +30,57 @@ re-open these; do not ask again mid-build.**
 repointed. Citations inside `audit/00`–`05` still say `plan/…` **deliberately** —
 those files are a dated research record and rewriting them would falsify the
 trail. Read them as `tasks/spec.md`.
+
+---
+
+## ✅ CURRENT REALITY (reconciled 2026-07-26)
+
+**`tasks/todo.md` has been reconciled against the repo and is now trustworthy.**
+Read it for the progress board; read the checkbox lists **below** as intent and
+acceptance criteria, which is all they ever were. Evidence for the
+reconciliation: `audit/juno-recovery-companion/15-track-4-todo-reconcile.md`,
+read against `14-track-3-adversarial-verify.md` — a cold-start adversarial re-run
+that found **no FAKEs** — `17-deploy-and-tool-wiring.md`, which deployed the app
+and proved a real ElevenLabs agent calling its routes, and the two build tracks'
+own reports (`12-track-1-demo-flow.md` incl. §X4, `13-track-2-demo-ui.md`).
+
+> **⚠️ §Demo mode vs live mode, below, is stale on one point.** It says
+> extraction is "Real AI Gateway → **OpenAI** structured outputs
+> (`Output.object`)". The code has used `anthropic("claude-haiku-4-5")` since
+> commit `fe657f6`, and it currently 500s for want of a key. OpenAI via the
+> Gateway remains the **target** [L9]; it is not what runs. The same false
+> sentence appears in `12-track-1-demo-flow.md`.
+
+### Intended contract (unchanged, restate so nobody drifts again)
+
+1. **Live / eval:** send real corpus PDFs to a provider with **structured
+   outputs**, get an `ExtractedBundle`, score it against the medic's sibling
+   JSON (source of truth). Tune prompt / model until `make eval` is green.
+2. **Demo (`PORTICO_MODE=demo`):** do **not** call the LLM for extraction.
+   Serve the baked Whitfield / seed bundle. Voice, Redis, Blob, and UI stay
+   real. A live failure must **never** silently become demo [D9].
+
+### What the code has today (verified file by file, 2026-07-26)
+
+| Area                                                                     | Reality                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
+| ------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Phase 0 foundation (schema, redis, log, clock, env helpers, CI, seed)    | **Complete.** `pnpm typecheck` and `pnpm lint` both exit 0; CI gates format, lint and typecheck                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| Track A ingest → `/plan` → drugs → red-flag/source → task ticks          | **Complete**, except extraction. A1–A5 and A7–A11 are built and wired                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
+| A6 extraction                                                            | **Never demonstrated.** On a live-mode server `POST /api/extract` returns a bare **500** — `ZodError: ANTHROPIC_API_KEY … received undefined` at `lib/env.ts:47`. Commit `fe657f6` moved the provider to `anthropic("claude-haiku-4-5")` and updated `.env.example`, but no local env file carries the key. Production _does_ carry it — and runs in demo mode, so the model is never called there either. It fails loudly and never serves baked data (D9 rule 1 holds), but **D9 rule 3 is breached**: nobody has shown a successful live extraction anywhere. Out of scope for the 2026-07-26 build night |
+| A6.5 `make eval` harness                                                 | **Exists**; has never been run green. Demo's baked bundle is therefore used but not licensed                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| Deployment                                                               | **Live at `https://juno-hack.vercel.app`** — but `vercel deploy` ships the **working tree, not `HEAD`**, and the snapshot predates the i18n, prompt and malformed-body fixes. **Redeploy before filming.** Local and production also share one Redis and one Blob store, so pick one host per take                                                                                                                                                                                                                                                                                                           |
+| A6.6 demo mode                                                           | **Complete.** Badge counted on all five patient-facing screens from a cold start; `/api/seed` and all six `/api/demo/*` methods 403 in live mode (7 of 7); the short-circuit is checked before the model call, and every `catch` in `app/`, `lib/` and `components/` was read — none reaches `DEMO_PLAN`. Caveat: in demo mode **any** uploaded letter yields Whitfield's plan, disclosed three ways in the code but not by a narrator                                                                                                                                                                       |
+| Track B Phase 1 (i18n, locale on voice)                                  | **Complete; both D9 leaks closed.** `/plan` and `/upload` now read the dictionary end to end (verified in French over the wire), and `lib/check-in-prompt.ts` tags each red flag `(fr)` or `(en)` with the language it is handing the agent — explicit, never a fallthrough. Remaining gap is a data one: the letter's own clinical text has no authored French, and is declared `lang="en"` where it appears                                                                                                                                                                                                |
+| Track B Phase 2+ (plan-aware prompt, `assess()`, `/family`, `/operator`) | **Complete and adversarially verified.** `assess()` survived four separate attempts to make it lie; `alert-kin` has exactly one producer and one consumer; the operator panel cannot paint a card                                                                                                                                                                                                                                                                                                                                                                                                            |
+| Track B server tools (B4/B6/B7)                                          | **Live and proven.** Deployed to `https://juno-hack.vercel.app`; all three tools created **and attached via `tool_ids`** (the agent read back `tool_ids = []` beforehand — they were unattached, not merely unexercised). A real agent invoked them, corroborated by ElevenLabs' execution ledger, Vercel runtime logs and the app's own state. Both TTS pins and all 12 `client_events` survived the PATCH                                                                                                                                                                                                  |
+| Voice audio                                                              | **English proven live; French still unheard.** Three real agent sessions held a plan-grounded conversation and called tools, with the app's own override frame accepted. Every one was `language: "en"`. B11's French ear-test is the last human-only item                                                                                                                                                                                                                                                                                                                                                   |
+| Home entry                                                               | **Mechanism fixed; story not told in the state that will be filmed.** Home reads the store and leads with the step the patient is on — verified by deleting the plan key, not by reading JSX. But seeded, it leads with a full-width "Start today's check-in" and puts the letter third as a hairline row, so a viewer of the filmed state never learns the product is built from a discharge letter. **Now a one-command choice:** `make clear-letter` deletes the plan and keeps the log, the patient and the clock, so the arc can open on the empty home and still escalate from the surviving history   |
+
+**Next extraction work (L9):** rewire A6 to OpenAI structured outputs (Gateway
+`openai/…` preferred), restore `Output.object`, put a working key in
+`.env.local`, and prove it with `make eval`. Only then is demo's baked JSON
+licensed rather than a mock in a costume. **Until then the honest position is
+that live extraction is unproven — do not claim it works.**
 
 ---
 
@@ -241,12 +293,12 @@ from building them.
 Most of the stack stays real, because most of it is fast and reliable. Only four
 things change:
 
-| Concern          | `live`                              | `demo`                                                             | Why                                                                                      |
-| ---------------- | ----------------------------------- | ------------------------------------------------------------------ | ---------------------------------------------------------------------------------------- |
-| **Extraction**   | Real AI Gateway call via the AI SDK | Baked `ExtractedBundle` from the medic's gold JSON, no LLM call    | A 5–15s round-trip does not fit in a 60s video, and a gateway hiccup would kill the take |
-| **Drug context** | Live NHS.uk fetch + 24h Redis cache | `fixtures/nhs-drug-map.json`, already committed and verified       | Removes a third-party network dependency from the demo path                              |
-| **Clock**        | Real `today`                        | Overridable via the operator panel (B10.5)                         | A day-by-day timeline is not demonstrable in a minute at real speed                      |
-| **Seed state**   | Empty until a letter is uploaded    | Primed — two missed apixaban doses, so escalation is already armed | The escalation rule needs history that would otherwise take three days to accrue         |
+| Concern          | `live`                                                            | `demo`                                                             | Why                                                                                      |
+| ---------------- | ----------------------------------------------------------------- | ------------------------------------------------------------------ | ---------------------------------------------------------------------------------------- |
+| **Extraction**   | Real AI Gateway → **OpenAI** structured outputs (`Output.object`) | Baked `ExtractedBundle` from the medic's gold JSON, no LLM call    | A 5–15s round-trip does not fit in a 60s video, and a gateway hiccup would kill the take |
+| **Drug context** | Live NHS.uk fetch + 24h Redis cache                               | `fixtures/nhs-drug-map.json`, already committed and verified       | Removes a third-party network dependency from the demo path                              |
+| **Clock**        | Real `today`                                                      | Overridable via the operator panel (B10.5)                         | A day-by-day timeline is not demonstrable in a minute at real speed                      |
+| **Seed state**   | Empty until a letter is uploaded                                  | Primed — two missed apixaban doses, so escalation is already armed | The escalation rule needs history that would otherwise take three days to accrue         |
 
 **Everything else is identical in both modes, and that is deliberate:**
 
@@ -312,8 +364,11 @@ here so the dependency graph below makes sense without re-deriving them.
 1. **Persistence is Upstash Redis + Vercel Blob**, provisioned via the Vercel
    Marketplace. No Supabase, no Postgres. [Locked D1]
 2. **Extraction runs through the Vercel AI SDK via the AI Gateway**, using
-   `generateText` + `Output.object` (`generateObject` is deprecated). [Locked
-   D2; 05 §Rationale]
+   `generateText` + `Output.object` (`generateObject` is deprecated), with an
+   **OpenAI** model string (e.g. `openai/gpt-4o` / `openai/gpt-4.1` — confirm
+   against the Gateway model list). Anthropic is **out** for this schema:
+   nullable-heavy structured output exceeds its union budget [L9]. [Locked
+   D2; L9; 05 §Rationale]
 3. **No `timeline[]` in the schema.** The model emits dated facts; a pure
    function computes the day-by-day view. [01 §I3]
 4. **Grounding the voice agent is prompt injection, not RAG.** The browser
@@ -700,12 +755,16 @@ its system prompt. Both are reading `portico:plan:demo`.
     hitting a body-size error, and both reach `/api/extract`.
 
 - [ ] **Task A6: `lib/extraction/extract.ts` + `/api/extract`.** AI SDK call:
-      `generateText` + `Output.object({ schema: ExtractedBundleFromModel })`.
-      **Verify the exact API shape against `node_modules/ai/docs/` after
-      installing** — the audit's description is from a bundled skill reference,
-      not the live package. Merge `blobUrl`/`blobPathname` back in after parse
-      (never ask the model for a URL). Re-validate the merged object with the
-      full `ExtractedBundle` schema before writing to Redis.
+      `generateText` + `Output.object({ schema: ExtractedBundleFromModel })`
+      through the **AI Gateway with an OpenAI model** [L9].
+      **Status (2026-07-25):** a route and extract path exist, but they call
+      **Anthropic direct** with prompt-injected JSON Schema — that is a
+      deviation to **undo**. Do not keep the Claude workaround; OpenAI can take
+      this nullable schema under structured outputs. `llmEnv()` must read
+      `AI_GATEWAY_API_KEY` again (not `ANTHROPIC_API_KEY`).
+      Merge `blobUrl`/`blobPathname` back in after parse (never ask the model
+      for a URL). Re-validate the merged object with the full `ExtractedBundle`
+      schema before writing to Redis.
   - Files: `lib/extraction/extract.ts`, `app/api/extract/route.ts`
   - **API shape now verified against `ai@7.0.37` (07 §Grounding) — the plan was
     right, so stop treating it as unknown:** `import { generateText, Output }

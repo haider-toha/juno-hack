@@ -9,17 +9,13 @@ import {
   DEMO_PATIENT,
   DEMO_PLAN,
 } from "@/lib/plan/samples/demo-plan";
+import { clearCheckIn } from "@/lib/store/check-in";
 import { setDemoToday } from "@/lib/store/clock";
-import { DEMO_PATIENT_ID, logKey } from "@/lib/store/keys";
-import { appendLogEntry } from "@/lib/store/log";
+import { DEMO_PATIENT_ID } from "@/lib/store/keys";
+import { appendLogEntry, clearLog } from "@/lib/store/log";
 import { writePatient } from "@/lib/store/patient";
 import { writePlan } from "@/lib/store/plan";
-import { redis } from "@/lib/store/redis";
 import { addDays } from "@/lib/timeline/schedule";
-
-// How far back the seed clears. One week of history is enough to arm the
-// escalation rule and short enough to state.
-const HISTORY_DAYS = 7;
 
 // Two days after discharge. The primed misses have to fall on days the patient
 // was actually at home, and the letter's two-day antibiotic course has to have
@@ -60,13 +56,18 @@ export async function POST() {
   );
   await setDemoToday(today);
 
-  const window = Array.from({ length: HISTORY_DAYS }, (_, i) =>
-    addDays(today, -i),
-  );
-
   // Clear before priming, so re-seeding is a reset rather than a merge with
-  // whatever the last rehearsal left behind.
-  await redis().del(...window.map((day) => logKey(DEMO_PATIENT_ID, day)));
+  // whatever the last rehearsal left behind. `clearLog` scans instead of
+  // clearing a window counted from today: the demo clock moves, so an answer
+  // written while it was parked further forward is on a day no backwards window
+  // reaches, and it would survive a "reset" and reach `assess()`.
+  //
+  // A raised check-in is cleared for the same reason — a take that ended
+  // mid-call must not leave the next one already ringing.
+  const [cleared] = await Promise.all([
+    clearLog(DEMO_PATIENT_ID),
+    clearCheckIn(DEMO_PATIENT_ID),
+  ]);
 
   await Promise.all([
     writePlan(DEMO_PATIENT_ID, DEMO_PLAN),
@@ -108,5 +109,8 @@ export async function POST() {
     medications: DEMO_PLAN.medications.length,
     redFlags: DEMO_PLAN.redFlags.length,
     missed: { itemId: DEMO_MISSED_ITEM_ID, days: missedDays },
+    // Named, not counted: between takes the operator needs to see that the day
+    // a previous rehearsal wrote to actually went.
+    clearedLogDays: cleared,
   });
 }

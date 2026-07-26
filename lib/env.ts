@@ -63,6 +63,22 @@ export function blobEnv() {
   });
 }
 
+const toolSchema = z.object({
+  PORTICO_TOOL_SECRET: z.string().min(1),
+});
+
+// The shared secret behind `/api/log` and `/api/escalate`. ElevenLabs' backend
+// sends it as a request header it resolves from a workspace secret, so the
+// value never reaches the browser. It is deliberately NOT a `NEXT_PUBLIC_` var
+// and deliberately not a `secret__` dynamic variable: dynamic variables are
+// sent FROM the browser inside conversation_initiation_client_data, so the
+// prefix hides a value from the LLM, not from anyone with devtools open [C7].
+export function toolEnv() {
+  return toolSchema.parse({
+    PORTICO_TOOL_SECRET: process.env.PORTICO_TOOL_SECRET,
+  });
+}
+
 const redisSchema = z.object({
   UPSTASH_REDIS_REST_URL: z.url(),
   UPSTASH_REDIS_REST_TOKEN: z.string().min(1),

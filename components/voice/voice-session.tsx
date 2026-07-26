@@ -1,14 +1,19 @@
 "use client";
 
-import { ConversationProvider, useConversation } from "@elevenlabs/react";
+import {
+  ConversationProvider,
+  useConversation,
+  useConversationClientTool,
+} from "@elevenlabs/react";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { z } from "zod";
 
-import { IconKeyboard, IconMenu, IconMic } from "@/components/icons";
+import { IconMenu } from "@/components/icons";
 import { LanguagePicker } from "@/components/language-picker";
 import { Composer } from "@/components/voice/composer";
-import { OrbDock, OrbSphere, VoiceStatusLine } from "@/components/voice/orb";
+import { IdleView } from "@/components/voice/idle-view";
+import { OrbDock, VoiceStatusLine } from "@/components/voice/orb";
 import { SuggestedQuestions } from "@/components/voice/suggested-questions";
 import { Transcript, type Turn } from "@/components/voice/transcript";
 import { env } from "@/lib/env";
@@ -24,8 +29,26 @@ type Phase = "idle" | "conversation";
 // handed to a client component is serialised into the page payload.
 export type VoiceStrings = Pick<
   Dictionary,
-  "voice" | "composer" | "transcript" | "suggestions" | "languagePicker"
+  | "voice"
+  | "composer"
+  | "transcript"
+  | "suggestions"
+  | "languagePicker"
+  | "redFlag"
+  | "common"
 >;
+
+// What `show_red_flag` puts on screen. Resolved on the server so the client
+// carries only the two or four strings it renders, never the whole bundle.
+export type VoiceRedFlag = {
+  id: string;
+  triggerVerbatim: string;
+  actionVerbatim: string;
+  // Authored French or null. Null renders the English alone rather than
+  // machine-translating it on the spot [Locked D7].
+  triggerFr: string | null;
+  actionFr: string | null;
+};
 
 type VoiceSessionProps = {
   // Drives the UI language AND the agent's spoken language from one value, so a
@@ -45,6 +68,16 @@ type VoiceSessionProps = {
   systemPrompt: string;
   firstMessage: string;
   suggestedQuestions: readonly string[];
+  // Bound as a dynamic variable so the agent's server tools log against a
+  // patient the app named, not one the model produced. Dynamic variables are
+  // sent FROM the browser inside conversation_initiation_client_data, so this
+  // is identity for the tool handler to key on — never authentication. The
+  // tools authenticate on a header ElevenLabs resolves server-side [C7].
+  patientId: string;
+  // When the operator raised a check-in, or null. The server value is the
+  // initial state; the poll below keeps it live while the screen is idle.
+  incomingAt: string | null;
+  redFlags: readonly VoiceRedFlag[];
 };
 
 // A growing per-character timeline: for each char of the agent's current
@@ -59,6 +92,12 @@ type RevealTimeline = {
 // Small lead so a word appears just before the voice hits it, instead of
 // trailing behind. Keeps the reveal feeling "live" without spoiling phrases.
 const REVEAL_LEAD_MS = 120;
+
+// How often the idle screen asks whether a check-in has been raised. Matches
+// the family dashboard's refresh, so both screens react on the same beat.
+const INCOMING_POLL_MS = 5000;
+
+const incomingSchema = z.object({ raisedAt: z.string().nullable() });
 
 // The SDK is provider-based: the provider holds the session machinery and the
 // inner component drives it through the conversation hooks. The provider must
@@ -79,9 +118,19 @@ function Session({
   systemPrompt,
   firstMessage,
   suggestedQuestions,
+  patientId,
+  incomingAt,
+  redFlags,
 }: VoiceSessionProps) {
   const t = strings.voice;
   const [phase, setPhase] = useState<Phase>("idle");
+  const [incoming, setIncoming] = useState(incomingAt !== null);
+  // The flag the agent put on screen, if any. Set only by the client tool, so
+  // a card on screen always means the agent asked for that exact flag.
+  const [shownFlagId, setShownFlagId] = useState<string | null>(null);
+  // A server tool in flight. The transcript shows the agent doing the thing
+  // rather than only saying it, which is the whole point of a live tick.
+  const [toolInFlight, setToolInFlight] = useState<string | null>(null);
   // How the conversation was entered: "voice" via the primary CTA, "text" via
   // "Type instead". Voice entry keeps the prominent orb; the typed path drops it
   // for a slim status line so the thread reads clean to the input bar. Voice
@@ -164,6 +213,15 @@ function Session({
         }
         timeline.current = { spokenAtMs: next };
       },
+      // The live tick. A server tool firing is the moment the app stops being a
+      // chatbot, so the transcript shows it happening rather than waiting for
+      // the agent to mention it afterwards. `agent_tool_request` carries no
+      // arguments — only which tool and which call — which is all this needs.
+      onAgentToolRequest: (request) => setToolInFlight(request.tool_name),
+      // Fires for both `agent_tool_response` and the full-payload variant; the
+      // union has no discriminant this needs, because clearing the indicator is
+      // right either way.
+      onAgentToolResponse: () => setToolInFlight(null),
       // onError(message, context) — the first arg is the message string, not an
       // Error object. Surface it inline rather than logging to a console nobody
       // watches during a demo.
@@ -173,11 +231,45 @@ function Session({
           setAgentLive("");
           setRevealedCount(0);
           setAgentThinking(false);
+          setToolInFlight(null);
           timeline.current = { spokenAtMs: [] };
         }
       },
     });
   const sessionLive = status === "connected" || status === "connecting";
+
+  // The agent putting a red flag on screen while it reads the action aloud.
+  // It never throws: an uncaught error here reaches onError and paints the
+  // connection-error banner over the transcript, on a projector, over something
+  // that is only a display concern. An unknown id is reported back to the agent
+  // as a plain string instead.
+  useConversationClientTool("show_red_flag", (parameters) => {
+    // The SDK hands client-tool arguments through as `Record<string, unknown>`
+    // — they came from a language model, so narrowing here is the boundary.
+    const id = parameters.flag_id;
+    const match = redFlags.find((flag) => flag.id === id);
+    if (match === undefined) return "That flag is not in this plan.";
+    setShownFlagId(match.id);
+    return "Shown on screen.";
+  });
+
+  const shownFlag = redFlags.find((flag) => flag.id === shownFlagId) ?? null;
+
+  // While the screen is idle, ask whether a check-in has been raised. It stops
+  // the moment the call starts, so nothing polls across a live session.
+  // Server-rendered `incomingAt` is the initial value, so a fresh load never
+  // flashes the wrong card.
+  useEffect(() => {
+    if (phase !== "idle") return;
+    const check = async () => {
+      const res = await fetch("/api/demo/check-in", { cache: "no-store" });
+      if (!res.ok) return;
+      setIncoming(incomingSchema.parse(await res.json()).raisedAt !== null);
+    };
+    void check();
+    const tick = window.setInterval(() => void check(), INCOMING_POLL_MS);
+    return () => window.clearInterval(tick);
+  }, [phase]);
 
   // Audio-paced reveal: ~30ms tick (≈animation frame cadence) walks the
   // cumulative spoken-at timeline and advances `revealedCount` to the last
@@ -251,6 +343,14 @@ function Session({
           },
           tts: { voiceId: env.NEXT_PUBLIC_XI_VOICE_ID },
         },
+        // Bound to the tool parameters in the agent config, so `log_step` and
+        // `escalate_to_next_of_kin` write against a patient the app named
+        // rather than one the model produced. The call's own id comes from the
+        // built-in `system__conversation_id` and is never sent from here.
+        //
+        // Every dynamic variable the agent declares has to be present in this
+        // frame, so adding one to the agent config means adding it here too.
+        dynamicVariables: { patient_id: patientId },
       });
     } catch (e) {
       setError(messageOf(e, t));
@@ -265,6 +365,14 @@ function Session({
     setEntryMode(focusInput ? "text" : "voice");
     void connect();
     setPhase("conversation");
+    // Answering dismisses the raised check-in, the way answering a call does.
+    // Fired after connect() so nothing is queued ahead of getUserMedia inside
+    // the gesture; its result is not awaited because the call does not depend
+    // on it.
+    if (incoming) {
+      setIncoming(false);
+      void fetch("/api/demo/check-in", { method: "DELETE" });
+    }
   }
 
   // The docked X. Hiding the live view without unmounting the provider would
@@ -301,6 +409,7 @@ function Session({
         title={title}
         blurb={blurb}
         error={error}
+        incoming={incoming}
         onStart={() => begin(false)}
         onType={() => begin(true)}
       />
@@ -351,7 +460,47 @@ function Session({
           thinking={agentThinking}
           thinkingLabel={strings.transcript.thinking}
         />
+
+        {/* The letter's own words, put on screen by the agent. Shown in French
+            when French was authored, with the clinician's English underneath
+            and labelled as the original [Locked D7]. */}
+        {shownFlag !== null ? (
+          <div
+            role="status"
+            className="mt-4 rounded-card border border-rule border-l-2 border-l-error bg-surface p-4 shadow-card"
+          >
+            <p className="font-display text-base font-medium text-ink">
+              {locale === "fr" && shownFlag.triggerFr !== null
+                ? shownFlag.triggerFr
+                : shownFlag.triggerVerbatim}
+            </p>
+            <p className="mt-1 text-base leading-relaxed text-ink-muted">
+              {locale === "fr" && shownFlag.actionFr !== null
+                ? shownFlag.actionFr
+                : shownFlag.actionVerbatim}
+            </p>
+            {locale === "fr" && shownFlag.triggerFr !== null ? (
+              <div className="mt-3 border-t border-rule pt-2">
+                <p className="text-sm text-ink-faint">
+                  {strings.redFlag.verbatim}
+                </p>
+                <p className="mt-1 text-sm text-ink-muted">
+                  {shownFlag.triggerVerbatim} — {shownFlag.actionVerbatim}
+                </p>
+              </div>
+            ) : null}
+          </div>
+        ) : null}
       </div>
+
+      {toolInFlight !== null ? (
+        <p
+          aria-live="polite"
+          className="shrink-0 px-4 pb-1 text-sm text-ink-faint"
+        >
+          {t.noting}
+        </p>
+      ) : null}
 
       {showSuggestions ? (
         <SuggestedQuestions
@@ -374,75 +523,6 @@ function Session({
         autoFocus={entryMode === "text"}
         t={strings.composer}
       />
-    </div>
-  );
-}
-
-// The pre-session screen: the orb at rest, the screen's own copy, and the two
-// ways in. Both CTAs call `begin` directly so the mic request stays inside the
-// user's tap.
-function IdleView({
-  locale,
-  strings,
-  title,
-  blurb,
-  error,
-  onStart,
-  onType,
-}: {
-  locale: Locale;
-  strings: VoiceStrings;
-  title: string;
-  blurb: string;
-  error: string | null;
-  onStart: () => void;
-  onType: () => void;
-}) {
-  return (
-    <div className="flex min-h-0 flex-1 flex-col bg-surface px-5">
-      {/* The language control keeps the same top-right position it holds on
-          every other screen, so it is never hunted for. */}
-      <div className="flex shrink-0 justify-end pt-3">
-        <LanguagePicker locale={locale} t={strings.languagePicker} />
-      </div>
-      <div className="flex flex-1 flex-col items-center justify-center gap-6 text-center">
-        <OrbSphere connected speaking={false} />
-        <div>
-          <h1 className="font-display text-3xl font-bold tracking-tight text-ink">
-            {title}
-          </h1>
-          <p className="mx-auto mt-3 max-w-[32ch] text-base leading-relaxed text-ink-muted">
-            {blurb}
-          </p>
-        </div>
-        {error !== null ? (
-          <p
-            role="alert"
-            className="rounded-tactile border-l-2 border-accent bg-accent/10 py-2 pl-3 pr-2 text-left text-base text-ink"
-          >
-            {error}
-          </p>
-        ) : null}
-      </div>
-
-      <div className="shrink-0 py-6">
-        <button
-          type="button"
-          onClick={onStart}
-          className="flex min-h-[3.25rem] w-full items-center justify-center gap-2 rounded-tactile bg-accent px-5 font-display text-lg font-medium text-ink-invert transition-opacity duration-150 ease-out hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent active:opacity-80"
-        >
-          <IconMic className="size-5 text-ink-invert" />
-          {strings.voice.start}
-        </button>
-        <button
-          type="button"
-          onClick={onType}
-          className="mt-3 flex min-h-11 w-full items-center justify-center gap-2 rounded-tactile px-5 font-display text-base font-medium text-ink-muted transition-opacity duration-150 ease-out hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent active:opacity-70"
-        >
-          <IconKeyboard className="size-4 text-ink-muted" />
-          {strings.voice.typeInstead}
-        </button>
-      </div>
     </div>
   );
 }

@@ -21,6 +21,12 @@
   --color-info: #2566ec;
   --color-warning: #d4780f;
   --color-error: #d62d28;
+  /* The red-flag card's surface. Every other block on the plan is a white card,
+     so the one that says "get help" cannot be a white card too — a patient
+     scanning the screen has to see it before they read it. `ink` measures
+     14.2:1 here and `accent` 4.96:1, both AA; `error` is 4.31:1, so it stays on
+     the glyph and never carries a sentence. */
+  --color-error-soft: #fdecec;
 
   /* Surfaces */
   --color-surface: #ffffff;

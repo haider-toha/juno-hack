@@ -8,13 +8,18 @@ import { formatDay } from "@/components/plan/day-section";
 import { RedFlagCard } from "@/components/plan/red-flag-card";
 import { Timeline } from "@/components/plan/timeline";
 import { lookupDrug } from "@/lib/drugs/lookup";
+import { getDictionary, getLocale } from "@/lib/i18n/dictionary";
+import type { Dictionary } from "@/lib/i18n/en";
 import { getDemoToday } from "@/lib/store/clock";
 import { DEMO_PATIENT_ID } from "@/lib/store/keys";
 import { readLog } from "@/lib/store/log";
 import { readPlan } from "@/lib/store/plan";
 import { addDays, buildTimeline, standingItems } from "@/lib/timeline/schedule";
 
-export const metadata = { title: "Recovery plan" };
+export async function generateMetadata() {
+  const t = getDictionary(await getLocale());
+  return { title: t.plan.metaTitle };
+}
 
 // Redis-backed and patient-specific: prerendering it would bake one moment of
 // one patient's plan into the build.
@@ -25,12 +30,14 @@ export const dynamic = "force-dynamic";
 const LOG_WINDOW = [-2, -1, 0, 1, 2, 3, 4];
 
 export default async function PlanPage() {
-  const [today, bundle] = await Promise.all([
+  const [locale, today, bundle] = await Promise.all([
+    getLocale(),
     getDemoToday(),
     readPlan(DEMO_PATIENT_ID),
   ]);
+  const t = getDictionary(locale);
 
-  if (bundle === null) return <NoPlanYet />;
+  if (bundle === null) return <NoPlanYet t={t} />;
 
   const log = await readLog(
     DEMO_PATIENT_ID,
@@ -41,10 +48,20 @@ export default async function PlanPage() {
   );
 
   const days = buildTimeline(bundle, today);
-  const changed = bundle.medications.filter(
-    (medication) =>
-      medication.changeStatus === "stopped" ||
-      medication.changeStatus === "amended",
+  // `flatMap` rather than `filter` so `status` narrows to the two the list can
+  // hold — the row's fallback copy is then exhaustive on those two alone.
+  const changed = bundle.medications.flatMap((medication) =>
+    medication.changeStatus === "stopped" ||
+    medication.changeStatus === "amended"
+      ? [
+          {
+            id: medication.id,
+            name: medication.nameAsWritten,
+            note: medication.changeNoteVerbatim,
+            status: medication.changeStatus,
+          },
+        ]
+      : [],
   );
 
   // Every red flag's related medicines, looked up at once. Keyed by medication
@@ -92,25 +109,38 @@ export default async function PlanPage() {
   return (
     <main className="flex min-h-0 flex-1 flex-col bg-mist px-6">
       <div className="-ml-2.5 shrink-0 pt-2">
-        <BackButton href="/" />
+        <BackButton href="/" label={t.common.back} />
       </div>
 
-      <header className="shrink-0 pt-2 pb-5">
+      {/* Four lines of preamble used to stand between the title and the first
+          thing a patient has to do. The episode and the discharge date are
+          orientation and they stay, at body size and tight together; everything
+          else about this screen is now below the fold on purpose. */}
+      <header className="shrink-0 pt-2 pb-4">
         <h1 className="font-display text-3xl font-bold tracking-tight text-ink">
-          Your recovery plan
+          {t.plan.title}
         </h1>
         {bundle.episode.titlePlain === null ? null : (
-          <p className="mt-2 leading-relaxed text-ink-muted">
+          // The letter's own account of the admission, and the bundle carries
+          // no French for it — so it is marked English rather than left to be
+          // read out with French phonemes under <html lang="fr">.
+          <p
+            lang="en"
+            className="mt-2 text-base leading-relaxed text-ink-muted"
+          >
             {bundle.episode.titlePlain}
           </p>
         )}
         {bundle.episode.dischargeDate === null ? null : (
           <p className="mt-1 text-base text-ink-muted">
-            Home since {formatDay(bundle.episode.dischargeDate)}
+            {t.plan.homeSince.replace(
+              "{date}",
+              formatDay(bundle.episode.dischargeDate, locale),
+            )}
           </p>
         )}
-        <div className="mt-4 empty:mt-0">
-          <DemoModeBadge />
+        <div className="mt-3 empty:mt-0">
+          <DemoModeBadge text={t.common.demoMode} />
         </div>
       </header>
 
@@ -121,6 +151,8 @@ export default async function PlanPage() {
         today={today}
         patientId={DEMO_PATIENT_ID}
         statuses={statuses}
+        locale={locale}
+        t={t.plan}
         redFlags={
           <div className="flex flex-col gap-3">
             {bundle.redFlags.map((flag) => (
@@ -136,9 +168,11 @@ export default async function PlanPage() {
                   const medicine = guidance.get(id);
                   return medicine === undefined ? [] : [medicine];
                 })}
-                // English until B1's `getLocale()` lands; that is the one line
-                // that switches this card into its dual EN+FR render.
-                locale="en"
+                // The read locale, so a French session gets the dual EN+FR
+                // render the D7 decision requires.
+                locale={locale}
+                t={t.redFlag}
+                nhs={t.nhs}
               />
             ))}
           </div>
@@ -148,26 +182,28 @@ export default async function PlanPage() {
   );
 }
 
-function NoPlanYet() {
+function NoPlanYet({ t }: { t: Dictionary }) {
   return (
     // `mist`, like the skeleton and the loaded plan: the empty state is the
     // third thing this route can render, and it must not flash the page from
     // grey to white on its way to being one of the other two.
     <main className="flex min-h-0 flex-1 flex-col bg-mist px-6">
       <div className="-ml-2.5 shrink-0 pt-2">
-        <BackButton href="/" />
+        <BackButton href="/" label={t.common.back} />
       </div>
       <div className="flex flex-1 flex-col justify-center pb-16">
         <h1 className="font-display text-3xl font-bold tracking-tight text-ink">
-          No plan yet
+          {t.plan.emptyTitle}
         </h1>
         <p className="mt-3 leading-relaxed text-ink-muted">
-          Your recovery plan is built from your discharge letter. Take a photo
-          of it, or choose the file, and it will appear here.
+          {t.plan.emptyBody}
         </p>
+        {/* The same words as the screen it leads to, from the same key — a
+            button whose label and its destination's title disagree is two
+            translations of one idea drifting apart. */}
         <Link href="/upload" className={`${primaryButton} mt-6 w-fit`}>
           <IconUpload className="size-5" />
-          Add your discharge letter
+          {t.upload.title}
         </Link>
       </div>
     </main>

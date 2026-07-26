@@ -26,3 +26,17 @@ export async function writePlan(
 ): Promise<void> {
   await redis().set(planKey(patientId), bundle);
 }
+
+// No plan stored is the state every real account is in before its first letter
+// is read — `readPlan` already returns null for it and home, `/plan`, `/family`
+// and `/check-in` all name it. So this deletes a key rather than setting an
+// "empty" flag: the app cannot tell an account cleared here from one that never
+// had a letter, which is what makes it a legitimate thing to reach for on
+// camera [Locked D9].
+//
+// Only the plan. The adherence log, the patient record and the demo clock are
+// keyed separately and survive, so a plan re-extracted from the letter on
+// camera lands back on the history `assess()` was already computing over.
+export async function clearPlan(patientId: string): Promise<void> {
+  await redis().del(planKey(patientId));
+}

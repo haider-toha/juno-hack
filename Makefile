@@ -1,7 +1,8 @@
 # Task runner for the Next.js app.
 SHELL := /bin/bash
 
-.PHONY: help setup install dev build format lint typecheck clean eval e2e seed
+.PHONY: help setup install dev build format lint typecheck clean eval e2e seed \
+        operator ring unring clock miss clear-letter arc
 
 .DEFAULT_GOAL := help
 
@@ -42,3 +43,33 @@ e2e: ## Drive the demo arc in a real browser (needs a running app)
 
 seed: ## Reset the demo to a known state (dev server must be running)
 	curl -fsS -X POST http://localhost:3000/api/seed && echo
+
+# Headless forms of the operator panel's buttons. The panel is the interface on
+# the night; these exist so the arc can be rehearsed or scripted without one.
+
+operator: ## Open the operator control panel
+	open http://localhost:3000/operator
+
+ring: ## Raise the incoming check-in on the phone
+	curl -fsS -X POST http://localhost:3000/api/demo/check-in && echo
+
+unring: ## Cancel the raised check-in
+	curl -fsS -X DELETE http://localhost:3000/api/demo/check-in && echo
+
+clock: ## Move the demo clock (DAY=2026-07-28, or SHIFT=1)
+	@if [ -n "$(DAY)" ]; then BODY='{"day":"$(DAY)"}'; else BODY='{"shiftDays":$(or $(SHIFT),1)}'; fi; \
+	curl -fsS -X POST http://localhost:3000/api/demo/clock \
+		-H 'content-type: application/json' -d "$$BODY" && echo
+
+miss: ## Record a missed step (ITEM=med-apixaban, DAY=2026-07-26)
+	curl -fsS -X POST http://localhost:3000/api/demo/log \
+		-H 'content-type: application/json' \
+		-d '{"itemId":"$(or $(ITEM),med-apixaban)","day":$(if $(DAY),"$(DAY)",null),"status":"missed"}' && echo
+
+# Run `seed` then this to open a take on an empty account: the plan goes, the
+# primed misses and the clock stay, and the letter is photographed on camera.
+clear-letter: ## Delete the stored plan, keeping the log and the clock
+	curl -fsS -X DELETE http://localhost:3000/api/demo/plan && echo
+
+arc: ## Drive the whole demo arc over HTTP and assert each beat
+	bash scripts/demo-arc.sh

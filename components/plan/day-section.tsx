@@ -1,6 +1,8 @@
 import { PlanCard } from "@/components/plan/plan-card";
 import { TaskCheck } from "@/components/plan/task-check";
 import { TaskRow } from "@/components/plan/task-row";
+import type { Dictionary } from "@/lib/i18n/en";
+import type { Locale } from "@/lib/i18n/locales";
 import type { LogEntry } from "@/lib/store/log";
 import type { TimelineDay, TimelineItem } from "@/lib/timeline/schedule";
 
@@ -13,6 +15,8 @@ type Props = {
   answerable: boolean;
   // Keyed `${date}:${itemId}` so a day only ever picks up its own answers.
   statuses: ReadonlyMap<string, LogEntry["status"]>;
+  locale: Locale;
+  t: Dictionary["plan"];
 };
 
 export function DaySection({
@@ -21,12 +25,14 @@ export function DaySection({
   patientId,
   answerable,
   statuses,
+  locale,
+  t,
 }: Props) {
-  const counted = dayLabel(day.dayNumber);
+  const counted = dayLabel(day.dayNumber, t);
   const meta = isToday
     ? counted === null
-      ? formatDay(day.date)
-      : `${formatDay(day.date)} · ${counted}`
+      ? formatDay(day.date, locale)
+      : `${formatDay(day.date, locale)} · ${counted}`
     : counted;
 
   return (
@@ -39,22 +45,44 @@ export function DaySection({
         id={`day-${day.date}`}
         className="flex flex-wrap items-baseline gap-x-2"
       >
-        <span className="font-display text-lg font-semibold tracking-tight text-ink">
-          {isToday ? "Today" : formatDay(day.date)}
+        {/* Today is a size larger than every other day heading on the screen.
+            It is the one card a patient has to act on, and lavender alone was
+            carrying that whole distinction. */}
+        <span
+          className={`font-display font-semibold tracking-tight text-ink ${isToday ? "text-2xl" : "text-lg"}`}
+        >
+          {isToday ? t.today : formatDay(day.date, locale)}
         </span>
         {meta === null ? null : (
           <span className="tnum text-base text-ink-muted">{meta}</span>
         )}
       </h2>
 
+      {/* The circles were the only thing on the screen saying a row could be
+          answered, and an empty ring is not self-explanatory to someone who has
+          never used the app. Said once, on the card it applies to. */}
+      {isToday && answerable ? (
+        <p className="mt-1 text-base leading-relaxed text-ink-muted">
+          {t.tapHint}
+        </p>
+      ) : null}
+
       <ul className="mt-1 divide-y divide-rule">
         {day.items.map((item) => {
-          const status = statuses.get(`${day.date}:${item.id}`) ?? null;
+          // A day that cannot be answered for cannot show an answer. The log
+          // outlives the clock — the operator panel can move `today` backwards,
+          // and an entry written while a date was the present stays on the
+          // record after it becomes the future. Rendering it put a red "Missed"
+          // on tomorrow's apixaban, which is not a fact about tomorrow.
+          const status = answerable
+            ? (statuses.get(`${day.date}:${item.id}`) ?? null)
+            : null;
           return (
             <TaskRow
               key={item.id}
               item={item}
               status={status}
+              t={t}
               check={
                 answerable && isAnswerable(item) ? (
                   <TaskCheck
@@ -65,8 +93,9 @@ export function DaySection({
                     // repeats on every card, so without it three days of ticks
                     // announce identically and a screen reader user cannot tell
                     // which day they are answering for.
-                    label={`${answerLabel(item)}, ${isToday ? "today" : formatDay(day.date)}`}
+                    label={`${answerLabel(item)}, ${isToday ? t.todayLower : formatDay(day.date, locale)}`}
                     status={status}
+                    t={t.tick}
                   />
                 ) : undefined
               }
@@ -91,6 +120,8 @@ function isAnswerable(item: TimelineItem): boolean {
   }
 }
 
+// The letter's own words, so this half of the tick's name stays English
+// whatever the screen is written in.
 function answerLabel(item: TimelineItem): string {
   switch (item.kind) {
     case "medication":
@@ -105,18 +136,34 @@ function answerLabel(item: TimelineItem): string {
 // The letter counts from the day he came home ("2 days", "in 1 week"), so the
 // plan counts the same way — and says nothing at all where the letter gave no
 // discharge date to count from.
-function dayLabel(dayNumber: number | null): string | null {
+function dayLabel(
+  dayNumber: number | null,
+  t: Dictionary["plan"],
+): string | null {
   if (dayNumber === null) return null;
-  return dayNumber === 0 ? "Discharge day" : `Day ${dayNumber}`;
+  return dayNumber === 0
+    ? t.dischargeDay
+    : t.dayNumber.replace("{n}", String(dayNumber));
 }
 
-const DAY_FORMAT = new Intl.DateTimeFormat("en-GB", {
-  weekday: "long",
-  day: "numeric",
-  month: "long",
-  timeZone: "UTC",
-});
+// One formatter per locale, built once. `en-GB` gives "Saturday 25 July" and
+// `fr-FR` "samedi 25 juillet" — the weekday and the month are the reader's,
+// even though everything the letter itself says stays English.
+const DAY_FORMATS = {
+  en: new Intl.DateTimeFormat("en-GB", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    timeZone: "UTC",
+  }),
+  fr: new Intl.DateTimeFormat("fr-FR", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    timeZone: "UTC",
+  }),
+} satisfies Record<Locale, Intl.DateTimeFormat>;
 
-export function formatDay(date: string): string {
-  return DAY_FORMAT.format(new Date(`${date}T00:00:00Z`));
+export function formatDay(date: string, locale: Locale): string {
+  return DAY_FORMATS[locale].format(new Date(`${date}T00:00:00Z`));
 }

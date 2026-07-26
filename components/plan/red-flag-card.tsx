@@ -1,9 +1,14 @@
 import { secondaryButton } from "@/components/button-styles";
 import { IconAlert, IconChevron } from "@/components/icons";
 import type { DrugGuidance, Provenance } from "@/lib/drugs/lookup";
+import type { Dictionary } from "@/lib/i18n/en";
+import type { Locale } from "@/lib/i18n/locales";
 import type { Contact, RedFlag, SourceDocument } from "@/lib/plan/schema";
 
 export type MedicineGuidance = { name: string; guidance: DrugGuidance };
+
+type Strings = Dictionary["redFlag"];
+type NhsStrings = Dictionary["nhs"];
 
 type Props = {
   flag: RedFlag;
@@ -11,7 +16,9 @@ type Props = {
   document: SourceDocument | undefined;
   patientId: string;
   medicines: MedicineGuidance[];
-  locale: "en" | "fr";
+  locale: Locale;
+  t: Strings;
+  nhs: NhsStrings;
 };
 
 // The safety-netting line off the letter, and the one card where visual
@@ -27,6 +34,8 @@ export function RedFlagCard({
   patientId,
   medicines,
   locale,
+  t,
+  nhs,
 }: Props) {
   return (
     <section
@@ -34,30 +43,34 @@ export function RedFlagCard({
       // would otherwise give every card the identical name "Get help if", and a
       // list of identically-named regions is no help at all.
       aria-labelledby={`flag-${flag.id} flag-${flag.id}-trigger`}
-      className="rounded-card bg-surface shadow-card"
+      // `error-soft`, not `surface`. Every other block on this screen is a white
+      // or lavender card, and the one that says get help was the same shape and
+      // the same colour as the one listing tomorrow's statin — it had to be read
+      // to be found. Colour is the only thing that works before reading.
+      className="rounded-card bg-error-soft shadow-card"
     >
-      <div className="flex items-start gap-2.5 px-5 pt-4">
-        <span aria-hidden className="mt-0.5 shrink-0 text-error">
-          <IconAlert className="size-4.5" />
+      <div className="flex items-center gap-2.5 px-5 pt-4">
+        <span aria-hidden className="shrink-0 text-error">
+          <IconAlert className="size-5" />
         </span>
         {/* A step below the trigger, not level with it: this is the card's
             frame and the clinician's sentence is its content. */}
         <h2
           id={`flag-${flag.id}`}
-          className="font-display text-base font-semibold tracking-tight text-ink-muted"
+          className="font-display text-base font-semibold tracking-tight text-ink"
         >
-          {locale === "fr" ? "Demandez de l’aide si" : "Get help if"}
+          {t.getHelpIf}
         </h2>
       </div>
 
-      <div className="px-5 pb-4 pt-2">
+      <div className="px-5 pb-4 pt-1.5">
         {/* `lang` and `translate="no"` so a screen reader pronounces the
             clinician's English correctly and browser auto-translate cannot
             rewrite a clinical instruction behind the patient's back. */}
         <blockquote lang="en" translate="no">
           <p
             id={`flag-${flag.id}-trigger`}
-            className="text-lg font-semibold leading-snug text-ink"
+            className="text-xl font-semibold leading-snug text-ink"
           >
             {flag.triggerVerbatim}
           </p>
@@ -67,15 +80,15 @@ export function RedFlagCard({
           <p className="mt-2 leading-relaxed text-ink">{flag.actionVerbatim}</p>
         </blockquote>
 
-        {locale === "fr" ? <FrenchRendering flag={flag} /> : null}
+        {locale === "fr" ? <FrenchRendering flag={flag} t={t} /> : null}
 
-        <Recipients flag={flag} contacts={contacts} locale={locale} />
+        <Recipients flag={flag} contacts={contacts} t={t} />
 
         <SourceTrace
           flag={flag}
           document={document}
           patientId={patientId}
-          locale={locale}
+          t={t}
         />
       </div>
 
@@ -83,16 +96,14 @@ export function RedFlagCard({
         <details className="group rounded-b-card border-t border-rule bg-mist">
           <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-3 px-5 py-2.5 transition-opacity duration-150 ease-out hover:opacity-90 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-accent active:opacity-80 [&::-webkit-details-marker]:hidden">
             <h3 className="text-base font-semibold text-ink-muted">
-              {locale === "fr"
-                ? "Ce que le NHS dit de vos médicaments"
-                : "What the NHS says about your medicines"}
+              {nhs.heading}
             </h3>
             <IconChevron className="size-4 shrink-0 text-ink-faint group-open:rotate-90" />
           </summary>
           <ul className="flex flex-col gap-3 px-5 pb-4">
             {medicines.map((medicine) => (
               <li key={medicine.name}>
-                <Medicine medicine={medicine} locale={locale} />
+                <Medicine medicine={medicine} t={nhs} />
               </li>
             ))}
           </ul>
@@ -106,12 +117,14 @@ export function RedFlagCard({
 // the English labelled as the original. Never a replacement, and never a silent
 // English fallthrough when no French has been authored — the card says so, in
 // French.
-function FrenchRendering({ flag }: { flag: RedFlag }) {
+function FrenchRendering({ flag, t }: { flag: RedFlag; t: Strings }) {
   const translated = flag.triggerFr !== null && flag.actionFr !== null;
 
   return (
     <div className="mt-4 rounded-tactile bg-mist px-4 py-3">
-      <p className="text-sm font-semibold text-ink-muted">En français</p>
+      <p className="text-sm font-semibold text-ink-muted">
+        {t.translationHeading}
+      </p>
       {translated ? (
         <div className="mt-1" lang="fr">
           <p className="text-base font-semibold leading-snug text-ink">
@@ -122,14 +135,11 @@ function FrenchRendering({ flag }: { flag: RedFlag }) {
           </p>
         </div>
       ) : (
-        <p lang="fr" className="mt-1 text-base leading-relaxed text-ink">
-          Cette consigne n’a pas encore été traduite. Le texte ci-dessus est
-          celui de votre médecin, en anglais.
+        <p className="mt-1 text-base leading-relaxed text-ink">
+          {t.untranslated}
         </p>
       )}
-      <p lang="fr" className="mt-2 text-sm text-ink-muted">
-        Le texte en anglais ci-dessus est celui de votre médecin.
-      </p>
+      <p className="mt-2 text-sm text-ink-muted">{t.originalNote}</p>
     </div>
   );
 }
@@ -137,11 +147,11 @@ function FrenchRendering({ flag }: { flag: RedFlag }) {
 function Recipients({
   flag,
   contacts,
-  locale,
+  t,
 }: {
   flag: RedFlag;
   contacts: Contact[];
-  locale: "en" | "fr";
+  t: Strings;
 }) {
   const named = contacts.filter((contact) =>
     flag.contactIds.includes(contact.id),
@@ -153,9 +163,7 @@ function Recipients({
   if (named.length === 0) {
     return (
       <p className="mt-4 text-base leading-relaxed text-ink-muted">
-        {locale === "fr"
-          ? "Votre lettre ne précise pas qui contacter dans ce cas."
-          : "Your letter does not say who to contact for this."}
+        {t.noRecipient}
       </p>
     );
   }
@@ -165,7 +173,9 @@ function Recipients({
       {named.map((contact) => (
         <li key={contact.id}>
           {contact.phone === null ? (
-            <span className="text-base text-ink">{contact.labelVerbatim}</span>
+            <span lang="en" className="text-base text-ink">
+              {contact.labelVerbatim}
+            </span>
           ) : (
             // The one accent-coloured thing on the card. Everything else is
             // either the doctor's words or the trail back to them.
@@ -173,7 +183,7 @@ function Recipients({
               href={`tel:${contact.phone.replace(/\s/g, "")}`}
               className={`${secondaryButton} bg-mist`}
             >
-              {contact.labelVerbatim}
+              <span lang="en">{contact.labelVerbatim}</span>
               <span className="tnum ml-auto text-ink-muted">
                 {contact.phone}
               </span>
@@ -189,12 +199,12 @@ function SourceTrace({
   flag,
   document,
   patientId,
-  locale,
+  t,
 }: {
   flag: RedFlag;
   document: SourceDocument | undefined;
   patientId: string;
-  locale: "en" | "fr";
+  t: Strings;
 }) {
   if (document === undefined) return null;
 
@@ -216,23 +226,19 @@ function SourceTrace({
       rel="noreferrer"
       className="mt-2 flex min-h-11 items-center text-base text-ink-muted underline underline-offset-4 transition duration-150 ease-out hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent active:opacity-80"
     >
-      {locale === "fr" ? "Voir où c’est écrit" : "See where it says that"}
-      {page === null ? "" : `, page ${String(page)}`}
-      <span className="sr-only">
-        {locale === "fr"
-          ? " (s’ouvre dans un nouvel onglet)"
-          : " (opens in a new tab)"}
-      </span>
+      {t.viewSource}
+      {page === null ? "" : t.sourcePage.replace("{page}", String(page))}
+      <span className="sr-only">{t.newTab}</span>
     </a>
   );
 }
 
 function Medicine({
   medicine,
-  locale,
+  t,
 }: {
   medicine: MedicineGuidance;
-  locale: "en" | "fr";
+  t: NhsStrings;
 }) {
   const { name, guidance } = medicine;
 
@@ -240,12 +246,12 @@ function Medicine({
     case "found":
       return (
         <div>
-          <p className="text-base font-semibold text-ink">{name}</p>
+          <p lang="en" className="text-base font-semibold text-ink">
+            {name}
+          </p>
           {guidance.match === "partial" ? (
             <p className="mt-0.5 text-base leading-relaxed text-ink-muted">
-              {locale === "fr"
-                ? `Le NHS ne décrit que le composant « ${guidance.slug} » de ce médicament.`
-                : `The NHS page covers only the ${guidance.slug} part of this medicine.`}
+              {t.partialMatch.replace("{part}", guidance.slug)}
             </p>
           ) : null}
           <ul className="mt-1 flex flex-col gap-2">
@@ -256,7 +262,8 @@ function Medicine({
               <li key={`${index}-${block.aspect}-${block.headline}`}>
                 {/* Unmodified English, so it is attributed to the NHS and
                     carries the date it was read. A translation would be adapted
-                    content, which may not name them at all. */}
+                    content, which may not name them at all — which is why the
+                    frame around it is translated and this is not. */}
                 <p
                   lang="en"
                   className="text-base leading-relaxed text-ink-muted"
@@ -267,29 +274,29 @@ function Medicine({
               </li>
             ))}
           </ul>
-          <Attribution provenance={guidance.provenance} locale={locale} />
+          <Attribution provenance={guidance.provenance} t={t} />
         </div>
       );
     case "no-urgent-guidance":
       return (
         <div>
-          <p className="text-base font-semibold text-ink">{name}</p>
-          <p className="mt-0.5 text-base leading-relaxed text-ink-muted">
-            {locale === "fr"
-              ? "La page du NHS pour ce médicament ne contient pas de consigne d’urgence."
-              : "The NHS page for this medicine carries no urgent advice."}
+          <p lang="en" className="text-base font-semibold text-ink">
+            {name}
           </p>
-          <Attribution provenance={guidance.provenance} locale={locale} />
+          <p className="mt-0.5 text-base leading-relaxed text-ink-muted">
+            {t.noUrgent}
+          </p>
+          <Attribution provenance={guidance.provenance} t={t} />
         </div>
       );
     case "absent":
       return (
         <div>
-          <p className="text-base font-semibold text-ink">{name}</p>
+          <p lang="en" className="text-base font-semibold text-ink">
+            {name}
+          </p>
           <p className="mt-0.5 text-base leading-relaxed text-ink-muted">
-            {locale === "fr"
-              ? "Ce médicament ne figure pas dans l’index des médicaments du NHS."
-              : "This medicine is not in the NHS medicines A to Z."}
+            {t.notListed}
           </p>
         </div>
       );
@@ -298,11 +305,11 @@ function Medicine({
     case "unavailable":
       return (
         <div>
-          <p className="text-base font-semibold text-ink">{name}</p>
+          <p lang="en" className="text-base font-semibold text-ink">
+            {name}
+          </p>
           <p className="mt-0.5 text-base leading-relaxed text-ink-muted">
-            {locale === "fr"
-              ? "Nous n’avons pas pu joindre le NHS pour ce médicament."
-              : "We could not reach the NHS for this medicine just now."}
+            {t.unreachable}
           </p>
         </div>
       );
@@ -316,34 +323,35 @@ function Medicine({
 // as a healthy cache hit is the one reading a patient must not be given.
 function Attribution({
   provenance,
-  locale,
+  t,
 }: {
   provenance: Provenance;
-  locale: "en" | "fr";
+  t: NhsStrings;
 }) {
+  const dated = asAt(provenance.retrievedOn);
+
   return (
     <>
       {provenance.stale ? (
         <p className="mt-1.5 text-sm font-medium leading-relaxed text-ink-muted">
-          {locale === "fr"
-            ? `Nous n’avons pas pu joindre le NHS à l’instant. Ceci est la copie enregistrée le ${asAt(provenance.retrievedOn)}.`
-            : `We could not reach the NHS just now, so this is the copy we recorded on ${asAt(provenance.retrievedOn)}.`}
+          {t.stale.replace("{date}", dated)}
         </p>
       ) : null}
-      <p lang="en" className="mt-1.5 text-sm leading-relaxed text-ink-muted">
-        Information from the NHS website
+      <p className="mt-1.5 text-sm leading-relaxed text-ink-muted">
         {provenance.origin === "nhs"
-          ? ""
-          : `, as at ${asAt(provenance.retrievedOn)}`}
-        , licensed under the{" "}
+          ? t.attribution
+          : t.attributionDated.replace("{date}", dated)}{" "}
         <a
           href="https://www.nationalarchives.gov.uk/doc/open-government-licence/version/3/"
           target="_blank"
           rel="noreferrer"
           className="underline underline-offset-2 transition duration-150 ease-out hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent active:opacity-80"
         >
-          Open Government Licence v3.0
-          <span className="sr-only"> (opens in a new tab)</span>
+          {/* The licence's legal name, never translated — the same class of
+              proper noun as "NHS" and "Portico", so it stays out of the
+              dictionary where a translator would be invited to change it. */}
+          <span lang="en">Open Government Licence v3.0</span>
+          <span className="sr-only">{t.newTab}</span>
         </a>
         .
       </p>
@@ -351,6 +359,8 @@ function Attribution({
   );
 }
 
+// dd/mm/yyyy reads the same way in both languages, so the one formatter serves
+// both.
 function asAt(date: string): string {
   const [year, month, day] = date.split("-");
   return `${day}/${month}/${year}`;

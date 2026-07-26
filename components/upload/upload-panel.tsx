@@ -4,8 +4,8 @@ import { upload } from "@vercel/blob/client";
 import { useRouter } from "next/navigation";
 import { useId, useState } from "react";
 
-import { primaryButton } from "@/components/button-styles";
 import { IconUpload } from "@/components/icons";
+import type { Dictionary } from "@/lib/i18n/en";
 
 // One control for both paths. `capture` is a hint: on a phone it opens the
 // camera, on a desktop it is ignored and the file picker appears, so the same
@@ -13,13 +13,32 @@ import { IconUpload } from "@/components/icons";
 // several pages, hence `multiple`.
 const ACCEPT = "image/*,application/pdf";
 
+// Its own class string rather than `primaryButton` from `components/
+// button-styles.ts`: this is the one control on the one screen a patient reaches
+// holding a piece of paper, and it is deliberately twice the height of an
+// ordinary button. Reusing the shared string and overriding `min-h`, `text-lg`
+// and `justify-center` on top would put three pairs of same-property utilities
+// in one class attribute, which resolve by stylesheet order rather than by the
+// order they are typed in. Same tokens, same motion, same radius — only the
+// scale differs.
+const letterButton =
+  "flex w-full min-h-[7rem] items-center gap-4 rounded-card bg-accent px-5 py-4 text-left text-ink-invert transition-opacity duration-150 ease-out hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent active:opacity-80";
+
+type Strings = Dictionary["upload"]["panel"];
+
 type State =
   | { phase: "idle" }
   | { phase: "uploading"; done: number; total: number }
   | { phase: "reading" }
   | { phase: "failed"; message: string };
 
-export function UploadPanel({ patientId }: { patientId: string }) {
+export function UploadPanel({
+  patientId,
+  t,
+}: {
+  patientId: string;
+  t: Strings;
+}) {
   const router = useRouter();
   const inputId = useId();
   const [state, setState] = useState<State>({ phase: "idle" });
@@ -59,7 +78,14 @@ export function UploadPanel({ patientId }: { patientId: string }) {
         body: JSON.stringify({ patientId, documents }),
       });
       if (!response.ok) {
-        setState({ phase: "failed", message: problemFor(response.status) });
+        // Both 422s mean the same thing to a patient and ask for the same next
+        // step, so they collapse into one sentence. The route's own message
+        // carries the model's account of what went wrong, which is developer
+        // English and not for this screen; the status code is not for it either.
+        setState({
+          phase: "failed",
+          message: response.status === 422 ? t.errorUnreadable : t.errorRead,
+        });
         return;
       }
       router.push("/plan");
@@ -67,11 +93,7 @@ export function UploadPanel({ patientId }: { patientId: string }) {
       // Surfaced, never swallowed: a failed upload must not leave an empty
       // screen that reads as "your letter had nothing in it". The thrown
       // message itself is developer English and stays out of the patient's way.
-      setState({
-        phase: "failed",
-        message:
-          "We could not finish sending that, so nothing has been saved. Check your connection and try again.",
-      });
+      setState({ phase: "failed", message: t.errorSend });
     }
   }
 
@@ -86,12 +108,18 @@ export function UploadPanel({ patientId }: { patientId: string }) {
           mouse click and stayed lit after the file dialog closed. */}
       <label
         htmlFor={inputId}
-        className={`${primaryButton} w-full has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-accent ${
+        className={`${letterButton} has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-accent ${
           busy ? "pointer-events-none opacity-60" : "cursor-pointer"
         }`}
       >
-        <IconUpload className="size-5" />
-        <LabelText state={state} />
+        <IconUpload className="size-8 shrink-0" />
+        {/* `text-balance` because the label does not fit one line at 390px and
+            an unbalanced wrap leaves "file" alone on the second. No sub-line
+            under it: "take a photo OR choose a file" already names both paths,
+            and the page above already says to photograph every page. */}
+        <span className="min-w-0 text-balance font-display text-xl font-medium leading-snug">
+          <LabelText state={state} t={t} />
+        </span>
         <input
           id={inputId}
           type="file"
@@ -113,7 +141,7 @@ export function UploadPanel({ patientId }: { patientId: string }) {
       </label>
 
       <p aria-live="polite" className="min-h-6 text-base leading-relaxed">
-        <StateMessage state={state} />
+        <StateMessage state={state} t={t} />
       </p>
     </div>
   );
@@ -122,56 +150,39 @@ export function UploadPanel({ patientId }: { patientId: string }) {
 // The label is the busy affordance: it already knows how many pages have
 // landed, and dimming alone through a multi-second multi-page upload says only
 // that something is disabled.
-function LabelText({ state }: { state: State }) {
+function LabelText({ state, t }: { state: State; t: Strings }) {
   switch (state.phase) {
     case "idle":
     case "failed":
-      return "Take a photo or choose a file";
+      return t.cta;
     case "uploading":
       return (
         <span className="tnum">
-          Sent {state.done} of {state.total}{" "}
-          {state.total === 1 ? "page" : "pages"}
+          {(state.total === 1 ? t.sentOne : t.sentMany)
+            .replace("{done}", String(state.done))
+            .replace("{total}", String(state.total))}
         </span>
       );
     case "reading":
-      return "Reading your letter";
+      return t.reading;
   }
 }
 
-function StateMessage({ state }: { state: State }) {
+function StateMessage({ state, t }: { state: State; t: Strings }) {
   switch (state.phase) {
     // The privacy promise, worded as the home screen words it. The instruction
     // to photograph every page is on the page above and does not need saying
     // twice, differently, 100px apart.
     case "idle":
-      return (
-        <span className="text-ink-muted">
-          Nothing is shared with anyone you haven&rsquo;t chosen.
-        </span>
-      );
+      return <span className="text-ink-muted">{t.idleNote}</span>;
     case "uploading":
-      return (
-        <span className="text-ink-muted">
-          Keep this screen open until the pages have gone.
-        </span>
-      );
+      return <span className="text-ink-muted">{t.uploadingNote}</span>;
     case "reading":
-      return <span className="text-ink-muted">This takes a few seconds.</span>;
+      return <span className="text-ink-muted">{t.readingNote}</span>;
     // No `role="alert"` — this already sits inside the polite live region
     // above, and an assertive region nested in a polite one gets announced
     // twice, or not at all, depending on the screen reader.
     case "failed":
       return <span className="text-error">{state.message}</span>;
   }
-}
-
-// Both 422s mean the same thing to a patient and ask for the same next step, so
-// they collapse into one sentence. The route's own message carries the model's
-// account of what went wrong, which is developer English and not for this
-// screen; the status code is not for it either.
-function problemFor(status: number): string {
-  return status === 422
-    ? "We could not read that letter, so nothing has been saved. Try photographing each page again, laid flat and in good light."
-    : "We could not finish reading that, so nothing has been saved. Please try again in a moment.";
 }
