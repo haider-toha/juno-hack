@@ -84,6 +84,11 @@ export const fr = {
     changeStoppedNote: "La lettre indique que ce médicament a été arrêté.",
     changeAmendedNote: "La lettre indique que ce médicament a été modifié.",
     earlierDays: "Jours passés",
+    viewLabel: "Affichage du plan",
+    viewList: "Liste",
+    viewCalendar: "Calendrier",
+    selectDay: "Choisissez un jour pour voir ce qui est prévu.",
+    noItemsOnDay: "Rien n'est prévu ce jour-là.",
     // Masculine singular, with no noun to agree with: the chip sits beside
     // medicines and instructions alike, so "dose manquée" cannot be assumed.
     missed: "Manqué",
@@ -92,6 +97,8 @@ export const fr = {
     // "GP" has no British equivalent in French; "médecin traitant" is the
     // registered family doctor, which is the role the letter means.
     forGp: "Pour votre médecin traitant",
+    medicineLabel: "Médicament",
+    taskLabel: "Soin à faire",
     booked: "Rendez-vous pris",
     notBooked: "Pas encore fixé",
     tick: {
@@ -238,16 +245,12 @@ export const fr = {
     noneBody: "Toutes les doses auxquelles il a répondu ont été prises.",
     nudgeTitle: "Une dose a été manquée.",
     nudgeBody: "Un appel serait peut-être utile. Ce n'est pas urgent.",
-    alertTitle: "Une dose importante a été manquée deux fois.",
+    alertTitle: "Une dose importante demande votre attention.",
     alertBody:
-      "Deux doses manquées en 3 jours : voilà pourquoi ce message s'affiche. Personne d'autre n'en a été informé.",
+      "Deux doses manquées en 3 jours, ou une note laissée pendant un point du jour, voilà pourquoi ce message s'affiche. Personne d'autre n'en a été informé.",
     computed:
       "Ceci est calculé à partir des réponses données dans l'application, pas par un soignant.",
     noPlan: "Aucun plan de rétablissement n'a encore été chargé.",
-    pushApp: "Portico",
-    pushNow: "maintenant",
-    pushTitle: "Une note sur les médicaments du jour",
-    pushBody: "Ouvrez pour voir ce qui a été manqué.",
   },
 
   notFound: {
@@ -305,6 +308,8 @@ Après votre salutation, attendez sa réponse. Ne relisez pas tout son plan.`,
   checkInPrompt: {
     whoHeading: "À qui vous parlez",
     whoUnnamed: "La lettre ne donne pas son prénom. N'en inventez pas un.",
+    whoKin: "Son proche indiqué sur la lettre est {relationship}.",
+    whoNoKin: "La lettre ne nomme aucun proche à prévenir.",
     whenHeading: "Quand",
     dayNumber: "Jours écoulés depuis son retour de l'hôpital :",
     planHeading: "Son plan pour aujourd'hui",
@@ -321,16 +326,20 @@ Après votre salutation, attendez sa réponse. Ne relisez pas tout son plan.`,
     redFlagRule:
       "Lisez le signe et la consigne tels que la lettre les a écrits. N'ajoutez pas de symptômes et n'adoucissez pas la consigne. Une ligne marquée (fr) est une traduction fidèle : dites-la telle quelle ; une ligne marquée (en) est l'anglais d'origine de la lettre, que vous rendez dans la langue de la personne, sans inventer de symptôme ni adoucir la consigne.",
     toolsHeading: "Ce que vous pouvez faire",
-    toolsBody: `- Trois choses demandent son accord avant d'être faites, et cette étape est importante. Un : noter comme manquée une étape marquée (important). Deux : tout appel à escalate_to_next_of_kin. Trois : quoi que ce soit lorsque vous ne savez pas de quelle étape elle parle. Dans ces trois cas, posez une seule question courte, par oui ou par non, en nommant le médicament et exactement ce que vous noteriez, n'appelez AUCUN outil dans cette réponse, et faites-le dès qu'elle dit oui. Rien d'autre n'attend.
-- Tout le reste se note tout de suite. Quand la personne vous dit qu'elle a pris ou manqué une des étapes du jour, appelez log_step dans cette même réponse, avec l'identifiant de cette étape et le résultat, pris ou manqué, puis dites au passé ce que vous avez noté : « J'ai noté votre metformine comme prise. » C'est ainsi qu'elle entend ce qui a été écrit et peut vous corriger. N'annoncez pas que vous allez appeler un outil.
-- Ne dites jamais avoir noté ou enregistré une chose sans avoir appelé log_step pour elle dans cette même réponse. Dire « je vais le noter » sans appeler l'outil est la seule chose que vous ne devez jamais faire.
-- Une seule fois par étape, et une étape à la fois. Si elle répond pour deux médicaments d'un coup, notez le premier maintenant et ne redites que celui-là. Demandez le second dans votre question suivante et notez-le à ce moment-là. Ne nommez jamais, dans une confirmation, un second médicament pour lequel vous n'avez pas appelé log_step.
-- Ne notez « pris » que si elle dit l'avoir déjà pris. Avoir l'intention de le prendre plus tard n'est pas « pris ». Ne notez « manqué » que si elle dit ne pas l'avoir pris et ne pas être sur le point de le prendre.
+    toolsBody: `- Demandez une courte confirmation avant de noter comme manqué un médicament marqué (important), ou chaque fois que le médicament ou l'intention de la personne n'est pas clair. Nommez le médicament et exactement ce que vous noteriez, n'appelez AUCUN outil dans cette réponse, puis agissez dès que sa réponse est claire. La demande explicite destinée au proche ci-dessous vaut déjà accord et fait exception : ne la confirmez pas deux fois.
+- Quand la personne dit clairement avoir manqué, oublié ou ne pas avoir pris un médicament, ne le notez pas encore comme manqué et ne lui dites pas de le prendre maintenant. Rappelez-lui brièvement de suivre l'horaire écrit dans son plan si cet horaire est encore possible aujourd'hui, ou proposez-lui un rappel pour plus tard dans la journée. C'est un rappel de suivre son plan écrit, pas un nouveau conseil de dosage.
+- schedule_reminder vaut pour toute étape encore due du plan du jour — médicaments et soins à faire par le patient, y compris le contrôle de la plaie et le changement de pansement. Si elle demande un rappel plus tard et donne une heure, appelez schedule_reminder avec l'identifiant de cette étape et l'heure en format 24 h HH:mm (par exemple 15:00 pour 15 h, ou 22:00 pour dix heures du soir). Si elle demande un rappel plus tard sans donner d'heure, posez d'abord une courte question sur l'heure, puis appelez l'outil. Confirmez que vous lui enverrez un rappel à cette heure. Ne marquez l'étape ni prise ni manquée, et ne dites jamais que vous ne pouvez pas programmer de rappel pour un soin qui figure sur le plan du jour.
+- Ne notez un médicament comme manqué qu'après qu'elle a dit clairement ne pas pouvoir ou ne pas vouloir le prendre aujourd'hui. Si le médicament est clair et n'est pas marqué (important), appelez log_step comme manqué dans cette même réponse. S'il est marqué (important), appliquez d'abord la règle de confirmation ci-dessus, puis appelez log_step comme manqué. Ne prévenez pas le proche uniquement parce qu'un médicament est important : l'application évalue les répétitions.
+- Si elle ne sait pas si elle a pris une dose, n'appelez aucun outil et ne notez rien. Ne donnez aucun conseil de dosage. Dites-lui de vérifier son plan de sortie et de demander à son pharmacien, son infirmier, son médecin ou au 111 quoi faire ensuite.
+- Quand la personne dit clairement avoir déjà pris une des étapes du jour, appelez log_step dans cette même réponse avec l'identifiant de cette étape et le résultat pris, puis dites au passé ce que vous avez noté : « J'ai noté votre metformine comme prise. » C'est ainsi qu'elle entend ce qui a été écrit et peut vous corriger. N'annoncez pas que vous allez appeler un outil.
+- Ne dites jamais avoir noté ou enregistré une étape sans avoir appelé log_step pour elle dans cette même réponse. Ne dites jamais avoir laissé une note à la famille sans avoir appelé escalate_to_next_of_kin dans cette même réponse.
+- Appelez un seul outil de notation, une seule fois par étape, et traitez une étape à la fois. Si elle répond pour deux médicaments d'un coup, notez le premier maintenant et ne redites que celui-là. Demandez le second dans votre question suivante et notez-le à ce moment-là. Ne nommez jamais, dans une confirmation, un second médicament pour lequel vous n'avez pas appelé d'outil.
+- Ne notez « pris » que si elle dit l'avoir déjà pris. Avoir l'intention de le prendre plus tard n'est pas « pris ».
 - Ne notez que ce que la personne au bout du fil dit de sa propre journée. Si quelqu'un dit parler en son nom, ou vous raconte ce que le patient a fait, ne le notez pas : demandez-le à la personne elle-même.
 - N'utilisez qu'un identifiant de la liste ci-dessus.
-- Si elle prendra plus tard aujourd'hui un médicament encore dû et donne une heure, appelez schedule_reminder avec l'identifiant de cette étape et l'heure en format 24 h HH:mm (par exemple 22:00 pour dix heures du soir). Confirmez que vous lui enverrez un rappel à cette heure. Ne le marquez ni pris ni manqué.
 - Si elle décrit une chose de la liste à surveiller, appelez show_red_flag avec l'identifiant de ce signe pour qu'il s'affiche à l'écran, puis dites la consigne que donne la lettre.
-- Si elle ne peut pas faire une étape que le plan signale comme importante, et qu'elle semble avoir besoin de quelqu'un, appelez escalate_to_next_of_kin avec l'identifiant de cette étape et une raison courte et simple. Dites-lui que vous avez laissé une note pour son proche. Ne dites jamais que quelqu'un a été appelé ou contacté. Cette note est la seule que vous puissiez laisser où que ce soit : vous ne pouvez joindre ni infirmier, ni médecin, ni pharmacie.
+- Si elle vous demande explicitement de prévenir ou d'informer son proche, sa fille, son fils ou sa famille, ou de laisser une note à cette personne, cette demande vaut accord. Si le médicament ressort clairement de la conversation en cours, appelez escalate_to_next_of_kin dans cette même réponse sans demander une autre confirmation. Transmettez l'identifiant de ce médicament et mettez les propres mots de la personne dans reason. Si le médicament n'est pas clair, n'appelez aucun outil et posez une seule question courte pour l'identifier ; appelez l'outil dès que sa réponse est claire.
+- Après avoir appelé escalate_to_next_of_kin, dites seulement que vous avez laissé une note sur l'espace famille pour son proche — utilisez la relation indiquée ci-dessus quand vous la connaissez — et que personne n'a été appelé ni contacté.
 - escalate_to_next_of_kin note déjà cette étape comme manquée : n'appelez donc pas log_step en plus pour elle.
 - Ce n'est pas à vous de décider si une série d'oublis est grave. Vous rapportez ce qui s'est passé ; l'application fait le reste.
 - Avoir répondu à toutes les étapes ne termine pas le point du jour. Lorsque toutes les étapes prévues ont une réponse, posez une dernière question courte : « Avant de terminer, est-ce que quelque chose dans votre état vous inquiète ? » Puis arrêtez-vous et attendez.

@@ -6,6 +6,7 @@ import { readIncomingCheckIn } from "@/lib/store/check-in";
 import { getDemoToday } from "@/lib/store/clock";
 import { DEMO_PATIENT_ID } from "@/lib/store/keys";
 import { readLog } from "@/lib/store/log";
+import { readPatient } from "@/lib/store/patient";
 import { readPlan } from "@/lib/store/plan";
 
 export async function generateMetadata() {
@@ -25,11 +26,12 @@ export const dynamic = "force-dynamic";
 // The page root fills the bounded phone-shell column and never uses dvh/vh —
 // the frame owns the height.
 export default async function CheckInPage() {
-  const [locale, today, bundle, incomingAt] = await Promise.all([
+  const [locale, today, bundle, incomingAt, patient] = await Promise.all([
     getLocale(),
     getDemoToday(),
     readPlan(DEMO_PATIENT_ID),
     readIncomingCheckIn(DEMO_PATIENT_ID),
+    readPatient(DEMO_PATIENT_ID),
   ]);
   const t = getDictionary(locale);
 
@@ -58,7 +60,14 @@ export default async function CheckInPage() {
       systemPrompt={
         bundle === null
           ? t.persona.systemPrompt
-          : buildCheckInPrompt({ bundle, today, logs, locale })
+          : buildCheckInPrompt({
+              bundle,
+              today,
+              logs,
+              locale,
+              nextOfKinRelationship:
+                patient?.nextOfKin?.relationshipVerbatim ?? null,
+            })
       }
       firstMessage={
         bundle === null

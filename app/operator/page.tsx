@@ -5,6 +5,7 @@ import { assess, assessmentWindow } from "@/lib/escalation/rules";
 import { formatLocalTime } from "@/lib/format-time";
 import { readIncomingCheckIn } from "@/lib/store/check-in";
 import { getDemoToday } from "@/lib/store/clock";
+import { readEscalations } from "@/lib/store/escalation";
 import { DEMO_PATIENT_ID } from "@/lib/store/keys";
 import { readLog } from "@/lib/store/log";
 import { readPlan } from "@/lib/store/plan";
@@ -33,13 +34,16 @@ export default async function OperatorPage() {
     readIncomingCheckIn(DEMO_PATIENT_ID),
     readIncomingNudge(DEMO_PATIENT_ID),
   ]);
-  const [logs, reminders] = await Promise.all([
+  const window = assessmentWindow(today);
+  const [logs, reminders, escalations] = await Promise.all([
+    bundle === null ? Promise.resolve([]) : readLog(DEMO_PATIENT_ID, window),
+    readReminders(DEMO_PATIENT_ID, today),
     bundle === null
       ? Promise.resolve([])
-      : readLog(DEMO_PATIENT_ID, assessmentWindow(today)),
-    readReminders(DEMO_PATIENT_ID, today),
+      : readEscalations(DEMO_PATIENT_ID, window),
   ]);
-  const assessment = bundle === null ? null : assess(bundle, logs, today);
+  const assessment =
+    bundle === null ? null : assess(bundle, logs, escalations, today);
 
   // The one the escalation rule is written about. Naming it here rather than
   // hardcoding an id keeps the panel correct if the demo letter changes.

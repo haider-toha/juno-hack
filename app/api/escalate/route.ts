@@ -2,22 +2,14 @@ import { z } from "zod";
 
 import { toolEnv } from "@/lib/env";
 import { getDemoToday } from "@/lib/store/clock";
+import { recordEscalation } from "@/lib/store/escalation";
 import { appendLogEntry } from "@/lib/store/log";
 import { readPatient } from "@/lib/store/patient";
 import { readPlan } from "@/lib/store/plan";
 
-// The `escalate_to_next_of_kin` server tool. It records that a step the plan
-// marks as important could not be done, as a real `LogEntry` through the same
-// `appendLogEntry()` every other write path uses — and then stops.
-//
-// It does NOT decide that an escalation has happened. `assess()` reads the log
-// and works that out on `/family`, which is why the family dashboard can say
-// "missed twice in 3 days" and mean it. If this route set an "escalated" flag
-// instead, the card would be repeating a model's judgement back to a relative
-// [Locked D9].
-//
-// Nothing here calls, texts or emails anyone. The response says so, so the
-// agent has nothing to overstate.
+// The `escalate_to_next_of_kin` server tool. It records the named medicine as
+// missed through the same `appendLogEntry()` every other write path uses, and
+// writes the explicit family-note record that `assess()` reads on `/family`.
 const Input = z.object({
   patient_id: z.string().min(1),
   check_in_id: z.string().min(1),
@@ -74,6 +66,18 @@ export async function POST(request: Request) {
     at: new Date().toISOString(),
   });
 
+  await recordEscalation({
+    id: `escalation:${input.patient_id}:${input.item_id}:${today}`,
+    patientId: input.patient_id,
+    itemId: input.item_id,
+    day: today,
+    reason: input.reason,
+    checkInId: input.check_in_id,
+    at: new Date().toISOString(),
+  });
+
+  const relationship = patient?.nextOfKin?.relationshipVerbatim ?? null;
+
   // The letter names the relationship and never the daughter, so the agent is
   // handed the relationship word and nothing else to embellish with.
   return Response.json({
@@ -81,10 +85,12 @@ export async function POST(request: Request) {
     item_id: medication.id,
     day: today,
     recorded_as: "missed",
-    next_of_kin: patient?.nextOfKin?.relationshipVerbatim ?? null,
+    next_of_kin: relationship,
     // The one sentence the agent may promise. Anything stronger would be a
     // claim about a message nobody sent.
     tell_the_patient:
-      "A note has been left on the family view. Nobody has been called or messaged.",
+      relationship === null
+        ? "A note has been left on the family view. Nobody has been called or messaged."
+        : `I have left a note on the family view for your ${relationship}. Nobody has been called or messaged.`,
   });
 }

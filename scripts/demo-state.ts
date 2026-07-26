@@ -55,6 +55,7 @@ const CHECK_IN_KEY = `portico:incoming:${PATIENT}`;
 const NUDGE_KEY = `portico:nudge:${PATIENT}`;
 const logKey = (day: string) => `portico:log:${PATIENT}:${day}`;
 const reminderKey = (day: string) => `portico:reminders:${PATIENT}:${day}`;
+const escalationKey = (day: string) => `portico:escalation:${PATIENT}:${day}`;
 
 // `lib/store/check-in.ts` and `lib/store/reminder.ts` both set 15 minutes.
 const RING_TTL_SECONDS = 15 * 60;
@@ -236,7 +237,7 @@ async function answer(
 const FAMILY_HEADINGS = {
   none: "Nothing needs your attention.",
   nudge: "A dose was missed.",
-  "alert-kin": "A dose that matters was missed twice.",
+  "alert-kin": "A dose that matters needs your attention.",
 } as const;
 
 type AssessmentKind = keyof typeof FAMILY_HEADINGS;
@@ -503,6 +504,91 @@ const STEPS: Step[] = [
         panel.includes(STANDARD.name),
         `the nudge should name ${STANDARD.name}`,
         panel.slice(panel.indexOf("assess()"), panel.indexOf("assess()") + 200),
+      );
+    },
+  },
+
+  {
+    name: "An explicit family note creates one miss and an immediate alert",
+    run: async () => {
+      const seeded = await seed();
+      const t = seeded.today;
+
+      // Remove the primed pattern first. This isolates the explicit tool call:
+      // if the family card turns red, it came from the escalation record rather
+      // than from the two historical misses the seed normally carries.
+      await answer(HIGH_STAKES.id, addDays(t, -1), "taken");
+      await answer(HIGH_STAKES.id, addDays(t, -2), "taken");
+      await assertAssessment("none", "before the explicit family note");
+
+      const before = await client.hgetall<Record<string, unknown>>(logKey(t));
+      must(
+        before === null || before[HIGH_STAKES.id] === undefined,
+        "today should have no apixaban answer before escalate_to_next_of_kin",
+        JSON.stringify(before),
+      );
+
+      const reason = "I forgot my apixaban. Please tell my daughter.";
+      const escalated = await tool("/api/escalate", {
+        patient_id: PATIENT,
+        check_in_id: "explicit-family-note",
+        item_id: HIGH_STAKES.id,
+        reason,
+      });
+      must(
+        escalated.status === 200,
+        `POST /api/escalate → HTTP 200`,
+        `HTTP ${escalated.status} ${escalated.body}`,
+      );
+      const reply = z
+        .object({
+          recorded_as: z.literal("missed"),
+          tell_the_patient: z.string(),
+        })
+        .parse(escalated.value);
+      must(
+        reply.tell_the_patient.includes("note on the family view") &&
+          reply.tell_the_patient.includes("Nobody has been called or messaged"),
+        "the tool response should promise only a note on the family view",
+        escalated.body,
+      );
+
+      await assertAssessment(
+        "alert-kin",
+        "after one explicit family note and no missed-dose pattern",
+      );
+
+      const entries = await client.hgetall<Record<string, unknown>>(logKey(t));
+      const fields = Object.keys(entries ?? {});
+      const miss = z
+        .object({
+          itemId: z.literal(HIGH_STAKES.id),
+          status: z.literal("missed"),
+          source: z.object({
+            kind: z.literal("voice"),
+            checkInId: z.literal("explicit-family-note"),
+          }),
+        })
+        .parse(entries?.[HIGH_STAKES.id]);
+      must(
+        fields.length === 1 && miss.status === "missed",
+        "escalate_to_next_of_kin should create exactly one missed entry when none existed",
+        JSON.stringify(entries),
+      );
+
+      const escalations = await client.hgetall<Record<string, unknown>>(
+        escalationKey(t),
+      );
+      const stored = z
+        .object({
+          itemId: z.literal(HIGH_STAKES.id),
+          reason: z.string(),
+        })
+        .parse(escalations?.[HIGH_STAKES.id]);
+      must(
+        stored.reason === reason,
+        "the family note should retain the patient's own words exactly",
+        JSON.stringify(stored),
       );
     },
   },
@@ -1192,6 +1278,53 @@ const STEPS: Step[] = [
         z.object({ raisedAt: z.null() }).safeParse(afterSeed.value).success,
         "the seed should clear a check-in the previous take left ringing",
         afterSeed.body,
+      );
+    },
+  },
+
+  {
+    name: "Care-step reminders use the same schedule_reminder path",
+    run: async () => {
+      await seed();
+
+      const scheduled = await tool("/api/remind", {
+        patient_id: PATIENT,
+        check_in_id: "state-harness",
+        item_id: "inst-wound-dressing",
+        time: "15:00",
+      });
+      must(
+        scheduled.status === 200,
+        `POST /api/remind for a wound care step → HTTP ${scheduled.status}`,
+        scheduled.body,
+      );
+      must(
+        z.object({ tell_the_patient: z.string() }).parse(scheduled.value)
+          .tell_the_patient === "A nudge is set for 3 pm.",
+        "a care-step reminder should hand the agent the same nudge sentence shape",
+        scheduled.body,
+      );
+
+      const listed = await jsonCall("GET", "/api/demo/reminder");
+      const reminder = z
+        .object({
+          reminders: z
+            .array(
+              z.object({
+                itemId: z.string(),
+                timeLocal: z.string(),
+                nameAsWritten: z.string(),
+              }),
+            )
+            .min(1),
+        })
+        .parse(listed.value).reminders[0];
+      must(
+        reminder?.itemId === "inst-wound-dressing" &&
+          reminder.timeLocal === "15:00" &&
+          reminder.nameAsWritten.includes("wound"),
+        "the phone should store the care-step reminder under its instruction id",
+        listed.body,
       );
     },
   },

@@ -51,3 +51,9 @@ export function reminderKey(patientId: string, day: string) {
 export function incomingNudgeKey(patientId: string) {
   return `portico:nudge:${patientId}`;
 }
+
+// Explicit next-of-kin escalations from the voice tool. Hash per patient-day,
+// field = itemId — same idempotency shape as the adherence log.
+export function escalationKey(patientId: string, day: string) {
+  return `portico:escalation:${patientId}:${day}`;
+}

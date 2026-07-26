@@ -18,7 +18,7 @@ import {
 // the same way it moves the timeline, and nothing here reads Redis or the
 // clock for itself.
 
-type Inputs = {
+type PromptInputs = {
   bundle: ExtractedBundle;
   today: string;
   // The days `assess()` looks at, so the agent can mention a recent miss
@@ -27,12 +27,17 @@ type Inputs = {
   locale: Locale;
 };
 
+type CheckInPromptInputs = PromptInputs & {
+  nextOfKinRelationship: string | null;
+};
+
 export function buildCheckInPrompt({
   bundle,
   today,
   logs,
   locale,
-}: Inputs): string {
+  nextOfKinRelationship,
+}: CheckInPromptInputs): string {
   const t = getDictionary(locale).checkInPrompt;
   const persona = getDictionary(locale).persona.systemPrompt;
 
@@ -57,6 +62,9 @@ export function buildCheckInPrompt({
     bundle.patient.givenName === null
       ? t.whoUnnamed
       : `${bundle.patient.givenName}.`,
+    nextOfKinRelationship === null
+      ? t.whoNoKin
+      : t.whoKin.replace("{relationship}", nextOfKinRelationship),
     "",
     `## ${t.whenHeading}`,
     today,
@@ -121,7 +129,7 @@ export function buildFirstMessage({
   today,
   logs,
   locale,
-}: Inputs): string {
+}: PromptInputs): string {
   const t = getDictionary(locale).persona;
   const due = dueToday(bundle, today);
   const answeredIds = new Set(
@@ -169,8 +177,17 @@ function describe(
       const purpose = m.purposePlain === null ? "" : ` — ${m.purposePlain}`;
       return `- [${m.id}] ${m.nameAsWritten}: ${m.doseDirectionsVerbatim}${importance}${purpose}${answered}`;
     }
-    case "instruction":
-      return `- [${item.instruction.id}] ${item.instruction.detailVerbatim}${answered}`;
+    case "instruction": {
+      const title =
+        item.instruction.titlePlain ?? item.instruction.detailVerbatim;
+      // Keep the how-to when there is a short title, so the agent can still
+      // explain the care step once without inventing detail.
+      const detail =
+        item.instruction.titlePlain === null
+          ? ""
+          : `: ${item.instruction.detailVerbatim}`;
+      return `- [${item.instruction.id}] ${title}${detail}${answered}`;
+    }
     case "appointment": {
       const a = item.appointment;
       const where =

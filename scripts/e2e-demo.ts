@@ -399,6 +399,166 @@ const STEPS: Step[] = [
   },
 
   {
+    name: "/plan calendar is keyboard-operable, dated in the URL, and renders the selected day",
+    run: async (page) => {
+      const listText = await open(page, "/plan");
+      const list = page.getByRole("link", { name: "List", exact: true });
+      const calendar = page.getByRole("link", {
+        name: "Calendar",
+        exact: true,
+      });
+      must(
+        (await list.getAttribute("aria-current")) === "page",
+        "the list should be the default plan view",
+        listText,
+      );
+
+      await calendar.click();
+      await page.waitForURL((url) => {
+        return (
+          url.pathname === "/plan" &&
+          url.searchParams.get("view") === "calendar" &&
+          url.searchParams.get("date") !== null
+        );
+      });
+      await page.locator("main:not([aria-busy])").waitFor();
+
+      const initialUrl = new URL(page.url());
+      const initialDate = initialUrl.searchParams.get("date") ?? "";
+      must(
+        z.iso.date().safeParse(initialDate).success,
+        "the calendar URL should carry a real ISO date",
+        page.url(),
+      );
+      must(
+        (await calendar.getAttribute("aria-current")) === "page",
+        "the calendar toggle should expose the active view",
+        await page.locator("main").innerText(),
+      );
+
+      const selected = page.locator('a[data-selected="true"]');
+      must(
+        (await selected.count()) === 1 &&
+          (await selected.getAttribute("aria-current")) === "page" &&
+          (await selected.getAttribute("href"))?.endsWith(initialDate) === true,
+        "the date in the URL should be the one selected in the month grid",
+        await page.locator("main").innerText(),
+      );
+
+      const nextMonth = page.getByRole("link", { name: "Next month" });
+      const nextBox = await nextMonth.boundingBox();
+      must(
+        nextBox !== null && nextBox.width >= 44 && nextBox.height >= 44,
+        "the month control should have a 44px target",
+        JSON.stringify(nextBox),
+      );
+      await nextMonth.focus();
+      must(
+        await nextMonth.evaluate(
+          (element) => document.activeElement === element,
+        ),
+        "the month control should accept keyboard focus",
+        String(await nextMonth.getAttribute("href")),
+      );
+      await page.keyboard.press("Enter");
+      await page.waitForURL((url) => {
+        return (
+          url.pathname === "/plan" &&
+          url.searchParams.get("view") === "calendar" &&
+          url.searchParams.get("date") !== initialDate
+        );
+      });
+      await page.locator("main:not([aria-busy])").waitFor();
+
+      const shiftedDate =
+        new URL(page.url()).searchParams.get("date") ?? "(missing)";
+      const shiftedSection = page.locator(
+        `section[aria-labelledby="day-${shiftedDate}"]`,
+      );
+      must(
+        (await shiftedSection.count()) === 1 &&
+          (await shiftedSection.innerText()).includes("Apixaban 5mg"),
+        "changing month should select that month's date and render its plan content",
+        await page.locator("main").innerText(),
+      );
+
+      const [shiftedYear, shiftedMonth] = shiftedDate.split("-");
+      const chosenDate = `${shiftedYear}-${shiftedMonth}-01`;
+      const dayTarget = page.locator(
+        `a[href="/plan?view=calendar&date=${chosenDate}"]`,
+      );
+      const dayBox = await dayTarget.boundingBox();
+      must(
+        dayBox !== null && dayBox.width >= 44 && dayBox.height >= 44,
+        "calendar dates should have 44px targets",
+        JSON.stringify(dayBox),
+      );
+      await dayTarget.focus();
+      await page.keyboard.press("Enter");
+      await page.waitForURL(
+        (url) => url.searchParams.get("date") === chosenDate,
+      );
+      await page.locator("main:not([aria-busy])").waitFor();
+      const chosenSection = page.locator(
+        `section[aria-labelledby="day-${chosenDate}"]`,
+      );
+      must(
+        (await chosenSection.count()) === 1 &&
+          (await chosenSection.innerText()).includes("Apixaban 5mg"),
+        "choosing a calendar date should render that day's plan content",
+        await page.locator("main").innerText(),
+      );
+      const overflow = await horizontalOverflow(page);
+      must(
+        overflow.length === 0,
+        `the calendar must not overflow the phone shell: ${overflow.join("; ")}`,
+        await page.locator("main").innerText(),
+      );
+
+      const sharedUrl = page.url();
+      await page.reload();
+      await page.locator("main:not([aria-busy])").waitFor();
+      must(
+        page.url() === sharedUrl &&
+          (await page
+            .locator(
+              `a[aria-current="page"][data-selected="true"][href="/plan?view=calendar&date=${chosenDate}"]`,
+            )
+            .getAttribute("aria-current")) === "page",
+        "reloading a shared calendar URL should preserve its selected date",
+        page.url(),
+      );
+
+      await checkTypography(page, "/plan?view=calendar");
+      await shot(page, "plan-calendar");
+
+      await open(page, "/plan?view=calendar&date=2026-02-30");
+      const canonical = new URL(page.url());
+      must(
+        canonical.searchParams.get("view") === "calendar" &&
+          canonical.searchParams.get("date") !== "2026-02-30" &&
+          z.iso.date().safeParse(canonical.searchParams.get("date") ?? "")
+            .success,
+        "an invalid calendar date should redirect to a valid shareable URL",
+        page.url(),
+      );
+
+      await page
+        .context()
+        .addCookies([{ name: "portico_locale", value: "fr", url: BASE_URL }]);
+      const french = await open(page, `/plan?view=calendar&date=${chosenDate}`);
+      must(
+        (await page.getByRole("link", { name: "Calendrier" }).count()) === 1 &&
+          (await page.getByRole("link", { name: "Mois suivant" }).count()) ===
+            1,
+        "the calendar controls should carry their French labels",
+        french,
+      );
+      await page.context().clearCookies();
+    },
+  },
+
+  {
     name: "The red-flag card traces back to the letter",
     run: async (page) => {
       const text = await open(page, "/plan");

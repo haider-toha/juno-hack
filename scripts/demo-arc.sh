@@ -62,7 +62,7 @@ check "clock moves a day" "\"today\":\"$TOMORROW\"" "$(post /api/demo/clock '{"s
 check "clock moves back" "\"today\":\"$TODAY\"" "$(post /api/demo/clock "{\"day\":\"$TODAY\"}")"
 
 echo "3 · escalation, from the seeded misses"
-check "family escalates to next of kin" "missed twice" "$(family_says)"
+check "family escalates to next of kin" "needs your attention" "$(family_says)"
 
 echo "4 · escalation clears when the misses are answered"
 YESTERDAY="$(date -j -v-1d -f %Y-%m-%d "$TODAY" +%Y-%m-%d 2>/dev/null || date -d "$TODAY -1 day" +%Y-%m-%d)"

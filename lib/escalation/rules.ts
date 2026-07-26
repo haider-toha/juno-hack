@@ -1,4 +1,5 @@
 import type { ExtractedBundle, Medication } from "@/lib/plan/schema";
+import type { EscalationRecord } from "@/lib/store/escalation";
 import type { LogEntry } from "@/lib/store/log";
 import { addDays } from "@/lib/timeline/schedule";
 
@@ -29,6 +30,7 @@ export type Assessment =
 export function assess(
   bundle: ExtractedBundle,
   logs: readonly LogEntry[],
+  escalations: readonly EscalationRecord[],
   today: string,
 ): Assessment {
   const window = new Set(
@@ -48,6 +50,23 @@ export function assess(
   }
 
   const byId = new Map(bundle.medications.map((m) => [m.id, m]));
+
+  // An explicit next-of-kin note during a check-in is enough on its own.
+  // The demo must not depend on a second high-stakes miss landing first.
+  for (const escalation of escalations) {
+    if (!window.has(escalation.day)) continue;
+    const medication = byId.get(escalation.itemId);
+    if (medication === undefined) continue;
+    const missedDays = [...(missedByMedication.get(escalation.itemId) ?? [])];
+    if (!missedDays.includes(escalation.day)) missedDays.push(escalation.day);
+    missedDays.sort();
+    return {
+      kind: "alert-kin",
+      medicationId: medication.id,
+      name: medication.nameAsWritten,
+      missedDays,
+    };
+  }
 
   let worstNudge: { medication: Medication; missedDays: string[] } | null =
     null;

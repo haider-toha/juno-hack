@@ -11,6 +11,7 @@ import {
 } from "@/lib/plan/samples/demo-plan";
 import { clearCheckIn } from "@/lib/store/check-in";
 import { setDemoToday } from "@/lib/store/clock";
+import { clearEscalations } from "@/lib/store/escalation";
 import { DEMO_PATIENT_ID } from "@/lib/store/keys";
 import { appendLogEntry, clearLog } from "@/lib/store/log";
 import { writePatient } from "@/lib/store/patient";
@@ -65,8 +66,9 @@ export async function POST() {
   //
   // A raised check-in is cleared for the same reason — a take that ended
   // mid-call must not leave the next one already ringing.
-  const [cleared] = await Promise.all([
+  const [clearedLogDays, clearedEscalationKeys] = await Promise.all([
     clearLog(DEMO_PATIENT_ID),
+    clearEscalations(DEMO_PATIENT_ID),
     clearCheckIn(DEMO_PATIENT_ID),
     clearAllReminders(DEMO_PATIENT_ID),
   ]);
@@ -113,6 +115,7 @@ export async function POST() {
     missed: { itemId: DEMO_MISSED_ITEM_ID, days: missedDays },
     // Named, not counted: between takes the operator needs to see that the day
     // a previous rehearsal wrote to actually went.
-    clearedLogDays: cleared,
+    clearedLogDays,
+    clearedEscalationKeys,
   });
 }

@@ -65,13 +65,15 @@ export function TaskRow({
         <p lang="en" className="font-semibold leading-snug text-ink">
           {detail.title}
         </p>
-        <p
-          lang="en"
-          translate="no"
-          className="mt-0.5 text-base leading-relaxed text-ink-muted"
-        >
-          {detail.line}
-        </p>
+        {detail.line === null ? null : (
+          <p
+            lang="en"
+            translate="no"
+            className="mt-0.5 text-base leading-relaxed text-ink-muted"
+          >
+            {detail.line}
+          </p>
+        )}
       </div>
       {/* A red triangle and nothing else asks the reader to know what red means
           here. The word is on a white chip with a red edge rather than in red
@@ -86,7 +88,7 @@ export function TaskRow({
         // mist page under "More on your plan", not only on a white day card.
         // French "Pour votre médecin traitant" is long, so max-w keeps the
         // title the widest thing on the row.
-        <span className="mt-0.5 max-w-[45%] rounded-tactile bg-surface px-2 py-1 text-sm font-medium text-ink-muted">
+        <span className="mt-0.5 max-w-[45%] shrink-0 rounded-tactile bg-surface px-2 py-1 text-sm font-medium text-ink-muted">
           {detail.tag}
         </span>
       )}
@@ -115,7 +117,9 @@ function StatusMark({ status, t }: { status: LogEntry["status"]; t: Strings }) {
 
 type Described = {
   title: string;
-  line: string;
+  // Null when the title already says the job — used for titled care steps so
+  // a recurring daily how-to is not pasted under every day on the timeline.
+  line: string | null;
   tag: string | null;
 };
 
@@ -128,17 +132,22 @@ function describe(item: TimelineItem, t: Strings): Described {
         line: medication.doseDirectionsVerbatim,
         // Purpose lives once on the plan ("Why you take these"), not on every
         // day the dose repeats — a checklist row is name, directions, tick.
+        // No per-row box and no "Medicine" chip: most of today's rows are
+        // medicines, so labelling every one only adds noise.
         tag: null,
       };
     }
     case "instruction": {
       const { instruction } = item;
+      const titled = instruction.titlePlain !== null;
       return {
         title: instruction.titlePlain ?? instruction.detailVerbatim,
-        line: instruction.detailVerbatim,
-        // Whose job it is changes the question the check-in asks, so it is
-        // worth saying on the row too.
-        tag: instruction.actor === "patient" ? null : t.forGp,
+        // Day cards are a checklist. When there is a short title, keep the row
+        // to that; the long how-to still lives on the bundle for voice/letter.
+        line: titled ? null : instruction.detailVerbatim,
+        // Patient care steps are the minority next to medicines, so the quiet
+        // right-hand chip is enough to mark them without boxing the row.
+        tag: instruction.actor === "patient" ? t.taskLabel : t.forGp,
       };
     }
     case "appointment": {

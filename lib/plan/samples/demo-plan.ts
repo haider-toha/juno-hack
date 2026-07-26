@@ -465,6 +465,34 @@ export const DEMO_PLAN = {
         "Patient/daughter counselled as above re infection signs, antibiotic compliance and falls prevention; referral made to community falls clinic.",
       ),
     },
+    // Demo enrichment: a patient-added wound-care step on the freshly seeded
+    // day, alongside medicines. The wording is not transcribed from this
+    // letter; the source below only preserves where its district-nurse contact
+    // came from, and `patient_added` keeps that distinction in the stored plan.
+    {
+      id: "inst-wound-dressing",
+      kind: "wound_care",
+      titlePlain: "Check your wound and change the dressing if needed",
+      detailVerbatim:
+        "Inspect the wound site daily. Change the dressing if it is damp, soiled or lifting at the edges. Contact the district nurses if you notice increased redness, swelling, discharge or an unpleasant smell.",
+      anchor: {
+        kind: "offset",
+        from: "discharge",
+        days: 2,
+        daysUntil: null,
+        approximate: false,
+        verbatim: "from day 2 post-discharge",
+      },
+      recurrence: {
+        timesPerDay: 1,
+        everyDays: 1,
+        until: null,
+      },
+      actor: "patient",
+      contactIds: ["contact-community-services"],
+      enteredBy: "patient_added",
+      source: onPage(2, "District nurses / Falls team"),
+    },
   ],
 
   appointments: [

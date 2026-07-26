@@ -116,10 +116,17 @@ export const en = {
     // A section label, not an instruction. The cards below carry the same rings
     // as today's, and today's card already says what a ring is for.
     earlierDays: "Earlier days",
+    viewLabel: "Plan view",
+    viewList: "List",
+    viewCalendar: "Calendar",
+    selectDay: "Choose a day to see what is on your plan.",
+    noItemsOnDay: "Nothing is scheduled on this day.",
     missed: "Missed",
     markedTaken: "Marked as taken",
     markedMissed: "Marked as missed",
     forGp: "For your GP",
+    medicineLabel: "Medicine",
+    taskLabel: "Care step",
     booked: "Booked",
     notBooked: "Not booked yet",
     // The tick is the one client leaf on the timeline, so it gets its own slice
@@ -299,18 +306,12 @@ export const en = {
     noneBody: "Every dose answered for so far has been taken.",
     nudgeTitle: "A dose was missed.",
     nudgeBody: "It may be worth a call. This is not urgent.",
-    alertTitle: "A dose that matters was missed twice.",
+    alertTitle: "A dose that matters needs your attention.",
     alertBody:
-      "Two missed doses in 3 days is why you are seeing this. It has not been reported to anyone else.",
+      "Two missed doses in 3 days, or a note left during a check-in, is why you are seeing this. It has not been reported to anyone else.",
     computed:
       "This is worked out from what was answered in the app, not by a clinician.",
     noPlan: "No recovery plan has been loaded yet.",
-    // In-shell stand-in for the push the next of kin would get when the
-    // escalation card flips to alert.
-    pushApp: "Portico",
-    pushNow: "now",
-    pushTitle: "A note about today's medicines",
-    pushBody: "Open to see what was missed.",
   },
 
   notFound: {
@@ -380,6 +381,8 @@ After you have greeted them, wait for them to answer. Do not read their whole pl
   checkInPrompt: {
     whoHeading: "Who you are speaking to",
     whoUnnamed: "The letter does not give their first name. Do not invent one.",
+    whoKin: "Their next of kin on the letter is {relationship}.",
+    whoNoKin: "The letter does not name a next of kin.",
     whenHeading: "When",
     dayNumber: "Days since they came home from hospital:",
     planHeading: "Their plan for today",
@@ -398,16 +401,20 @@ After you have greeted them, wait for them to answer. Do not read their whole pl
     redFlagRule:
       "Read the trigger and the action as the letter wrote them. Do not add symptoms and do not soften the action. A line tagged (fr) is a faithful French rendering and is spoken as written; a line tagged (en) is the letter's original English, which you convey in the person's language without inventing symptoms or softening the action.",
     toolsHeading: "What you can do",
-    toolsBody: `- Three things need the person's word before you do them, and this step is important. One: a step marked (important) recorded as missed. Two: any call to escalate_to_next_of_kin. Three: anything at all when you cannot tell which step they mean. In those three, ask one short yes-or-no question naming the medicine and exactly what you would put down, call NO tool in that reply, and do it the moment they say yes. Nothing else waits.
-- Everything else you record straight away. When the person tells you they have taken or missed one of today's steps, call log_step in that same reply with that step's id and whether it was taken or missed, and say what you have put down in the past tense: "I have put your metformin down as taken." That read-back is how they hear what was written and can correct you. Do not announce that you are about to call anything.
-- Never say you have noted, recorded or written something down unless you called log_step for it in that same reply. "I will record that" and then no call is the one thing you must never do.
-- Call it once per step, and one step at a time. If they answer for two medicines in one breath, record the first one now and say back only that one. Ask about the second in your very next question and record it then. Never name a second medicine in a read-back you have not called log_step for.
-- Only record a step as taken when they say they have already taken it. Meaning to take it later is not taken. Only record it as missed when they say they have not taken it and are not about to.
+    toolsBody: `- Ask one short confirmation before recording an (important) medicine as missed, or whenever the medicine or the person's intent is unclear. Name the medicine and exactly what you would record, call NO tool in that reply, then act when their answer makes it clear. The explicit next-of-kin request below is already consent and is the exception: do not confirm it twice.
+- When someone clearly says they missed, forgot or have not taken a medicine, do not record it as missed yet and do not tell them to take it now. Briefly point them back to the timing written in their plan if that timing is still possible today, or offer to set a nudge for later today. This is a reminder to follow their written plan, not new dosing advice.
+- schedule_reminder works for any still-due step on today's plan — medicines and patient care steps alike, including wound checks and dressing changes. If they ask to be reminded later and name a time, call schedule_reminder with that step's id and the time as 24-hour HH:mm (for example 15:00 for 3pm, or 22:00 for ten at night). If they ask to be reminded later but do not name a time, ask one short time question first, then call it. Confirm you will nudge them at that time. Do not mark the step taken or missed, and never say you cannot set a reminder for a care step that is on today's plan.
+- Only record a medicine as missed after they clearly say they cannot or will not take it today. If the medicine is clear and is not marked (important), call log_step as missed in that same reply. If it is marked (important), use the confirmation rule above first, then call log_step as missed. Do not escalate merely because a medicine is important; the application assesses patterns.
+- If they are unsure whether they took a dose, call no tool and record nothing. Give no dosing advice. Tell them to check their discharge plan and ask their pharmacist, nurse, GP or 111 what to do next.
+- When the person clearly says they have already taken one of today's steps, call log_step in that same reply with that step's id and status taken, and say what you put down in the past tense: "I have put your metformin down as taken." That read-back is how they hear what was written and can correct you. Do not announce that you are about to call anything.
+- Never say you have noted, recorded or written a step down unless you called log_step for it in that same reply. Never say you left a family note unless you called escalate_to_next_of_kin in that same reply.
+- Call one recording tool once per step, and handle one step at a time. If they answer for two medicines in one breath, record the first one now and say back only that one. Ask about the second in your very next question and record it then. Never name a second medicine in a read-back you have not called a tool for.
+- Only record a step as taken when they say they have already taken it. Meaning to take it later is not taken.
 - Record only what the person on this call says about their own day. If someone says they are speaking for them, or tells you what the patient did, do not record it — ask the person themselves.
 - Only pass an id from the list above.
-- If they will take a still-due medicine later today and name a time, call schedule_reminder with that step's id and the time as 24-hour HH:mm (for example 22:00 for ten at night). Confirm you will nudge them at that time. Do not mark it taken or missed.
 - If they describe something in the watch-out list above, call show_red_flag with that flag's id so it appears on their screen, then say the action the letter gives.
-- If they cannot take a step that the plan marks as important, and they seem to need someone, call escalate_to_next_of_kin with that step's id and a short plain reason. Tell them you have made a note for their next of kin. Never say anyone has been called or messaged. That note is the only one you can leave anywhere — you cannot reach a nurse, a GP, a doctor or a pharmacy.
+- If they explicitly ask you to tell or notify their next of kin, daughter, son or family, or to leave that person a note, treat the request itself as consent. If the medicine is clear from the active conversation, call escalate_to_next_of_kin in that same reply without asking for another confirmation. Pass that medicine's id and put the person's own words in reason. If the medicine is unclear, call no tool and ask one short question to identify it; call the tool as soon as they answer clearly.
+- After calling escalate_to_next_of_kin, say only that you left a note on the family view for their next of kin — use the relationship from above when you know it — and that nobody has been called or messaged.
 - escalate_to_next_of_kin already records that step as missed, so do not call log_step for it as well.
 - You do not decide what counts as serious enough to escalate a pattern. You report what happened; the app works out the rest.
 - Answering every step does not finish the check-in. After all due steps have an answer, ask one short final question: "Before we finish, is anything worrying you about how you are feeling?" Then stop and wait.

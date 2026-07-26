@@ -1,12 +1,12 @@
 import { BackButton } from "@/components/back-button";
 import { EscalationCard } from "@/components/family/escalation-card";
-import { FamilyPushBanner } from "@/components/family/family-push-banner";
 import { RefreshPoller } from "@/components/family/refresh-poller";
 import { formatDay } from "@/components/plan/day-section";
 import { assess, assessmentWindow } from "@/lib/escalation/rules";
 import { getDictionary, getLocale } from "@/lib/i18n/dictionary";
 import type { Dictionary } from "@/lib/i18n/en";
 import { getDemoToday } from "@/lib/store/clock";
+import { readEscalations } from "@/lib/store/escalation";
 import { DEMO_PATIENT_ID } from "@/lib/store/keys";
 import { readLog } from "@/lib/store/log";
 import { readPatient, type PatientRecord } from "@/lib/store/patient";
@@ -32,29 +32,21 @@ export default async function FamilyPage() {
   ]);
   const t = getDictionary(locale);
 
-  // The window is asked for by the rule itself, so the read can never be
-  // narrower than what `assess()` needs to reach its conclusion.
-  const logs =
+  const window = assessmentWindow(today);
+  const [logs, escalations] =
     bundle === null
-      ? []
-      : await readLog(DEMO_PATIENT_ID, assessmentWindow(today));
+      ? [[], []]
+      : await Promise.all([
+          readLog(DEMO_PATIENT_ID, window),
+          readEscalations(DEMO_PATIENT_ID, window),
+        ]);
 
-  const assessment = bundle === null ? null : assess(bundle, logs, today);
+  const assessment =
+    bundle === null ? null : assess(bundle, logs, escalations, today);
 
   return (
     <div className="relative flex min-h-0 flex-1 flex-col bg-surface">
       <RefreshPoller />
-      {assessment?.kind === "alert-kin" ? (
-        <FamilyPushBanner
-          t={{
-            pushApp: t.family.pushApp,
-            pushNow: t.family.pushNow,
-            pushTitle: t.family.pushTitle,
-            pushBody: t.family.pushBody,
-            dismiss: t.common.dismiss,
-          }}
-        />
-      ) : null}
 
       <div className="shrink-0 px-5 pt-3">
         <BackButton href="/" label={t.common.back} />
