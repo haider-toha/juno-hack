@@ -441,14 +441,43 @@ const STEPS: Step[] = [
         throw new Error(`the "see where it says that" link carries no href`);
       }
       const source = new URL(href, BASE_URL);
-      source.hash = "";
+      must(
+        source.pathname === "/letter",
+        `the link should open the in-app letter viewer, got ${source.pathname}`,
+        href,
+      );
+      must(
+        source.searchParams.get("flag") !== null,
+        "the letter link should name the red-flag it came from",
+        href,
+      );
 
-      const letter = await page.request.get(source.href);
+      await link.click();
+      await page.getByRole("heading", { name: "Your letter" }).waitFor({
+        state: "visible",
+        timeout: 15_000,
+      });
+      // The highlight is aria-hidden paint over the glyphs — its id is the
+      // stable proof the quote was found and marked, not just that a canvas
+      // painted.
+      await page.locator("#letter-highlight-0").waitFor({
+        state: "visible",
+        timeout: 20_000,
+      });
+      await shot(page, "letter-highlight");
+
+      // The viewer loads bytes through the private blob proxy. Hit that route
+      // the same way the canvas does, so a pretty page over a missing PDF
+      // still fails the arc.
+      const patientId = source.searchParams.get("patientId") ?? "demo";
+      const letter = await page.request.get(
+        `${BASE_URL}/api/blob/source/letters/demo/02_Whitfield_Harold_Pneumonia.pdf?patientId=${encodeURIComponent(patientId)}`,
+      );
       const body = await letter.body();
       const preview = body.subarray(0, 300).toString("utf8");
       must(
         letter.status() === 200,
-        `${source.pathname} should serve the letter, got HTTP ${letter.status()}`,
+        `the blob proxy should serve the letter, got HTTP ${letter.status()}`,
         preview,
       );
       must(
@@ -456,11 +485,9 @@ const STEPS: Step[] = [
         `the letter should be served as a PDF, got content-type "${letter.headers()["content-type"] ?? "(none)"}"`,
         preview,
       );
-      // A 200 with the right header can still be an HTML error page. The magic
-      // bytes are the only proof the patient gets their letter.
       must(
         body.subarray(0, 5).toString("utf8") === "%PDF-",
-        "the bytes behind the link should be a PDF, not an error page wearing its content-type",
+        "the bytes behind the viewer should be a PDF, not an error page wearing its content-type",
         preview,
       );
     },

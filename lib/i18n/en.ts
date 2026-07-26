@@ -32,9 +32,14 @@ export const en = {
     greeting: "Good afternoon.",
     subtitle: "How are you doing today?",
     checkInTitle: "Start today's check-in",
-    checkInBlurb: "I'll talk you through it.",
+    // Quiet-row subtitle when check-in is demoted (e.g. adding another letter).
+    checkInBlurb: "A short voice chat about today.",
     planTitle: "See my recovery plan",
     planBlurb: "Day by day, from discharge.",
+    // Second-reader surface — the daughter's phone in the demo. Same product,
+    // different reader; linked here so the beat is not a hidden URL.
+    familyTitle: "Family view",
+    familyBlurb: "What your next of kin can see.",
     // Button label — opens the camera or the file picker on this screen.
     letterTitle: "Take a photo or upload a PDF",
     // Names the exact document so "a PDF" is not a guess.
@@ -131,6 +136,23 @@ export const en = {
     blurb: "Tell me how today has gone and I'll walk you through what's left.",
   },
 
+  // Shown after the voice session ends — hang-up, agent goodbye, or disconnect.
+  // It surfaces the same Redis notes the tools wrote during the call.
+  checkInSummary: {
+    metaTitle: "Check-in notes",
+    title: "Today's check-in",
+    blurb: "Here is what was noted from that conversation.",
+    empty: "Nothing was noted this time.",
+    taken: "Taken",
+    missed: "Missed",
+    unanswered: "Not covered",
+    markedTaken: "Marked as taken",
+    markedMissed: "Marked as missed",
+    seePlan: "See my plan",
+    seeFamily: "Open family view",
+    done: "Done",
+  },
+
   // The voice screen's chrome. `speaking` and `listening` are read out by
   // aria-live, so they are exactly the "conditional or rarely used" text that
   // must not leak English into a French screen.
@@ -142,6 +164,12 @@ export const en = {
     incomingLabel: "Incoming check-in",
     incomingTitle: "Portico — your check-in",
     incomingBlurb: "It is time for today's check-in. Tap to answer.",
+    // In-shell banner that stands in for a lock-screen push when the operator
+    // rings a check-in. Same beat the real notification would open.
+    pushApp: "Portico",
+    pushNow: "now",
+    pushTitle: "Time for your check-in",
+    pushBody: "Tap to talk with Portico about today's plan.",
     answer: "Answer",
     // Shown while one of the agent's server tools is in flight, so a write to
     // the record is visible as it happens rather than only claimed afterwards.
@@ -187,6 +215,21 @@ export const en = {
   // Locked D7. In French the red-flag card shows the French translation AND the
   // clinician's exact English words, labelled as the original. These are the
   // labels that dual render needs; the card itself is Task A9.
+  // The in-app letter viewer behind "See where it says that". Opens on the
+  // page the quote lives on and paints a highlight over the matching glyphs.
+  letter: {
+    metaTitle: "Your letter",
+    title: "Your letter",
+    blurb: "The line this comes from.",
+    blurbPage: "The line this comes from, on page {page}.",
+    loading: "Opening your letter…",
+    failed: "We could not open that letter. Go back and try again.",
+    missing: "We could not find that place in your letter.",
+    notFound:
+      "We opened the page, but could not mark the exact line. Look for the words from your plan on this page.",
+    pageLabel: "Page {page} of your discharge letter",
+  },
+
   redFlag: {
     verbatim: "The exact words from your letter",
     viewSource: "See where it says that",
@@ -232,8 +275,8 @@ export const en = {
   family: {
     metaTitle: "Family view",
     title: "Family view",
-    // Followed by the letter's own word for the relationship, which is often
-    // all it gives — she is never named on the page, so she is not named here.
+    // Followed by name · relationship when the letter named them, otherwise
+    // just the relationship ("Daughter") — inventing a forename is a lie.
     sharedWith: "Next of kin on the letter:",
     noKin: "Nobody is named as next of kin on the letter.",
     todayLabel: "Today",
@@ -244,10 +287,15 @@ export const en = {
     alertTitle: "A dose that matters was missed twice.",
     alertBody:
       "Two missed doses in 3 days is why you are seeing this. It has not been reported to anyone else.",
-    missedOn: "Missed on",
     computed:
       "This is worked out from what was answered in the app, not by a clinician.",
     noPlan: "No recovery plan has been loaded yet.",
+    // In-shell stand-in for the push the next of kin would get when the
+    // escalation card flips to alert.
+    pushApp: "Portico",
+    pushNow: "now",
+    pushTitle: "A note about today's medicines",
+    pushBody: "Open to see what was missed.",
   },
 
   notFound: {
@@ -259,6 +307,7 @@ export const en = {
 
   common: {
     back: "Back",
+    dismiss: "Dismiss",
   },
 
   // The voice persona, authored per language and never machine-translated. This
@@ -278,7 +327,7 @@ How to answer:
 - Answer only from the plan below. If something is not written there, say you do not have it written down, and offer to flag it for their nurse or GP.
 - Never invent a medication, a dose, a date or an instruction.
 - You are not a clinician and you never make a clinical judgement. If the person describes something worrying, tell them plainly to call 111, or 999 if it sounds severe, and stop there.
-- After you explain a step, check your own explanation rather than the person. Ask something like: just so I know I explained that clearly, when are you taking the next one?
+- After you explain a step, ask one short, direct question about that exact step. Name the medicine or task, and ask for one clear fact — usually the time. Good: "What time are you taking your next metformin?" Bad: anything about whether you explained clearly, or "what should you say". The person must know exactly what to answer.
 
 After you have greeted them, wait for them to answer. Do not read their whole plan back to them.`,
     // Plan-aware, not generic. The opening line names the one thing this call
@@ -328,7 +377,8 @@ After you have greeted them, wait for them to answer. Do not read their whole pl
 - Only pass an id from the list above. If you cannot tell which step they mean, ask which one before calling anything.
 - If they describe something in the watch-out list above, call show_red_flag with that flag's id so it appears on their screen, then say the action the letter gives.
 - If they cannot take a step that the plan marks as important, and they seem to need someone, call escalate_to_next_of_kin with that step's id and a short plain reason. Tell them you have made a note for their next of kin. Never say anyone has been called or messaged.
-- You do not decide what counts as serious enough to escalate a pattern. You report what happened; the app works out the rest.`,
+- You do not decide what counts as serious enough to escalate a pattern. You report what happened; the app works out the rest.
+- When the check-in is finished, say a short warm goodbye, then call end_check_in. Do not keep asking questions after goodbye. If end_check_in is not available, call end_call instead.`,
     idNote:
       "Each step's id is in brackets. Ids are for the tools only. Never read one out loud.",
   },

@@ -1,3 +1,4 @@
+import { BackButton } from "@/components/back-button";
 import { IconKeyboard, IconMic } from "@/components/icons";
 import { LanguagePicker } from "@/components/language-picker";
 import { OrbSphere } from "@/components/voice/orb";
@@ -34,9 +35,9 @@ export function IdleView({
 }) {
   return (
     <div className="flex min-h-0 flex-1 flex-col bg-surface px-5">
-      {/* The language control keeps the same top-right position it holds on
-          every other screen, so it is never hunted for. */}
-      <div className="flex shrink-0 justify-end pt-3">
+      {/* Same chrome as plan/family: back on the left, language on the right. */}
+      <div className="flex shrink-0 items-center justify-between pt-3">
+        <BackButton href="/" label={strings.common.back} />
         <LanguagePicker locale={locale} t={strings.languagePicker} />
       </div>
       <div className="flex flex-1 flex-col items-center justify-center gap-6 text-center">

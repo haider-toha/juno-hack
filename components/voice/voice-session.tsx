@@ -5,11 +5,11 @@ import {
   useConversation,
   useConversationClientTool,
 } from "@elevenlabs/react";
-import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { z } from "zod";
 
-import { IconMenu } from "@/components/icons";
+import { IconChevron } from "@/components/icons";
 import { LanguagePicker } from "@/components/language-picker";
 import { Composer } from "@/components/voice/composer";
 import { IdleView } from "@/components/voice/idle-view";
@@ -22,7 +22,9 @@ import type { Locale } from "@/lib/i18n/locales";
 
 // The two internal view-states of a voice screen. The provider + session live
 // across both, mounted once; entering the conversation never unmounts the
-// session. These are NOT sub-routes and read no URL state.
+// session. These are NOT sub-routes and read no URL state. Summary is a real
+// route (`/check-in/summary`) so it can read fresh Redis notes as a Server
+// Component after the socket tears down.
 type Phase = "idle" | "conversation";
 
 // Only the slices this tree renders, never the whole dictionary — every prop
@@ -35,6 +37,7 @@ export type VoiceStrings = Pick<
   | "suggestions"
   | "languagePicker"
   | "redFlag"
+  | "common"
 >;
 
 // What `show_red_flag` puts on screen. Resolved on the server so the client
@@ -96,6 +99,15 @@ const REVEAL_LEAD_MS = 120;
 // the family dashboard's refresh, so both screens react on the same beat.
 const INCOMING_POLL_MS = 5000;
 
+// Farewell fallback when `end_check_in` is not yet attached on the agent: once
+// the agent says goodbye and finishes speaking, tear the session down rather
+// than leave the orb on "Listening".
+const FAREWELL_RE =
+  /\b(goodbye|good\s*bye|bye for now|au revoir|à bientôt|a bientôt|bonne nuit)\b/i;
+
+// Brief pause after speech ends so the last syllable is not cut off.
+const FAREWELL_SETTLE_MS = 900;
+
 const incomingSchema = z.object({ raisedAt: z.string().nullable() });
 
 // The SDK is provider-based: the provider holds the session machinery and the
@@ -122,6 +134,7 @@ function Session({
   redFlags,
 }: VoiceSessionProps) {
   const t = strings.voice;
+  const router = useRouter();
   const [phase, setPhase] = useState<Phase>("idle");
   const [incoming, setIncoming] = useState(incomingAt !== null);
   // The flag the agent put on screen, if any. Set only by the client tool, so
@@ -140,6 +153,8 @@ function Session({
   const [revealedCount, setRevealedCount] = useState(0);
   const [agentThinking, setAgentThinking] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Agent goodbye / end_check_in — wait for speaking to finish, then leave.
+  const [pendingClose, setPendingClose] = useState(false);
 
   // Absolute spoken-at timestamps per char of the *current* agent response.
   // A ref (not state) because the reveal interval mutates it on every audio
@@ -158,6 +173,14 @@ function Session({
   // flush on connect so a question entered during the ~1-2s start handshake still
   // reaches the agent instead of being silently dropped.
   const pendingMessages = useRef<string[]>([]);
+  // Guards double navigation when hang-up, end_check_in, farewell, and
+  // disconnect all race toward the summary screen.
+  const finishingRef = useRef(false);
+  const phaseRef = useRef<Phase>(phase);
+
+  useEffect(() => {
+    phaseRef.current = phase;
+  }, [phase]);
 
   // The SDK's convenience hook: it both reads status / exposes the session
   // controls AND registers these callbacks with the provider via a latest-
@@ -179,6 +202,11 @@ function Session({
             if (last?.role === "agent" && last.text === m.message) return t;
             return [...t, { role: "agent", text: m.message }];
           });
+          // Soft close: if the agent said goodbye and the dedicated tool is not
+          // wired on the ElevenLabs agent yet, still end after speech settles.
+          if (FAREWELL_RE.test(m.message)) {
+            setPendingClose(true);
+          }
         }
       },
       onAgentChatResponsePart: (part) => {
@@ -225,17 +253,42 @@ function Session({
       // Error object. Surface it inline rather than logging to a console nobody
       // watches during a demo.
       onError: (message) => setError(message),
-      onStatusChange: ({ status }) => {
-        if (status === "disconnected") {
+      onStatusChange: ({ status: next }) => {
+        if (next === "disconnected") {
           setAgentLive("");
           setRevealedCount(0);
           setAgentThinking(false);
           setToolInFlight(null);
           timeline.current = { spokenAtMs: [] };
+          // Built-in end_call (or a remote hang-up) tears the socket without
+          // going through our hang-up button — still land on the notes screen.
+          if (phaseRef.current === "conversation" && !finishingRef.current) {
+            finishingRef.current = true;
+            setPendingClose(false);
+            router.push("/check-in/summary");
+          }
         }
       },
     });
   const sessionLive = status === "connected" || status === "connecting";
+
+  // Shared teardown for hang-up and the farewell-settle effect. The
+  // finishingRef guard lets disconnect, settle, and the X race without
+  // pushing the summary twice.
+  function goToSummary() {
+    if (finishingRef.current) return;
+    finishingRef.current = true;
+    setPendingClose(false);
+    endSession();
+    setTranscript([]);
+    setShownFlagId(null);
+    setAgentLive("");
+    setRevealedCount(0);
+    setAgentThinking(false);
+    setToolInFlight(null);
+    timeline.current = { spokenAtMs: [] };
+    router.push("/check-in/summary");
+  }
 
   // The agent putting a red flag on screen while it reads the action aloud.
   // It never throws: an uncaught error here reaches onError and paints the
@@ -252,7 +305,29 @@ function Session({
     return "Shown on screen.";
   });
 
+  // Preferred close path: agent says goodbye, then calls this. We wait for
+  // speaking to finish (see settle effect) so the farewell is not cut off.
+  useConversationClientTool("end_check_in", () => {
+    setPendingClose(true);
+    return "Check-in closed.";
+  });
+
   const shownFlag = redFlags.find((flag) => flag.id === shownFlagId) ?? null;
+
+  // Once goodbye (or end_check_in) is queued, wait until the agent is no longer
+  // speaking, settle briefly, then leave for the notes screen.
+  useEffect(() => {
+    if (phase !== "conversation" || !pendingClose) return;
+    if (finishingRef.current) return;
+    if (mode === "speaking" || agentThinking) return;
+    const settle = window.setTimeout(() => {
+      goToSummary();
+    }, FAREWELL_SETTLE_MS);
+    return () => window.clearTimeout(settle);
+    // goToSummary closes over endSession/router; both are stable enough that
+    // re-running on speaking/thinking transitions is the behaviour we want.
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- hang-up shares goToSummary
+  }, [phase, pendingClose, mode, agentThinking]);
 
   // While the screen is idle, ask whether a check-in has been raised. It stops
   // the moment the call starts, so nothing polls across a live session.
@@ -361,6 +436,8 @@ function Session({
   // reached within the gesture; never move it into an effect, timeout or router
   // transition — Safari will refuse the mic outside the gesture.
   function begin(focusInput: boolean) {
+    finishingRef.current = false;
+    setPendingClose(false);
     setEntryMode(focusInput ? "text" : "voice");
     void connect();
     setPhase("conversation");
@@ -374,13 +451,19 @@ function Session({
     }
   }
 
-  // The docked X. Hiding the live view without unmounting the provider would
-  // leave the mic / WebSocket alive, so ending here is REQUIRED, not redundant
-  // unmount teardown — the provider stays mounted.
+  // The docked X. Ending here is REQUIRED — hiding the live view without
+  // endSession would leave the mic / WebSocket alive. After teardown, the notes
+  // screen shows what the tools wrote.
   function end() {
+    goToSummary();
+  }
+
+  function leaveHome() {
+    if (finishingRef.current) return;
+    finishingRef.current = true;
+    setPendingClose(false);
     endSession();
-    setTranscript([]);
-    setPhase("idle");
+    router.push("/");
   }
 
   // Send a question through the shared session, or queue it when the socket isn't
@@ -418,13 +501,14 @@ function Session({
   return (
     <div className="relative flex min-h-0 flex-1 flex-col bg-surface">
       <div className="flex shrink-0 items-center justify-between px-4 pt-3 pb-2">
-        <Link
-          href="/"
-          aria-label={t.menu}
+        <button
+          type="button"
+          onClick={leaveHome}
+          aria-label={strings.common.back}
           className="grid size-11 place-items-center rounded-tactile text-ink-muted transition-colors duration-150 ease-out hover:bg-mist focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent active:opacity-60"
         >
-          <IconMenu className="size-5" />
-        </Link>
+          <IconChevron className="size-5 rotate-180" />
+        </button>
         <LanguagePicker locale={locale} t={strings.languagePicker} />
       </div>
 

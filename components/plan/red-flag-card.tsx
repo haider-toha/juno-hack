@@ -209,12 +209,10 @@ function SourceTrace({
   if (document === undefined) return null;
 
   const page = flag.source.page;
-  const href = `/api/blob/source/${document.blobPathname
-    .split("/")
-    .map(encodeURIComponent)
-    .join("/")}?patientId=${encodeURIComponent(patientId)}${
-    page === null ? "" : `#page=${page}`
-  }`;
+  // In-app viewer (not a raw PDF tab): the page resolves this flag's quote and
+  // highlights the glyphs. `document` is only a presence check here — the
+  // letter route re-reads the plan so a rewritten query cannot point elsewhere.
+  const href = `/letter?patientId=${encodeURIComponent(patientId)}&flag=${encodeURIComponent(flag.id)}`;
 
   // Provenance, not an action: it is the quietest thing that still reads as a
   // link, so it cannot compete with the number a frightened patient should be
@@ -222,13 +220,10 @@ function SourceTrace({
   return (
     <a
       href={href}
-      target="_blank"
-      rel="noreferrer"
       className="mt-2 flex min-h-11 items-center text-base text-ink-muted underline underline-offset-4 transition duration-150 ease-out hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent active:opacity-80"
     >
       {t.viewSource}
       {page === null ? "" : t.sourcePage.replace("{page}", String(page))}
-      <span className="sr-only">{t.newTab}</span>
     </a>
   );
 }

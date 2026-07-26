@@ -1,7 +1,6 @@
 import { ImageResponse } from "next/og";
 
-// Tab favicon: the wordmark collapses to "p." — full "portico." is illegible
-// at 32px. Indigo period is the same accent as `PorticoWordmark`.
+// Tab favicon: "p" + indigo square period — same grammar as the wordmark.
 export const size = { width: 32, height: 32 };
 export const contentType = "image/png";
 
@@ -16,15 +15,34 @@ export default function Icon() {
           alignItems: "center",
           justifyContent: "center",
           background: "#ffffff",
-          fontSize: 22,
-          fontWeight: 500,
-          letterSpacing: "0.02em",
-          color: "#0d1b3d",
           fontFamily:
             'ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif',
         }}
       >
-        p<span style={{ color: "#2d51fb" }}>.</span>
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "row",
+            alignItems: "flex-end",
+            fontSize: 22,
+            fontWeight: 500,
+            letterSpacing: "0.02em",
+            color: "#0d1b3d",
+            lineHeight: 1,
+          }}
+        >
+          <span>p</span>
+          <div
+            style={{
+              width: 5,
+              height: 5,
+              marginLeft: 1,
+              marginBottom: 2,
+              background: "#2d51fb",
+              borderRadius: 1,
+            }}
+          />
+        </div>
       </div>
     ),
     { ...size },

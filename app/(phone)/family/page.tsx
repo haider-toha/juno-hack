@@ -1,12 +1,15 @@
 import { BackButton } from "@/components/back-button";
-import { EscalationCard, formatDay } from "@/components/family/escalation-card";
+import { EscalationCard } from "@/components/family/escalation-card";
+import { FamilyPushBanner } from "@/components/family/family-push-banner";
 import { RefreshPoller } from "@/components/family/refresh-poller";
+import { formatDay } from "@/components/plan/day-section";
 import { assess, assessmentWindow } from "@/lib/escalation/rules";
 import { getDictionary, getLocale } from "@/lib/i18n/dictionary";
+import type { Dictionary } from "@/lib/i18n/en";
 import { getDemoToday } from "@/lib/store/clock";
 import { DEMO_PATIENT_ID } from "@/lib/store/keys";
 import { readLog } from "@/lib/store/log";
-import { readPatient } from "@/lib/store/patient";
+import { readPatient, type PatientRecord } from "@/lib/store/patient";
 import { readPlan } from "@/lib/store/plan";
 
 export async function generateMetadata() {
@@ -39,8 +42,19 @@ export default async function FamilyPage() {
   const assessment = bundle === null ? null : assess(bundle, logs, today);
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col bg-surface">
+    <div className="relative flex min-h-0 flex-1 flex-col bg-surface">
       <RefreshPoller />
+      {assessment?.kind === "alert-kin" ? (
+        <FamilyPushBanner
+          t={{
+            pushApp: t.family.pushApp,
+            pushNow: t.family.pushNow,
+            pushTitle: t.family.pushTitle,
+            pushBody: t.family.pushBody,
+            dismiss: t.common.dismiss,
+          }}
+        />
+      ) : null}
 
       <div className="shrink-0 px-5 pt-3">
         <BackButton href="/" label={t.common.back} />
@@ -51,15 +65,13 @@ export default async function FamilyPage() {
           {t.family.title}
         </h1>
         <p className="mt-2 text-base leading-relaxed text-ink-muted">
-          {patient?.nextOfKin === null || patient?.nextOfKin === undefined
-            ? t.family.noKin
-            : `${t.family.sharedWith} ${patient.nextOfKin.relationshipVerbatim}`}
+          {kinLine(patient?.nextOfKin ?? null, t.family)}
         </p>
         <p className="mt-1 text-sm text-ink-faint">
           {t.family.todayLabel} · {formatDay(today, locale)}
         </p>
 
-        <div className="mt-5">
+        <div className="mt-6">
           {assessment === null ? (
             <p className="rounded-card border border-rule bg-surface p-5 text-base text-ink-muted shadow-card">
               {t.family.noPlan}
@@ -76,4 +88,18 @@ export default async function FamilyPage() {
       </div>
     </div>
   );
+}
+
+// The letter often only gives the relationship ("Daughter"). Name is shown
+// when the record has one; inventing "Dora" when the letter never said it is
+// the silent English fallthrough the schema's null name exists to prevent.
+function kinLine(
+  kin: PatientRecord["nextOfKin"],
+  t: Dictionary["family"],
+): string {
+  if (kin === null) return t.noKin;
+  if (kin.name === null) {
+    return `${t.sharedWith} ${kin.relationshipVerbatim}`;
+  }
+  return `${t.sharedWith} ${kin.name} · ${kin.relationshipVerbatim}`;
 }

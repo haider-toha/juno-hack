@@ -162,7 +162,15 @@ export function Timeline({
               <Group title={t.anyTime} blurb={t.anyTimeBlurb}>
                 <ul className="flex flex-col gap-1">
                   {standing.map((item) => (
-                    <TaskRow key={item.id} item={item} status={null} t={t} />
+                    <TaskRow
+                      key={item.id}
+                      item={item}
+                      // Voice / manual ticks for as-needed steps are keyed to
+                      // today — without this lookup a log_step write was real
+                      // in Redis and invisible on the plan.
+                      status={statuses.get(`${today}:${item.id}`) ?? null}
+                      t={t}
+                    />
                   ))}
                 </ul>
               </Group>

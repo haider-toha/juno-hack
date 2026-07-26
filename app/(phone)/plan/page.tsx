@@ -2,6 +2,7 @@ import Link from "next/link";
 
 import { BackButton } from "@/components/back-button";
 import { primaryButton } from "@/components/button-styles";
+import { RefreshPoller } from "@/components/family/refresh-poller";
 import { IconUpload } from "@/components/icons";
 import { formatDay } from "@/components/plan/day-section";
 import { RedFlagCard } from "@/components/plan/red-flag-card";
@@ -109,6 +110,9 @@ export default async function PlanPage() {
   // <main> alone cannot paint past its flex height when the timeline is tall.
   return (
     <main className="flex min-h-0 flex-1 flex-col bg-mist px-6">
+      {/* Same beat as /family: a voice check-in on another tab writes ticks
+          the open plan must notice without a manual reload. */}
+      <RefreshPoller />
       <div className="-ml-2.5 shrink-0 pt-2">
         <BackButton href="/" label={t.common.back} />
       </div>

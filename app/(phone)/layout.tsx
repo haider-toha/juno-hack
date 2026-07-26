@@ -1,5 +1,8 @@
 import type { ReactNode } from "react";
 
+import { IncomingPushBanner } from "@/components/phone/incoming-push-banner";
+import { getDictionary, getLocale } from "@/lib/i18n/dictionary";
+
 // The shared mobile app-shell AND the Mac-demo iPhone frame in one server-only
 // route-group layout. Route groups don't change URLs, so every screen inside
 // keeps its own top-level path. The FRAME owns the height — children never use
@@ -7,7 +10,14 @@ import type { ReactNode } from "react";
 // overflow the bezel). The iOS chrome (status bar / Dynamic Island / home
 // indicator) is lg-only: on a real phone the OS draws it, so the frame collapses
 // to full-bleed below lg.
-export default function PhoneLayout({ children }: { children: ReactNode }) {
+export default async function PhoneLayout({
+  children,
+}: {
+  children: ReactNode;
+}) {
+  const locale = await getLocale();
+  const t = getDictionary(locale);
+
   return (
     <div className="min-h-dvh bg-mist lg:grid lg:min-h-dvh lg:place-items-center lg:py-10">
       {/* device — a FIXED height (h-dvh on a phone, 852px on the Mac) so a page
@@ -91,6 +101,18 @@ export default function PhoneLayout({ children }: { children: ReactNode }) {
         <div
           aria-hidden
           className="absolute left-1/2 top-[11px] hidden h-[26px] w-[108px] -translate-x-1/2 rounded-full bg-bezel lg:block"
+        />
+
+        {/* Demo stand-in for a lock-screen push. Absolute over the shell so it
+            can land on home / plan the way a real notification would. */}
+        <IncomingPushBanner
+          t={{
+            pushApp: t.voice.pushApp,
+            pushNow: t.voice.pushNow,
+            pushTitle: t.voice.pushTitle,
+            pushBody: t.voice.pushBody,
+            dismiss: t.common.dismiss,
+          }}
         />
 
         {/* app shell — the scrollable content region; safe-area insets applied

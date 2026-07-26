@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none">
+  <!-- Same mark as brand/favicon-p.svg — lowercase p + accent period, as an
+       image so notification chrome never re-typesets the lockup. Square period
+       matches brand/portico-wordmark.png. -->
+  <rect width="32" height="32" rx="7" fill="#0d1b3d"/>
+  <text
+    x="13"
+    y="23"
+    text-anchor="middle"
+    font-family="ui-sans-serif, system-ui, -apple-system, sans-serif"
+    font-size="20"
+    font-weight="500"
+    fill="#ffffff"
+  >p</text>
+  <rect x="20.5" y="20" width="4" height="4" rx="0.6" fill="#2d51fb"/>
+</svg>

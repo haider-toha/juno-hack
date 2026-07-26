@@ -21,9 +21,12 @@ export const fr = {
     greeting: "Bon après-midi.",
     subtitle: "Comment allez-vous aujourd'hui ?",
     checkInTitle: "Faire le point du jour",
-    checkInBlurb: "Je vous guide pas à pas.",
+    // Quiet-row subtitle when check-in is demoted (e.g. adding another letter).
+    checkInBlurb: "Un court échange vocal sur votre journée.",
     planTitle: "Voir mon plan de rétablissement",
     planBlurb: "Jour par jour, depuis votre sortie.",
+    familyTitle: "Espace proche",
+    familyBlurb: "Ce que votre proche peut voir.",
     letterTitle: "Prenez une photo ou ajoutez un PDF",
     letterHint:
       "Votre lettre de sortie d'hôpital. Photographiez chaque page, ou ajoutez le PDF.",
@@ -112,6 +115,21 @@ export const fr = {
       "Racontez-moi votre journée et je vous rappelle ce qu'il reste à faire.",
   },
 
+  checkInSummary: {
+    metaTitle: "Notes du point du jour",
+    title: "Point du jour",
+    blurb: "Voici ce qui a été noté pendant cette conversation.",
+    empty: "Rien n'a été noté cette fois.",
+    taken: "Pris",
+    missed: "Manqué",
+    unanswered: "Pas abordé",
+    markedTaken: "Noté comme pris",
+    markedMissed: "Noté comme manqué",
+    seePlan: "Voir mon plan",
+    seeFamily: "Ouvrir l'espace proche",
+    done: "Terminer",
+  },
+
   voice: {
     start: "Commencer à parler",
     typeInstead: "Écrire plutôt",
@@ -119,6 +137,10 @@ export const fr = {
     incomingTitle: "Portico — votre point du jour",
     incomingBlurb:
       "C'est l'heure de votre point du jour. Touchez pour répondre.",
+    pushApp: "Portico",
+    pushNow: "maintenant",
+    pushTitle: "C'est l'heure de votre point du jour",
+    pushBody: "Touchez pour parler avec Portico de votre plan du jour.",
     answer: "Répondre",
     noting: "J'en prends note…",
     menu: "Menu",
@@ -155,6 +177,20 @@ export const fr = {
   languagePicker: {
     label: "Langue",
     change: "Changer de langue",
+  },
+
+  letter: {
+    metaTitle: "Votre lettre",
+    title: "Votre lettre",
+    blurb: "La phrase dont cela vient.",
+    blurbPage: "La phrase dont cela vient, page {page}.",
+    loading: "Ouverture de votre lettre…",
+    failed:
+      "Nous n'avons pas pu ouvrir cette lettre. Revenez en arrière et réessayez.",
+    missing: "Nous n'avons pas trouvé cet endroit dans votre lettre.",
+    notFound:
+      "Nous avons ouvert la page, mais n'avons pas pu marquer la phrase exacte. Cherchez les mots de votre plan sur cette page.",
+    pageLabel: "Page {page} de votre lettre de sortie",
   },
 
   redFlag: {
@@ -205,10 +241,13 @@ export const fr = {
     alertTitle: "Une dose importante a été manquée deux fois.",
     alertBody:
       "Deux doses manquées en 3 jours : voilà pourquoi ce message s'affiche. Personne d'autre n'en a été informé.",
-    missedOn: "Manquée le",
     computed:
       "Ceci est calculé à partir des réponses données dans l'application, pas par un soignant.",
     noPlan: "Aucun plan de rétablissement n'a encore été chargé.",
+    pushApp: "Portico",
+    pushNow: "maintenant",
+    pushTitle: "Une note sur les médicaments du jour",
+    pushBody: "Ouvrez pour voir ce qui a été manqué.",
   },
 
   notFound: {
@@ -220,6 +259,7 @@ export const fr = {
 
   common: {
     back: "Retour",
+    dismiss: "Fermer",
   },
 
   persona: {
@@ -235,7 +275,7 @@ Comment répondre :
 - Répondez uniquement à partir du plan ci-dessous. Si une chose n'y figure pas, dites que vous ne l'avez pas notée, et proposez de la signaler à son infirmier ou à son médecin.
 - N'inventez jamais un médicament, une dose, une date ou une consigne.
 - Vous n'êtes pas soignant et vous ne portez jamais de jugement médical. Si la personne décrit quelque chose d'inquiétant, dites-lui simplement d'appeler le 111, ou le 999 si cela semble grave, puis arrêtez-vous là.
-- Après avoir expliqué une étape, vérifiez votre propre explication, et non la personne. Demandez par exemple : pour être sûr d'avoir été clair, à quelle heure prenez-vous la prochaine ?
+- Après avoir expliqué une étape, posez une question courte et directe sur cette étape précise. Nommez le médicament ou la tâche, et demandez un fait clair — en général l'heure. Bien : « À quelle heure prenez-vous votre prochain metformine ? » Mal : demander si vous avez bien expliqué, ou « que devez-vous dire ». La personne doit savoir exactement quoi répondre.
 
 Après votre salutation, attendez sa réponse. Ne relisez pas tout son plan.`,
     firstMessage:
@@ -274,7 +314,8 @@ Après votre salutation, attendez sa réponse. Ne relisez pas tout son plan.`,
 - N'utilisez qu'un identifiant de la liste ci-dessus. Si vous ne savez pas de quelle étape il s'agit, demandez laquelle avant d'appeler quoi que ce soit.
 - Si elle décrit une chose de la liste à surveiller, appelez show_red_flag avec l'identifiant de ce signe pour qu'il s'affiche à l'écran, puis dites la consigne que donne la lettre.
 - Si elle ne peut pas faire une étape que le plan signale comme importante, et qu'elle semble avoir besoin de quelqu'un, appelez escalate_to_next_of_kin avec l'identifiant de cette étape et une raison courte et simple. Dites-lui que vous avez laissé une note pour son proche. Ne dites jamais que quelqu'un a été appelé ou contacté.
-- Ce n'est pas à vous de décider si une série d'oublis est grave. Vous rapportez ce qui s'est passé ; l'application fait le reste.`,
+- Ce n'est pas à vous de décider si une série d'oublis est grave. Vous rapportez ce qui s'est passé ; l'application fait le reste.
+- Quand le point du jour est terminé, dites un court au revoir chaleureux, puis appelez end_check_in. Ne posez plus de questions après l'au revoir. Si end_check_in n'est pas disponible, appelez end_call à la place.`,
     idNote:
       "L'identifiant de chaque étape est entre crochets. Les identifiants servent uniquement aux outils. Ne les dites jamais à voix haute.",
   },

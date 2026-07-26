@@ -1,7 +1,13 @@
 import Link from "next/link";
 
 import { primaryButton } from "@/components/button-styles";
-import { IconDoc, IconLock, IconMic, IconUpload } from "@/components/icons";
+import {
+  IconAlert,
+  IconDoc,
+  IconLock,
+  IconMic,
+  IconUpload,
+} from "@/components/icons";
 import { LanguagePicker } from "@/components/language-picker";
 import { PorticoWordmark } from "@/components/portico-wordmark";
 import { UploadPanel } from "@/components/upload/upload-panel";
@@ -56,12 +62,22 @@ export default async function HomePage({
               title: t.home.checkInTitle,
               blurb: t.home.checkInBlurb,
             },
+            {
+              href: "/family",
+              title: t.home.familyTitle,
+              blurb: t.home.familyBlurb,
+            },
           ]
         : [
             {
               href: "/plan",
               title: t.home.planTitle,
               blurb: t.home.planBlurb,
+            },
+            {
+              href: "/family",
+              title: t.home.familyTitle,
+              blurb: t.home.familyBlurb,
             },
             {
               href: "/?letter=1",
@@ -71,9 +87,11 @@ export default async function HomePage({
           ];
 
   // Surface over the shell's mist scrollport — home is white; secondary
-  // controls are mist and would disappear on a mist page.
+  // controls are mist and would disappear on a mist page. lg:-mb-5 / lg:pb-5
+  // pulls the white canvas over the shell's home-indicator pad so mist does
+  // not peek under the bar (other screens keep mist there on purpose).
   return (
-    <main className="flex min-h-0 flex-1 flex-col bg-surface px-6">
+    <main className="flex min-h-0 flex-1 flex-col bg-surface px-6 lg:-mb-5 lg:pb-5">
       {/* The language control sits top-right here and on every other screen, so
           it is always in the same place. -mr-2.5 pulls its padding back to the
           page gutter so the glyph optically aligns with the content below. */}
@@ -84,7 +102,7 @@ export default async function HomePage({
         </div>
       </header>
 
-      <div className="shrink-0 pt-6">
+      <div className="shrink-0 pt-12">
         <h1 className="font-display text-3xl font-bold tracking-tight">
           {t.home.greeting}
         </h1>
@@ -113,21 +131,18 @@ export default async function HomePage({
         // than a taller `min-h`: the shared button style already sets `min-h`,
         // and two utilities for one property resolve by stylesheet order, not
         // by which was typed last.
-        <div className="shrink-0 pt-7">
+        <div className="shrink-0 pt-12">
           <Link href="/check-in" className={`${primaryButton} w-full py-4`}>
             <IconMic className="size-6" />
             {t.home.checkInTitle}
           </Link>
-          <p className="mt-2.5 max-w-[42ch] text-base leading-relaxed text-ink-muted">
-            {t.home.checkInBlurb}
-          </p>
         </div>
       )}
 
       {rest.length > 0 ? (
         // Soft secondary buttons, not a bordered list. Mist fill + gap keeps
         // them quieter than the blue check-in without the hairline table vibe.
-        <nav className="mt-7 flex flex-col gap-2.5">
+        <nav className="mt-12 flex flex-col gap-4">
           {rest.map((step) => (
             <Link
               key={step.href}
@@ -139,6 +154,8 @@ export default async function HomePage({
                   <IconDoc className="size-5" />
                 ) : step.href === "/check-in" ? (
                   <IconMic className="size-5" />
+                ) : step.href === "/family" ? (
+                  <IconAlert className="size-5" />
                 ) : (
                   <IconUpload className="size-5" />
                 )}

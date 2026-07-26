@@ -126,6 +126,18 @@
   font-feature-settings: "tnum" 1;
 }
 
+/* In-shell push stand-in — opacity + small translate only. */
+@keyframes push-in {
+  from {
+    opacity: 0;
+    transform: translateY(-12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 /* Someone who has asked their system to reduce motion gets no orb pulse, no
    listening dots, no blinking caret and no 500ms morph between states.
    Nothing is hidden by this: the orb still changes size, brightness and
