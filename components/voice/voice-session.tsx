@@ -417,10 +417,11 @@ function Session({
           },
           tts: { voiceId: env.NEXT_PUBLIC_XI_VOICE_ID },
         },
-        // Bound to the tool parameters in the agent config, so `log_step` and
-        // `escalate_to_next_of_kin` write against a patient the app named
-        // rather than one the model produced. The call's own id comes from the
-        // built-in `system__conversation_id` and is never sent from here.
+        // Bound to the tool parameters in the agent config, so `log_step`,
+        // `schedule_reminder` and `escalate_to_next_of_kin` write against a
+        // patient the app named rather than one the model produced. The call's
+        // own id comes from the built-in `system__conversation_id` and is never
+        // sent from here.
         //
         // Every dynamic variable the agent declares has to be present in this
         // frame, so adding one to the agent config means adding it here too.

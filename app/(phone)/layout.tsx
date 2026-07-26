@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 
+import { DoseNudgeBanner } from "@/components/phone/dose-nudge-banner";
 import { IncomingPushBanner } from "@/components/phone/incoming-push-banner";
 import { getDictionary, getLocale } from "@/lib/i18n/dictionary";
 
@@ -111,6 +112,15 @@ export default async function PhoneLayout({
             pushNow: t.voice.pushNow,
             pushTitle: t.voice.pushTitle,
             pushBody: t.voice.pushBody,
+            dismiss: t.common.dismiss,
+          }}
+        />
+        <DoseNudgeBanner
+          t={{
+            pushApp: t.voice.pushApp,
+            pushNow: t.voice.pushNow,
+            dosePushTitle: t.voice.dosePushTitle,
+            dosePushBody: t.voice.dosePushBody,
             dismiss: t.common.dismiss,
           }}
         />

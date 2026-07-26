@@ -554,19 +554,23 @@ const STEPS: Step[] = [
   {
     name: "home upload takes a photo or a PDF",
     run: async (page) => {
-      // Seeded demos already have a plan, so the first-visit upload is reached
-      // via `?letter=1` — same control, same screen, no separate /upload route.
-      const text = await open(page, "/?letter=1");
+      // Seeded demos already have a plan, so "Add another letter" is the file
+      // control on home — same screen, picker opens in place, no /upload route
+      // and no `?letter=1` that swaps the check-in for a second upload screen.
+      const text = await open(page, "/");
       must(
-        text.includes("Add another letter") ||
-          text.includes("Take a photo or upload a PDF"),
+        text.includes("Add another letter"),
         "home should name the letter control",
         text,
       );
       must(
-        text.includes("Photograph it, or upload the PDF.") ||
-          text.includes("Photograph every page, or upload the PDF."),
+        text.includes("Photograph it, or upload the PDF."),
         "home should say which document to photograph or upload",
+        text,
+      );
+      must(
+        text.includes("Start today's check-in"),
+        "adding a letter must not replace the check-in on home",
         text,
       );
 
@@ -593,7 +597,7 @@ const STEPS: Step[] = [
         text,
       );
 
-      await checkTypography(page, "/?letter=1");
+      await checkTypography(page, "/");
       await shot(page, "home-letter");
     },
   },

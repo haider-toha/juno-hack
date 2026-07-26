@@ -123,10 +123,12 @@ export const fr = {
     taken: "Pris",
     missed: "Manqué",
     unanswered: "Pas abordé",
+    scheduled: "Rappel à {time}",
     markedTaken: "Noté comme pris",
     markedMissed: "Noté comme manqué",
+    markedScheduled: "Rappel prévu",
+    nudgeBlurb: "Un rappel est prévu à {time} — {name}.",
     seePlan: "Voir mon plan",
-    seeFamily: "Ouvrir l'espace proche",
     done: "Terminer",
   },
 
@@ -141,6 +143,8 @@ export const fr = {
     pushNow: "maintenant",
     pushTitle: "C'est l'heure de votre point du jour",
     pushBody: "Touchez pour parler avec Portico de votre plan du jour.",
+    dosePushTitle: "C'est l'heure — {name}",
+    dosePushBody: "Touchez pour le noter sur votre plan.",
     answer: "Répondre",
     noting: "J'en prends note…",
     menu: "Menu",
@@ -312,6 +316,7 @@ Après votre salutation, attendez sa réponse. Ne relisez pas tout son plan.`,
     toolsHeading: "Ce que vous pouvez faire",
     toolsBody: `- Quand la personne vous dit qu'elle a pris ou manqué une des étapes du jour, appelez log_step avec l'identifiant de cette étape et le résultat, pris ou manqué. Une seule fois par étape. N'annoncez pas l'appel de l'outil ; confirmez ensuite avec vos propres mots, chaleureusement.
 - N'utilisez qu'un identifiant de la liste ci-dessus. Si vous ne savez pas de quelle étape il s'agit, demandez laquelle avant d'appeler quoi que ce soit.
+- Si elle prendra plus tard aujourd'hui un médicament encore dû et donne une heure, appelez schedule_reminder avec l'identifiant de cette étape et l'heure en format 24 h HH:mm (par exemple 22:00 pour dix heures du soir). Confirmez que vous lui enverrez un rappel à cette heure. Ne le marquez ni pris ni manqué.
 - Si elle décrit une chose de la liste à surveiller, appelez show_red_flag avec l'identifiant de ce signe pour qu'il s'affiche à l'écran, puis dites la consigne que donne la lettre.
 - Si elle ne peut pas faire une étape que le plan signale comme importante, et qu'elle semble avoir besoin de quelqu'un, appelez escalate_to_next_of_kin avec l'identifiant de cette étape et une raison courte et simple. Dites-lui que vous avez laissé une note pour son proche. Ne dites jamais que quelqu'un a été appelé ou contacté.
 - Ce n'est pas à vous de décider si une série d'oublis est grave. Vous rapportez ce qui s'est passé ; l'application fait le reste.

@@ -6,10 +6,10 @@ import {
   IconDoc,
   IconLock,
   IconMic,
-  IconUpload,
 } from "@/components/icons";
 import { LanguagePicker } from "@/components/language-picker";
 import { PorticoWordmark } from "@/components/portico-wordmark";
+import { AddLetterRow } from "@/components/upload/add-letter-row";
 import { UploadPanel } from "@/components/upload/upload-panel";
 import { getDictionary, getLocale } from "@/lib/i18n/dictionary";
 import { DEMO_PATIENT_ID } from "@/lib/store/keys";
@@ -27,64 +27,37 @@ export const dynamic = "force-dynamic";
 // screen that leads with it teaches the wrong thing about the product.
 //
 // Upload lives here. Before a letter: the file control is the home. After a
-// letter, `?letter=1` brings the same control back for another page — there is
-// no second route just to open a picker.
-export default async function HomePage({
-  searchParams,
-}: {
-  searchParams: Promise<{ letter?: string }>;
-}) {
-  const [params, locale, bundle] = await Promise.all([
-    searchParams,
+// letter: "Add another letter" opens the picker on this same screen — there is
+// no second route, and no `?letter=1` that swaps the check-in for a bigger
+// button.
+export default async function HomePage() {
+  const [locale, bundle] = await Promise.all([
     getLocale(),
     readPlan(DEMO_PATIENT_ID),
   ]);
   const t = getDictionary(locale);
-  const addingLetter = params.letter === "1";
-  const showUpload = bundle === null || addingLetter;
+  const showUpload = bundle === null;
 
   // Empty before a letter exists: "see my plan" and "check in" both land on
   // nothing, and offering a patient two doors into an empty room is worse than
-  // offering none. After a letter the quiet rows stay; "add another" returns
-  // here with `?letter=1` rather than leaving the home.
-  const rest =
+  // offering none.
+  const links =
     bundle === null
       ? []
-      : addingLetter
-        ? [
-            {
-              href: "/plan",
-              title: t.home.planTitle,
-              blurb: t.home.planBlurb,
-            },
-            {
-              href: "/check-in",
-              title: t.home.checkInTitle,
-              blurb: t.home.checkInBlurb,
-            },
-            {
-              href: "/family",
-              title: t.home.familyTitle,
-              blurb: t.home.familyBlurb,
-            },
-          ]
-        : [
-            {
-              href: "/plan",
-              title: t.home.planTitle,
-              blurb: t.home.planBlurb,
-            },
-            {
-              href: "/family",
-              title: t.home.familyTitle,
-              blurb: t.home.familyBlurb,
-            },
-            {
-              href: "/?letter=1",
-              title: t.home.letterAgainTitle,
-              blurb: t.home.letterAgainBlurb,
-            },
-          ];
+      : [
+          {
+            href: "/plan",
+            title: t.home.planTitle,
+            blurb: t.home.planBlurb,
+            kind: "plan" as const,
+          },
+          {
+            href: "/family",
+            title: t.home.familyTitle,
+            blurb: t.home.familyBlurb,
+            kind: "family" as const,
+          },
+        ];
 
   // Surface over the shell's mist scrollport — home is white; secondary
   // controls are mist and would disappear on a mist page. lg:-mb-5 / lg:pb-5
@@ -118,10 +91,8 @@ export default async function HomePage({
             patientId={DEMO_PATIENT_ID}
             t={{
               ...t.upload.panel,
-              cta: addingLetter ? t.home.letterAgainTitle : t.home.letterTitle,
-              idleNote: addingLetter
-                ? t.home.letterAgainBlurb
-                : t.home.letterHint,
+              cta: t.home.letterTitle,
+              idleNote: t.home.letterHint,
             }}
           />
         </div>
@@ -139,25 +110,23 @@ export default async function HomePage({
         </div>
       )}
 
-      {rest.length > 0 ? (
+      {bundle !== null ? (
         // Soft secondary buttons, not a bordered list. Mist fill + gap keeps
         // them quieter than the blue check-in without the hairline table vibe.
+        // "Add another letter" is a file label, not a link — the picker opens
+        // here so home never navigates into a second upload screen.
         <nav className="mt-12 flex flex-col gap-4">
-          {rest.map((step) => (
+          {links.map((step) => (
             <Link
               key={step.href}
               href={step.href}
               className="flex min-h-14 items-center gap-3 rounded-tactile bg-mist px-4 py-3.5 transition-opacity duration-150 ease-out focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent active:opacity-70"
             >
               <span aria-hidden className="shrink-0 text-ink-muted">
-                {step.href === "/plan" ? (
+                {step.kind === "plan" ? (
                   <IconDoc className="size-5" />
-                ) : step.href === "/check-in" ? (
-                  <IconMic className="size-5" />
-                ) : step.href === "/family" ? (
-                  <IconAlert className="size-5" />
                 ) : (
-                  <IconUpload className="size-5" />
+                  <IconAlert className="size-5" />
                 )}
               </span>
               <span className="flex min-w-0 flex-1 flex-col text-left">
@@ -170,6 +139,12 @@ export default async function HomePage({
               </span>
             </Link>
           ))}
+          <AddLetterRow
+            patientId={DEMO_PATIENT_ID}
+            title={t.home.letterAgainTitle}
+            blurb={t.home.letterAgainBlurb}
+            t={t.upload.panel}
+          />
         </nav>
       ) : null}
 

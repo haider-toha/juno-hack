@@ -51,8 +51,9 @@ export const en = {
       "Your data stays private. We do not share your health information with anyone you have not chosen.",
   },
 
-  // Strings for the upload control on home. The control lives on `/` — there is
-  // no separate ingest route.
+  // Strings for the upload control on home. Before a letter the big panel is
+  // the home; after one, "Add another letter" opens the same picker in place.
+  // There is no separate ingest route.
   upload: {
     panel: {
       cta: "Take a photo or upload a PDF",
@@ -146,10 +147,12 @@ export const en = {
     taken: "Taken",
     missed: "Missed",
     unanswered: "Not covered",
+    scheduled: "Nudge at {time}",
     markedTaken: "Marked as taken",
     markedMissed: "Marked as missed",
+    markedScheduled: "Nudge scheduled",
+    nudgeBlurb: "A nudge is set for {time} — {name}.",
     seePlan: "See my plan",
-    seeFamily: "Open family view",
     done: "Done",
   },
 
@@ -170,6 +173,10 @@ export const en = {
     pushNow: "now",
     pushTitle: "Time for your check-in",
     pushBody: "Tap to talk with Portico about today's plan.",
+    // Dose nudge the agent scheduled earlier — operator fires it when "evening"
+    // arrives on stage, same Redis ring as the check-in.
+    dosePushTitle: "Time for {name}",
+    dosePushBody: "Tap to mark it on your plan.",
     answer: "Answer",
     // Shown while one of the agent's server tools is in flight, so a write to
     // the record is visible as it happens rather than only claimed afterwards.
@@ -375,6 +382,7 @@ After you have greeted them, wait for them to answer. Do not read their whole pl
     toolsHeading: "What you can do",
     toolsBody: `- When the person tells you they have taken or missed one of today's steps, call log_step with that step's id and whether it was taken or missed. Call it once per step. Do not announce that you are calling it; just confirm warmly in your own words afterwards.
 - Only pass an id from the list above. If you cannot tell which step they mean, ask which one before calling anything.
+- If they will take a still-due medicine later today and name a time, call schedule_reminder with that step's id and the time as 24-hour HH:mm (for example 22:00 for ten at night). Confirm you will nudge them at that time. Do not mark it taken or missed.
 - If they describe something in the watch-out list above, call show_red_flag with that flag's id so it appears on their screen, then say the action the letter gives.
 - If they cannot take a step that the plan marks as important, and they seem to need someone, call escalate_to_next_of_kin with that step's id and a short plain reason. Tell them you have made a note for their next of kin. Never say anyone has been called or messaged.
 - You do not decide what counts as serious enough to escalate a pattern. You report what happened; the app works out the rest.

@@ -3,17 +3,26 @@ import Link from "next/link";
 import { BackButton } from "@/components/back-button";
 import { primaryButton, secondaryButton } from "@/components/button-styles";
 import { IconAlert, IconCheck } from "@/components/icons";
-import { assess, assessmentWindow } from "@/lib/escalation/rules";
+import { formatLocalTime } from "@/lib/format-time";
 import { getDictionary, getLocale } from "@/lib/i18n/dictionary";
 import { getDemoToday } from "@/lib/store/clock";
 import { DEMO_PATIENT_ID } from "@/lib/store/keys";
 import { readLog, type LogEntry } from "@/lib/store/log";
 import { readPlan } from "@/lib/store/plan";
+import { readReminders, type Reminder } from "@/lib/store/reminder";
 import {
   dueToday,
   standingItems,
   type TimelineItem,
 } from "@/lib/timeline/schedule";
+
+type RowStatus = LogEntry["status"] | "scheduled" | null;
+
+type SummaryRow = {
+  item: TimelineItem;
+  status: RowStatus;
+  reminder: Reminder | null;
+};
 
 export async function generateMetadata() {
   const t = getDictionary(await getLocale());
@@ -33,14 +42,15 @@ export default async function CheckInSummaryPage() {
   ]);
   const t = getDictionary(locale);
 
-  // Windowed read so assess() and today's notes share one Redis round-trip.
-  const logs =
-    bundle === null
-      ? []
-      : await readLog(DEMO_PATIENT_ID, assessmentWindow(today));
-  const todayLogs = logs.filter((entry) => entry.day === today);
+  const [todayLogs, reminders] = await Promise.all([
+    bundle === null ? Promise.resolve([]) : readLog(DEMO_PATIENT_ID, [today]),
+    readReminders(DEMO_PATIENT_ID, today),
+  ]);
   const statusById = new Map(
     todayLogs.map((entry) => [entry.itemId, entry.status] as const),
+  );
+  const reminderById = new Map(
+    reminders.map((entry) => [entry.itemId, entry] as const),
   );
 
   const due = bundle === null ? [] : dueToday(bundle, today);
@@ -50,19 +60,32 @@ export default async function CheckInSummaryPage() {
   );
 
   // Notes first (whatever the tools wrote today), then today's due steps that
-  // were never covered — not the whole standing catalogue.
-  const noted = todayLogs.flatMap((entry) => {
+  // were never covered — not the whole standing catalogue. A scheduled nudge
+  // counts as covered for the row (chip changes), but stays in the list.
+  const noted: SummaryRow[] = todayLogs.flatMap((entry) => {
     const item = byId.get(entry.itemId);
-    return item === undefined ? [] : [{ item, status: entry.status }];
+    if (item === undefined) return [];
+    return [
+      {
+        item,
+        status: entry.status,
+        reminder: reminderById.get(entry.itemId) ?? null,
+      },
+    ];
   });
-  const open = due
+  const open: SummaryRow[] = due
     .filter((item) => !statusById.has(item.id))
-    .map((item) => ({ item, status: null as LogEntry["status"] | null }));
+    .map((item) => {
+      const reminder = reminderById.get(item.id) ?? null;
+      return {
+        item,
+        status: reminder !== null ? ("scheduled" as const) : null,
+        reminder,
+      };
+    });
   const rows = [...noted, ...open];
 
-  const assessment =
-    bundle === null ? { kind: "none" as const } : assess(bundle, logs, today);
-  const showFamily = assessment.kind !== "none";
+  const firstNudge = reminders[0] ?? null;
 
   return (
     <main className="flex min-h-0 flex-1 flex-col bg-surface">
@@ -83,7 +106,7 @@ export default async function CheckInSummaryPage() {
             <p className="text-base text-ink-muted">{t.checkInSummary.empty}</p>
           ) : (
             <ul className="divide-y divide-rule">
-              {rows.map(({ item, status }) => (
+              {rows.map(({ item, status, reminder }) => (
                 <li
                   key={item.id}
                   className="flex min-h-11 items-start gap-3 py-3 first:pt-0 last:pb-0"
@@ -104,25 +127,36 @@ export default async function CheckInSummaryPage() {
                       {itemLine(item)}
                     </p>
                   </div>
-                  <StatusChip status={status} t={t.checkInSummary} />
+                  <StatusChip
+                    status={status}
+                    timeLabel={
+                      reminder === null
+                        ? null
+                        : formatLocalTime(reminder.timeLocal, locale)
+                    }
+                    t={t.checkInSummary}
+                  />
                 </li>
               ))}
             </ul>
           )}
         </section>
 
+        {firstNudge !== null ? (
+          <p className="mt-4 max-w-[40ch] text-base leading-relaxed text-ink">
+            {t.checkInSummary.nudgeBlurb
+              .replace(
+                "{time}",
+                formatLocalTime(firstNudge.timeLocal, locale),
+              )
+              .replace("{name}", firstNudge.nameAsWritten)}
+          </p>
+        ) : null}
+
         <div className="mt-6 flex flex-col gap-2">
           <Link href="/plan" className={`${primaryButton} w-full`}>
             {t.checkInSummary.seePlan}
           </Link>
-          {showFamily ? (
-            <Link
-              href="/family"
-              className={`${secondaryButton} w-full justify-center`}
-            >
-              {t.checkInSummary.seeFamily}
-            </Link>
-          ) : null}
           <Link
             href="/"
             className={`${secondaryButton} w-full justify-center text-ink-muted`}
@@ -169,8 +203,13 @@ function StatusMark({
   status,
   t,
 }: {
-  status: LogEntry["status"] | null;
-  t: { markedTaken: string; markedMissed: string; unanswered: string };
+  status: RowStatus;
+  t: {
+    markedTaken: string;
+    markedMissed: string;
+    unanswered: string;
+    markedScheduled: string;
+  };
 }) {
   switch (status) {
     case "taken":
@@ -185,6 +224,12 @@ function StatusMark({
         <span className="mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-pill text-error">
           <IconAlert className="size-5" />
           <span className="sr-only">{t.markedMissed}</span>
+        </span>
+      );
+    case "scheduled":
+      return (
+        <span className="mt-0.5 size-7 shrink-0 rounded-pill border-2 border-accent bg-lavender">
+          <span className="sr-only">{t.markedScheduled}</span>
         </span>
       );
     case null:
@@ -203,10 +248,17 @@ function StatusMark({
 
 function StatusChip({
   status,
+  timeLabel,
   t,
 }: {
-  status: LogEntry["status"] | null;
-  t: { taken: string; missed: string; unanswered: string };
+  status: RowStatus;
+  timeLabel: string | null;
+  t: {
+    taken: string;
+    missed: string;
+    unanswered: string;
+    scheduled: string;
+  };
 }) {
   switch (status) {
     case "taken":
@@ -219,6 +271,12 @@ function StatusChip({
       return (
         <span className="mt-0.5 shrink-0 rounded-tactile border border-error bg-surface px-2 py-1 text-sm font-medium text-ink">
           {t.missed}
+        </span>
+      );
+    case "scheduled":
+      return (
+        <span className="mt-0.5 shrink-0 rounded-tactile bg-lavender px-2 py-1 text-sm font-medium text-ink">
+          {t.scheduled.replace("{time}", timeLabel ?? "")}
         </span>
       );
     case null:

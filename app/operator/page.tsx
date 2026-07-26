@@ -2,11 +2,16 @@ import { ClockControl } from "@/components/operator/clock-control";
 import { Control } from "@/components/operator/control";
 import { env } from "@/lib/env";
 import { assess, assessmentWindow } from "@/lib/escalation/rules";
+import { formatLocalTime } from "@/lib/format-time";
 import { readIncomingCheckIn } from "@/lib/store/check-in";
 import { getDemoToday } from "@/lib/store/clock";
 import { DEMO_PATIENT_ID } from "@/lib/store/keys";
 import { readLog } from "@/lib/store/log";
 import { readPlan } from "@/lib/store/plan";
+import {
+  readIncomingNudge,
+  readReminders,
+} from "@/lib/store/reminder";
 import { addDays } from "@/lib/timeline/schedule";
 
 export const metadata = { title: "Operator", robots: { index: false } };
@@ -25,15 +30,18 @@ export const dynamic = "force-dynamic";
 // the product uses — `appendLogEntry()`, `setDemoToday()`, the seed route — and
 // then this page re-reads that state. Nothing here paints a result.
 export default async function OperatorPage() {
-  const [today, bundle, incomingAt] = await Promise.all([
+  const [today, bundle, incomingAt, nudgeAt] = await Promise.all([
     getDemoToday(),
     readPlan(DEMO_PATIENT_ID),
     readIncomingCheckIn(DEMO_PATIENT_ID),
+    readIncomingNudge(DEMO_PATIENT_ID),
   ]);
-  const logs =
+  const [logs, reminders] = await Promise.all([
     bundle === null
-      ? []
-      : await readLog(DEMO_PATIENT_ID, assessmentWindow(today));
+      ? Promise.resolve([])
+      : readLog(DEMO_PATIENT_ID, assessmentWindow(today)),
+    readReminders(DEMO_PATIENT_ID, today),
+  ]);
   const assessment = bundle === null ? null : assess(bundle, logs, today);
 
   // The one the escalation rule is written about. Naming it here rather than
@@ -76,6 +84,21 @@ export default async function OperatorPage() {
             : `${bundle.medications.length} medicines, ${bundle.redFlags.length} red flag(s)`}
         </Row>
         <Row label="Check-in raised">{incomingAt ?? "no"}</Row>
+        <Row label="Dose nudge raised">
+          {nudgeAt === null
+            ? "no"
+            : `${nudgeAt.nameAsWritten} · ${formatLocalTime(nudgeAt.timeLocal, "en")}`}
+        </Row>
+        <Row label="Reminders today">
+          {reminders.length === 0
+            ? "none"
+            : reminders
+                .map(
+                  (reminder) =>
+                    `${reminder.nameAsWritten} @ ${formatLocalTime(reminder.timeLocal, "en")}`,
+                )
+                .join(" · ")}
+        </Row>
         <Row label="assess()">
           {assessment === null
             ? "n/a"
@@ -168,6 +191,20 @@ export default async function OperatorPage() {
           label="Cancel the ringing check-in"
           method="DELETE"
           path="/api/demo/check-in"
+        />
+      </Section>
+
+      <Section title="5 · Dose nudge">
+        <Control
+          label="Fire the scheduled dose nudge"
+          hint="Rings the phone with the first reminder schedule_reminder wrote today — usually the nocte dose the person said they would take later. Opens /plan when tapped."
+          path="/api/demo/reminder"
+          tone="primary"
+        />
+        <Control
+          label="Cancel the ringing dose nudge"
+          method="DELETE"
+          path="/api/demo/reminder"
         />
       </Section>
     </main>

@@ -63,7 +63,12 @@ type Screen = {
 
 const SCREENS: Screen[] = [
   { name: "home", path: "/" },
-  { name: "home-letter", path: "/?letter=1" },
+  // Same home — the letter control is the in-place "Add another letter" row.
+  {
+    name: "home-letter",
+    path: "/",
+    scrollTo: 'label:has-text("Add another letter")',
+  },
   { name: "plan-top", path: "/plan" },
   {
     name: "plan-today",

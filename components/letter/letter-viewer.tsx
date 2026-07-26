@@ -68,13 +68,17 @@ export function LetterViewer({ url, page, quote, t }: Props) {
         const pdfPage = await doc.getPage(pageNumber);
         if (ac.signal.aborted) return;
 
+        // Fit the page to the column's CSS width, then paint into a backing
+        // store scaled by devicePixelRatio. Without that, a 1× canvas is
+        // stretched across a 2×/3× phone screen and the letter goes soft.
         const cssWidth = canvas.parentElement?.clientWidth ?? 360;
         const unscaled = pdfPage.getViewport({ scale: 1 });
         const scale = cssWidth / unscaled.width;
         const viewport = pdfPage.getViewport({ scale });
+        const pixelRatio = Math.max(window.devicePixelRatio || 1, 1);
 
-        canvas.width = viewport.width;
-        canvas.height = viewport.height;
+        canvas.width = Math.floor(viewport.width * pixelRatio);
+        canvas.height = Math.floor(viewport.height * pixelRatio);
         canvas.style.width = `${viewport.width}px`;
         canvas.style.height = `${viewport.height}px`;
 
@@ -88,6 +92,10 @@ export function LetterViewer({ url, page, quote, t }: Props) {
           canvas,
           canvasContext: context,
           viewport,
+          transform:
+            pixelRatio === 1
+              ? undefined
+              : [pixelRatio, 0, 0, pixelRatio, 0, 0],
         });
         await renderTask.promise;
         if (ac.signal.aborted) return;

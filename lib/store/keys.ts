@@ -39,3 +39,15 @@ export function demoTodayKey() {
 export function incomingCheckInKey(patientId: string) {
   return `portico:incoming:${patientId}`;
 }
+
+// Dose nudges the agent scheduled during a check-in. Hash per patient-day,
+// field = itemId — same idempotency shape as the adherence log.
+export function reminderKey(patientId: string, day: string) {
+  return `portico:reminders:${patientId}:${day}`;
+}
+
+// A dose nudge currently ringing on the phone — the evening follow-up that
+// schedule_reminder promised. Same three-verb pattern as the check-in ring.
+export function incomingNudgeKey(patientId: string) {
+  return `portico:nudge:${patientId}`;
+}

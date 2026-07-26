@@ -15,6 +15,7 @@ import { DEMO_PATIENT_ID } from "@/lib/store/keys";
 import { appendLogEntry, clearLog } from "@/lib/store/log";
 import { writePatient } from "@/lib/store/patient";
 import { writePlan } from "@/lib/store/plan";
+import { clearAllReminders } from "@/lib/store/reminder";
 import { addDays } from "@/lib/timeline/schedule";
 
 // Two days after discharge. The primed misses have to fall on days the patient
@@ -67,6 +68,7 @@ export async function POST() {
   const [cleared] = await Promise.all([
     clearLog(DEMO_PATIENT_ID),
     clearCheckIn(DEMO_PATIENT_ID),
+    clearAllReminders(DEMO_PATIENT_ID),
   ]);
 
   await Promise.all([
