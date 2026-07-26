@@ -84,6 +84,10 @@ export function DaySection({
               key={item.id}
               item={item}
               status={status}
+              // Only today's rows are addressable: a nudge is always about the
+              // dose due now, and two cards claiming the same id would send the
+              // reader to whichever the browser found first.
+              anchorId={isToday ? `dose-${item.id}` : undefined}
               t={t}
               check={
                 answerable && isAnswerable(item) ? (

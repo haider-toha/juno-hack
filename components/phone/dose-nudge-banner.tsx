@@ -61,7 +61,11 @@ export function DoseNudgeBanner({ t }: { t: Strings }) {
   return (
     <PushBanner
       underIsland
-      href="/plan"
+      // The nudge names one medicine, so it opens on that medicine's row rather
+      // than at the top of a plan the patient then has to read down. Today's
+      // rows carry the id; a plan still streaming in falls back to the top,
+      // which is where the link used to land anyway.
+      href={`/plan#dose-${raised.itemId}`}
       app={t.pushApp}
       now={t.pushNow}
       title={t.dosePushTitle.replace("{name}", raised.nameAsWritten)}

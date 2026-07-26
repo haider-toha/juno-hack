@@ -8,10 +8,7 @@ import { getDemoToday } from "@/lib/store/clock";
 import { DEMO_PATIENT_ID } from "@/lib/store/keys";
 import { readLog } from "@/lib/store/log";
 import { readPlan } from "@/lib/store/plan";
-import {
-  readIncomingNudge,
-  readReminders,
-} from "@/lib/store/reminder";
+import { readIncomingNudge, readReminders } from "@/lib/store/reminder";
 import { addDays } from "@/lib/timeline/schedule";
 
 export const metadata = { title: "Operator", robots: { index: false } };

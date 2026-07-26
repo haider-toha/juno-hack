@@ -1,12 +1,7 @@
 import Link from "next/link";
 
 import { primaryButton } from "@/components/button-styles";
-import {
-  IconAlert,
-  IconDoc,
-  IconLock,
-  IconMic,
-} from "@/components/icons";
+import { IconAlert, IconDoc, IconLock, IconMic } from "@/components/icons";
 import { LanguagePicker } from "@/components/language-picker";
 import { PorticoWordmark } from "@/components/portico-wordmark";
 import { AddLetterRow } from "@/components/upload/add-letter-row";

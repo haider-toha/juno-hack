@@ -26,7 +26,18 @@ export async function POST(request: Request) {
   const refusal = refuseOutsideDemo();
   if (refusal !== null) return refusal;
 
-  const input = Input.parse(await request.json());
+  // `make miss ITEM=… DAY=…` builds this body by shell interpolation, so a
+  // typo arrives as JSON the schema refuses. Same reason as the clock: a bare
+  // 500 with an empty body is what the operator sees when a beat does not fire.
+  const parsed = Input.safeParse(await request.json().catch(() => null));
+  if (!parsed.success) {
+    return Response.json(
+      { error: "invalid_arguments", detail: parsed.error.message },
+      { status: 400 },
+    );
+  }
+  const input = parsed.data;
+
   const day = input.day ?? (await getDemoToday());
 
   await appendLogEntry({

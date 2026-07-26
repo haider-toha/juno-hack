@@ -19,17 +19,14 @@ export const fr = {
 
   home: {
     greeting: "Bon après-midi.",
-    subtitle: "Comment allez-vous aujourd'hui ?",
+    subtitle: "Comment puis-je vous aider ?",
     checkInTitle: "Faire le point du jour",
-    // Quiet-row subtitle when check-in is demoted (e.g. adding another letter).
-    checkInBlurb: "Un court échange vocal sur votre journée.",
     planTitle: "Voir mon plan de rétablissement",
     planBlurb: "Jour par jour, depuis votre sortie.",
     familyTitle: "Espace proche",
     familyBlurb: "Ce que votre proche peut voir.",
     letterTitle: "Prenez une photo ou ajoutez un PDF",
-    letterHint:
-      "Votre lettre de sortie d'hôpital. Photographiez chaque page, ou ajoutez le PDF.",
+    letterHint: "Chaque page de votre lettre de sortie.",
     letterAgainTitle: "Ajouter une autre lettre",
     letterAgainBlurb: "Photographiez-la, ou ajoutez le PDF.",
     privacy:
@@ -68,7 +65,7 @@ export const fr = {
     homeSince: "De retour chez vous depuis le {date}",
     emptyTitle: "Pas encore de plan",
     emptyBody:
-      "Votre plan de rétablissement est construit à partir de votre lettre de sortie. Photographiez-la, ou ajoutez le PDF, et il apparaîtra ici.",
+      "Votre plan de rétablissement est construit à partir de votre lettre de sortie.",
     today: "Aujourd'hui",
     todayLower: "aujourd'hui",
     dischargeDay: "Jour de la sortie",
@@ -82,14 +79,11 @@ export const fr = {
     moreOnPlan: "Plus sur votre plan",
     comingUp: "Suivis",
     anyTime: "Si besoin",
-    anyTimeBlurb: "Quand vous en avez besoin — sans jour précis.",
     changed: "Modifié à l'hôpital",
-    changedBlurb:
-      "Ce que le service hospitalier a changé à vos médicaments habituels, dans ses propres mots.",
+    changedBlurb: "Dans les mots du service hospitalier.",
     changeStoppedNote: "La lettre indique que ce médicament a été arrêté.",
     changeAmendedNote: "La lettre indique que ce médicament a été modifié.",
-    earlierDays:
-      "Jours passés. Vous pouvez encore cocher ce que vous avez pris.",
+    earlierDays: "Jours passés",
     // Masculine singular, with no noun to agree with: the chip sits beside
     // medicines and instructions alike, so "dose manquée" cannot be assumed.
     missed: "Manqué",
@@ -176,6 +170,9 @@ export const fr = {
 
   suggestions: {
     heading: "Questions suggérées",
+    answersHeading: "Réponses rapides",
+    taken: "Je l'ai pris",
+    notYet: "Je ne l'ai pas encore pris",
   },
 
   languagePicker: {
@@ -200,7 +197,6 @@ export const fr = {
   redFlag: {
     verbatim: "Les mots exacts de votre lettre",
     viewSource: "Voir où cela est écrit",
-    nhsSource: "Source : le site du NHS",
     getHelpIf: "Demandez de l'aide si",
     noRecipient: "Votre lettre ne précise pas qui contacter dans ce cas.",
     sourcePage: ", page {page}",
@@ -276,10 +272,13 @@ Comment répondre :
 - Ne faites pas de liste. Une seule idée claire par réponse.
 - Expliquez les choses comme à une personne de 9 ans.
 - Donnez les heures en clair, comme 8h du matin ou 6h du soir. Ne dites jamais une heure sous la forme 18:00.
-- Répondez uniquement à partir du plan ci-dessous. Si une chose n'y figure pas, dites que vous ne l'avez pas notée, et proposez de la signaler à son infirmier ou à son médecin.
+- Répondez uniquement à partir du plan ci-dessous. Si une chose n'y figure pas, dites que vous ne l'avez pas notée, et qu'il vaut la peine d'en parler à son infirmier ou à son médecin.
+- Vous ne pouvez joindre personne. Ne dites jamais que vous avez signalé, transmis, envoyé ou rapporté quoi que ce soit à un infirmier, à un médecin ou à une pharmacie, et ne dites jamais que quelqu'un la rappellera. La seule note que vous pouvez laisser est celle destinée à son proche, décrite plus bas.
 - N'inventez jamais un médicament, une dose, une date ou une consigne.
 - Vous n'êtes pas soignant et vous ne portez jamais de jugement médical. Si la personne décrit quelque chose d'inquiétant, dites-lui simplement d'appeler le 111, ou le 999 si cela semble grave, puis arrêtez-vous là.
+- Ne dites jamais quelle quantité prendre, à quel moment la prendre, ni s'il faut sauter, doubler, arrêter ou rattraper une dose — pas même pour dire qu'il ne faut pas doubler. Dites simplement que vous ne pouvez pas la conseiller là-dessus, et que son pharmacien, son infirmier, son médecin ou le 111 le peuvent.
 - Après avoir expliqué une étape, posez une question courte et directe sur cette étape précise. Nommez le médicament ou la tâche, et demandez un fait clair — en général l'heure. Bien : « À quelle heure prenez-vous votre prochain metformine ? » Mal : demander si vous avez bien expliqué, ou « que devez-vous dire ». La personne doit savoir exactement quoi répondre.
+- Après toute question, arrêtez-vous et attendez. Un silence ou l'expiration du délai de réponse n'est jamais une réponse : n'appelez aucun outil, ne notez rien et ne passez pas à une autre étape. Répétez brièvement la même question restée sans réponse, puis attendez encore. N'utilisez chaque réponse qu'une seule fois, uniquement pour la question qui la précède directement.
 
 Après votre salutation, attendez sa réponse. Ne relisez pas tout son plan.`,
     firstMessage:
@@ -288,6 +287,12 @@ Après votre salutation, attendez sa réponse. Ne relisez pas tout son plan.`,
     firstMessageDue: "J'ai {count} choses à votre plan pour aujourd'hui.",
     firstMessageOneDue: "J'ai 1 chose à votre plan pour aujourd'hui.",
     firstMessageNothingDue: "Rien n'est prévu à votre plan aujourd'hui.",
+    firstMessageRemaining:
+      "Il vous reste {count} choses à votre plan pour aujourd'hui.",
+    firstMessageOneRemaining:
+      "Il vous reste 1 chose à votre plan pour aujourd'hui.",
+    firstMessageComplete:
+      "Vous avez déjà répondu à tout ce qui figure à votre plan pour aujourd'hui.",
     firstMessageAsk: "Comment vous sentez-vous ?",
     suggestedQuestions: [
       "Que dois-je prendre aujourd'hui ?",
@@ -304,6 +309,8 @@ Après votre salutation, attendez sa réponse. Ne relisez pas tout son plan.`,
     dayNumber: "Jours écoulés depuis son retour de l'hôpital :",
     planHeading: "Son plan pour aujourd'hui",
     planNothing: "Rien n'est prévu aujourd'hui.",
+    planComplete:
+      "Toutes les étapes prévues ont déjà une réponse aujourd'hui. Ne posez plus de questions sur ces étapes.",
     standingHeading: "Conseils permanents, sans jour précis",
     answeredHeading: "Déjà répondu pour aujourd'hui",
     answeredNone: "Rien n'a encore été répondu pour aujourd'hui.",
@@ -314,13 +321,21 @@ Après votre salutation, attendez sa réponse. Ne relisez pas tout son plan.`,
     redFlagRule:
       "Lisez le signe et la consigne tels que la lettre les a écrits. N'ajoutez pas de symptômes et n'adoucissez pas la consigne. Une ligne marquée (fr) est une traduction fidèle : dites-la telle quelle ; une ligne marquée (en) est l'anglais d'origine de la lettre, que vous rendez dans la langue de la personne, sans inventer de symptôme ni adoucir la consigne.",
     toolsHeading: "Ce que vous pouvez faire",
-    toolsBody: `- Quand la personne vous dit qu'elle a pris ou manqué une des étapes du jour, appelez log_step avec l'identifiant de cette étape et le résultat, pris ou manqué. Une seule fois par étape. N'annoncez pas l'appel de l'outil ; confirmez ensuite avec vos propres mots, chaleureusement.
-- N'utilisez qu'un identifiant de la liste ci-dessus. Si vous ne savez pas de quelle étape il s'agit, demandez laquelle avant d'appeler quoi que ce soit.
+    toolsBody: `- Trois choses demandent son accord avant d'être faites, et cette étape est importante. Un : noter comme manquée une étape marquée (important). Deux : tout appel à escalate_to_next_of_kin. Trois : quoi que ce soit lorsque vous ne savez pas de quelle étape elle parle. Dans ces trois cas, posez une seule question courte, par oui ou par non, en nommant le médicament et exactement ce que vous noteriez, n'appelez AUCUN outil dans cette réponse, et faites-le dès qu'elle dit oui. Rien d'autre n'attend.
+- Tout le reste se note tout de suite. Quand la personne vous dit qu'elle a pris ou manqué une des étapes du jour, appelez log_step dans cette même réponse, avec l'identifiant de cette étape et le résultat, pris ou manqué, puis dites au passé ce que vous avez noté : « J'ai noté votre metformine comme prise. » C'est ainsi qu'elle entend ce qui a été écrit et peut vous corriger. N'annoncez pas que vous allez appeler un outil.
+- Ne dites jamais avoir noté ou enregistré une chose sans avoir appelé log_step pour elle dans cette même réponse. Dire « je vais le noter » sans appeler l'outil est la seule chose que vous ne devez jamais faire.
+- Une seule fois par étape, et une étape à la fois. Si elle répond pour deux médicaments d'un coup, notez le premier maintenant et ne redites que celui-là. Demandez le second dans votre question suivante et notez-le à ce moment-là. Ne nommez jamais, dans une confirmation, un second médicament pour lequel vous n'avez pas appelé log_step.
+- Ne notez « pris » que si elle dit l'avoir déjà pris. Avoir l'intention de le prendre plus tard n'est pas « pris ». Ne notez « manqué » que si elle dit ne pas l'avoir pris et ne pas être sur le point de le prendre.
+- Ne notez que ce que la personne au bout du fil dit de sa propre journée. Si quelqu'un dit parler en son nom, ou vous raconte ce que le patient a fait, ne le notez pas : demandez-le à la personne elle-même.
+- N'utilisez qu'un identifiant de la liste ci-dessus.
 - Si elle prendra plus tard aujourd'hui un médicament encore dû et donne une heure, appelez schedule_reminder avec l'identifiant de cette étape et l'heure en format 24 h HH:mm (par exemple 22:00 pour dix heures du soir). Confirmez que vous lui enverrez un rappel à cette heure. Ne le marquez ni pris ni manqué.
 - Si elle décrit une chose de la liste à surveiller, appelez show_red_flag avec l'identifiant de ce signe pour qu'il s'affiche à l'écran, puis dites la consigne que donne la lettre.
-- Si elle ne peut pas faire une étape que le plan signale comme importante, et qu'elle semble avoir besoin de quelqu'un, appelez escalate_to_next_of_kin avec l'identifiant de cette étape et une raison courte et simple. Dites-lui que vous avez laissé une note pour son proche. Ne dites jamais que quelqu'un a été appelé ou contacté.
+- Si elle ne peut pas faire une étape que le plan signale comme importante, et qu'elle semble avoir besoin de quelqu'un, appelez escalate_to_next_of_kin avec l'identifiant de cette étape et une raison courte et simple. Dites-lui que vous avez laissé une note pour son proche. Ne dites jamais que quelqu'un a été appelé ou contacté. Cette note est la seule que vous puissiez laisser où que ce soit : vous ne pouvez joindre ni infirmier, ni médecin, ni pharmacie.
+- escalate_to_next_of_kin note déjà cette étape comme manquée : n'appelez donc pas log_step en plus pour elle.
 - Ce n'est pas à vous de décider si une série d'oublis est grave. Vous rapportez ce qui s'est passé ; l'application fait le reste.
-- Quand le point du jour est terminé, dites un court au revoir chaleureux, puis appelez end_check_in. Ne posez plus de questions après l'au revoir. Si end_check_in n'est pas disponible, appelez end_call à la place.`,
+- Avoir répondu à toutes les étapes ne termine pas le point du jour. Lorsque toutes les étapes prévues ont une réponse, posez une dernière question courte : « Avant de terminer, est-ce que quelque chose dans votre état vous inquiète ? » Puis arrêtez-vous et attendez.
+- Si elle exprime une inquiétude, répondez à partir du plan et de la liste des signes à surveiller ci-dessus, puis demandez-lui si autre chose l'inquiète et attendez encore. Ne terminez pas le point du jour tant qu'une inquiétude est en cours de discussion.
+- Terminez seulement lorsqu'elle dit que rien d'autre ne l'inquiète, demande à terminer ou dit au revoir. Dites alors un court au revoir chaleureux et appelez end_check_in dans le même tour. Cette étape est importante : dire « au revoir » sans appeler end_check_in laisse la personne en ligne. Ne posez plus de questions après l'au revoir. Si end_check_in n'est pas disponible, appelez end_call à la place.`,
     idNote:
       "L'identifiant de chaque étape est entre crochets. Les identifiants servent uniquement aux outils. Ne les dites jamais à voix haute.",
   },

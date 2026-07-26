@@ -47,10 +47,10 @@ patient.
 A control surface that writes the **same** Redis state the product reads. It
 does not paint fake UI results. Bookmark it:
 
-| Where | URL |
-| --- | --- |
-| Local | [http://localhost:3000/operator](http://localhost:3000/operator) (`make operator`) |
-| Vercel | `https://<your-deploy>/operator` |
+| Where  | URL                                                                                |
+| ------ | ---------------------------------------------------------------------------------- |
+| Local  | [http://localhost:3000/operator](http://localhost:3000/operator) (`make operator`) |
+| Vercel | `https://<your-deploy>/operator`                                                   |
 
 Rough map of the buttons:
 

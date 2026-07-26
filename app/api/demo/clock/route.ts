@@ -22,7 +22,19 @@ export async function POST(request: Request) {
   const refusal = refuseOutsideDemo();
   if (refusal !== null) return refusal;
 
-  const input = Input.parse(await request.json());
+  // The panel's date field can be cleared, and `make clock DAY=…` is a shell
+  // string. Both reach here as a body Zod refuses, and an unhandled throw is a
+  // bare 500 with an empty body — which is precisely what the operator's own
+  // controls print back verbatim when a beat does not fire.
+  const parsed = Input.safeParse(await request.json().catch(() => null));
+  if (!parsed.success) {
+    return Response.json(
+      { error: "invalid_arguments", detail: parsed.error.message },
+      { status: 400 },
+    );
+  }
+  const input = parsed.data;
+
   const day =
     "day" in input ? input.day : addDays(await getDemoToday(), input.shiftDays);
 

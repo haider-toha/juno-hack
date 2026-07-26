@@ -11,10 +11,10 @@ import { z } from "zod";
 
 import { IconChevron } from "@/components/icons";
 import { LanguagePicker } from "@/components/language-picker";
+import { ChipRow } from "@/components/voice/chip-row";
 import { Composer } from "@/components/voice/composer";
 import { IdleView } from "@/components/voice/idle-view";
 import { OrbDock, VoiceStatusLine } from "@/components/voice/orb";
-import { SuggestedQuestions } from "@/components/voice/suggested-questions";
 import { Transcript, type Turn } from "@/components/voice/transcript";
 import { env } from "@/lib/env";
 import type { Dictionary } from "@/lib/i18n/en";
@@ -160,6 +160,14 @@ function Session({
   // A ref (not state) because the reveal interval mutates it on every audio
   // chunk and reads it every ~30ms without needing to re-render the tree.
   const timeline = useRef<RevealTimeline>({ spokenAtMs: [] });
+  // Latest live string for commit-on-stop without reading stale state.
+  const agentLiveRef = useRef("");
+  // The SDK emits the same turn through streaming parts and `onMessage`.
+  // Event ids are the identity; text comparison is not reliable because the
+  // streamed and final strings can differ in punctuation or wording.
+  const committedAgentEventIds = useRef(new Set<number>());
+  const activeAgentEventIdRef = useRef<number | null>(null);
+  const agentTurnCommittedRef = useRef(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   // Autoscroll state, in refs so updating it never re-renders. `stickToBottom`
   // is whether we should keep pinning to the foot as content grows; the onScroll
@@ -186,90 +194,136 @@ function Session({
   // controls AND registers these callbacks with the provider via a latest-
   // closure ref, so the handlers always see the current state setters. `mode`
   // is the SDK's speaking/listening axis, which drives the orb.
-  const { status, mode, startSession, endSession, sendUserMessage } =
-    useConversation({
-      onMessage: (m) => {
-        if (m.source === "user") {
-          setTranscript((t) => [...t, { role: "user", text: m.message }]);
+  function clearLiveReveal() {
+    agentLiveRef.current = "";
+    agentTurnCommittedRef.current = false;
+    setAgentLive("");
+    setRevealedCount(0);
+    timeline.current = { spokenAtMs: [] };
+    setAgentThinking(false);
+  }
+
+  // Event-id reconciliation guarantees this runs once for each SDK turn.
+  function commitAgentText(text: string) {
+    if (text === "") return;
+    setTranscript((turns) => [...turns, { role: "agent", text }]);
+    if (FAREWELL_RE.test(text)) setPendingClose(true);
+  }
+
+  const {
+    status,
+    mode,
+    startSession,
+    endSession,
+    sendUserMessage,
+    sendUserActivity,
+  } = useConversation({
+    onMessage: (m) => {
+      if (m.source === "user") {
+        setTranscript((t) => [...t, { role: "user", text: m.message }]);
+      }
+      if (m.source === "ai") {
+        agentTurnCommittedRef.current = true;
+        const eventId = m.event_id ?? activeAgentEventIdRef.current;
+        if (eventId === null || !committedAgentEventIds.current.has(eventId)) {
+          if (eventId !== null) committedAgentEventIds.current.add(eventId);
+          commitAgentText(m.message);
         }
-        if (m.source === "ai") {
-          // Dedup guard: drop an agent turn identical to the one immediately
-          // before it. The opening line arrives via the firstMessage override;
-          // an echoed/repeated emission of the same text must not stack a second
-          // bubble on top of it.
-          setTranscript((t) => {
-            const last = t[t.length - 1];
-            if (last?.role === "agent" && last.text === m.message) return t;
-            return [...t, { role: "agent", text: m.message }];
-          });
-          // Soft close: if the agent said goodbye and the dedicated tool is not
-          // wired on the ElevenLabs agent yet, still end after speech settles.
-          if (FAREWELL_RE.test(m.message)) {
-            setPendingClose(true);
-          }
+        agentLiveRef.current = "";
+        setAgentLive("");
+        setRevealedCount(0);
+        timeline.current = { spokenAtMs: [] };
+        setAgentThinking(false);
+      }
+    },
+    onAgentChatResponsePart: (part) => {
+      // part: { text, type: "start" | "delta" | "stop", event_id }.
+      // Accumulate the *target* text from deltas; gate visibility on the audio
+      // timeline so words appear with the voice, not in jumpy LLM chunks.
+      if (part.type === "start") {
+        activeAgentEventIdRef.current = part.event_id;
+        agentTurnCommittedRef.current = false;
+        agentLiveRef.current = "";
+        setAgentLive("");
+        setRevealedCount(0);
+        timeline.current = { spokenAtMs: [] };
+        setAgentThinking(true);
+      } else if (part.type === "delta") {
+        // Response already committed this turn — ignore trailing deltas.
+        if (agentTurnCommittedRef.current) return;
+        setAgentLive((s) => {
+          const next = s + part.text;
+          agentLiveRef.current = next;
+          return next;
+        });
+      } else if (part.type === "stop") {
+        if (
+          !agentTurnCommittedRef.current &&
+          !committedAgentEventIds.current.has(part.event_id) &&
+          agentLiveRef.current !== ""
+        ) {
+          committedAgentEventIds.current.add(part.event_id);
+          commitAgentText(agentLiveRef.current);
         }
-      },
-      onAgentChatResponsePart: (part) => {
-        // part: { text, type: "start" | "delta" | "stop", event_id }.
-        // We accumulate the *target* text from deltas but gate visibility on the
-        // audio timeline below — so the user sees text appear in step with the
-        // voice, not in jumpy LLM chunks.
-        if (part.type === "start") {
-          setAgentLive("");
-          setRevealedCount(0);
-          timeline.current = { spokenAtMs: [] };
-          setAgentThinking(true);
-        } else if (part.type === "delta") {
-          setAgentLive((s) => s + part.text);
-        } else if (part.type === "stop") {
-          setAgentLive("");
-          setRevealedCount(0);
-          timeline.current = { spokenAtMs: [] };
-          setAgentThinking(false);
+        clearLiveReveal();
+      }
+    },
+    onAgentResponseCorrection: (correction) => {
+      const text = correction.corrected_agent_response;
+      agentTurnCommittedRef.current = true;
+      setTranscript((turns) => {
+        let index = turns.length - 1;
+        while (turns[index]!.role !== "agent") index--;
+        return turns.map((turn, currentIndex) =>
+          currentIndex === index ? { role: "agent", text } : turn,
+        );
+      });
+      agentLiveRef.current = "";
+      setAgentLive("");
+      setRevealedCount(0);
+      timeline.current = { spokenAtMs: [] };
+      setAgentThinking(false);
+    },
+    onAudioAlignment: (a) => {
+      // Field names are snake_case on the wire (AudioEventAlignment). Convert
+      // each char's chunk-relative start into an absolute performance.now() ms
+      // and append to the cumulative timeline. The reveal interval below
+      // walks this timeline to drive `revealedCount`.
+      if (agentTurnCommittedRef.current) return;
+      const anchor = performance.now();
+      const next = timeline.current.spokenAtMs.slice();
+      for (let i = 0; i < a.chars.length; i++) {
+        next.push(anchor + (a.char_start_times_ms[i] ?? 0));
+      }
+      timeline.current = { spokenAtMs: next };
+    },
+    // The live tick. A server tool firing is the moment the app stops being a
+    // chatbot, so the transcript shows it happening rather than waiting for
+    // the agent to mention it afterwards. `agent_tool_request` carries no
+    // arguments — only which tool and which call — which is all this needs.
+    onAgentToolRequest: (request) => setToolInFlight(request.tool_name),
+    // Fires for both `agent_tool_response` and the full-payload variant; the
+    // union has no discriminant this needs, because clearing the indicator is
+    // right either way.
+    onAgentToolResponse: () => setToolInFlight(null),
+    // onError(message, context) — the first arg is the message string, not an
+    // Error object. Surface it inline rather than logging to a console nobody
+    // watches during a demo.
+    onError: (message) => setError(message),
+    onStatusChange: ({ status: next }) => {
+      if (next === "disconnected") {
+        clearLiveReveal();
+        setToolInFlight(null);
+        // Built-in end_call (or a remote hang-up) tears the socket without
+        // going through our hang-up button — still land on the notes screen.
+        if (phaseRef.current === "conversation" && !finishingRef.current) {
+          finishingRef.current = true;
+          setPendingClose(false);
+          router.push("/check-in/summary");
         }
-      },
-      onAudioAlignment: (a) => {
-        // Field names are snake_case on the wire (AudioEventAlignment). Convert
-        // each char's chunk-relative start into an absolute performance.now() ms
-        // and append to the cumulative timeline. The reveal interval below
-        // walks this timeline to drive `revealedCount`.
-        const anchor = performance.now();
-        const next = timeline.current.spokenAtMs.slice();
-        for (let i = 0; i < a.chars.length; i++) {
-          next.push(anchor + (a.char_start_times_ms[i] ?? 0));
-        }
-        timeline.current = { spokenAtMs: next };
-      },
-      // The live tick. A server tool firing is the moment the app stops being a
-      // chatbot, so the transcript shows it happening rather than waiting for
-      // the agent to mention it afterwards. `agent_tool_request` carries no
-      // arguments — only which tool and which call — which is all this needs.
-      onAgentToolRequest: (request) => setToolInFlight(request.tool_name),
-      // Fires for both `agent_tool_response` and the full-payload variant; the
-      // union has no discriminant this needs, because clearing the indicator is
-      // right either way.
-      onAgentToolResponse: () => setToolInFlight(null),
-      // onError(message, context) — the first arg is the message string, not an
-      // Error object. Surface it inline rather than logging to a console nobody
-      // watches during a demo.
-      onError: (message) => setError(message),
-      onStatusChange: ({ status: next }) => {
-        if (next === "disconnected") {
-          setAgentLive("");
-          setRevealedCount(0);
-          setAgentThinking(false);
-          setToolInFlight(null);
-          timeline.current = { spokenAtMs: [] };
-          // Built-in end_call (or a remote hang-up) tears the socket without
-          // going through our hang-up button — still land on the notes screen.
-          if (phaseRef.current === "conversation" && !finishingRef.current) {
-            finishingRef.current = true;
-            setPendingClose(false);
-            router.push("/check-in/summary");
-          }
-        }
-      },
-    });
+      }
+    },
+  });
   const sessionLive = status === "connected" || status === "connecting";
 
   // Shared teardown for hang-up and the farewell-settle effect. The
@@ -282,11 +336,8 @@ function Session({
     endSession();
     setTranscript([]);
     setShownFlagId(null);
-    setAgentLive("");
-    setRevealedCount(0);
-    setAgentThinking(false);
+    clearLiveReveal();
     setToolInFlight(null);
-    timeline.current = { spokenAtMs: [] };
     router.push("/check-in/summary");
   }
 
@@ -314,20 +365,22 @@ function Session({
 
   const shownFlag = redFlags.find((flag) => flag.id === shownFlagId) ?? null;
 
-  // Once goodbye (or end_check_in) is queued, wait until the agent is no longer
-  // speaking, settle briefly, then leave for the notes screen.
+  // Once goodbye (or end_check_in) is queued, wait until TTS finishes, settle
+  // briefly, then leave. Do not gate on agentThinking — agent_response can
+  // arrive without a matching chat-part `stop`, which used to leave thinking
+  // stuck true and block hang-up after "Goodbye".
   useEffect(() => {
     if (phase !== "conversation" || !pendingClose) return;
     if (finishingRef.current) return;
-    if (mode === "speaking" || agentThinking) return;
+    if (mode === "speaking") return;
     const settle = window.setTimeout(() => {
       goToSummary();
     }, FAREWELL_SETTLE_MS);
     return () => window.clearTimeout(settle);
     // goToSummary closes over endSession/router; both are stable enough that
-    // re-running on speaking/thinking transitions is the behaviour we want.
+    // re-running on speaking transitions is the behaviour we want.
     // eslint-disable-next-line react-hooks/exhaustive-deps -- hang-up shares goToSummary
-  }, [phase, pendingClose, mode, agentThinking]);
+  }, [phase, pendingClose, mode]);
 
   // While the screen is idle, ask whether a check-in has been raised. It stops
   // the moment the call starts, so nothing polls across a live session.
@@ -438,6 +491,8 @@ function Session({
   // transition — Safari will refuse the mic outside the gesture.
   function begin(focusInput: boolean) {
     finishingRef.current = false;
+    committedAgentEventIds.current.clear();
+    activeAgentEventIdRef.current = null;
     setPendingClose(false);
     setEntryMode(focusInput ? "text" : "voice");
     void connect();
@@ -481,8 +536,14 @@ function Session({
     }
   }
 
-  const showSuggestions =
-    sessionLive && !transcript.some((t) => t.role === "user");
+  // The strip above the composer changes job once the conversation has started:
+  // openings until the person has said something, the two answers a check-in
+  // turns on from then on. One surface, one purpose at a time — two chip strips
+  // stacked over the input would be the clutter this replaced.
+  const opened = transcript.some((turn) => turn.role === "user");
+  const chips = opened
+    ? [strings.suggestions.taken, strings.suggestions.notYet]
+    : suggestedQuestions;
 
   if (phase === "idle") {
     return (
@@ -586,14 +647,18 @@ function Session({
         </p>
       ) : null}
 
-      {showSuggestions ? (
-        <SuggestedQuestions
-          questions={suggestedQuestions}
+      {pendingClose ? null : (
+        <ChipRow
+          items={chips}
           onAsk={ask}
           disabled={!sessionLive}
-          heading={strings.suggestions.heading}
+          label={
+            opened
+              ? strings.suggestions.answersHeading
+              : strings.suggestions.heading
+          }
         />
-      ) : null}
+      )}
 
       {entryMode === "voice" ? (
         <OrbDock status={status} mode={mode} t={t} />
@@ -603,6 +668,7 @@ function Session({
 
       <Composer
         onSubmit={ask}
+        onUserActivity={sendUserActivity}
         onEnd={end}
         autoFocus={entryMode === "text"}
         t={strings.composer}

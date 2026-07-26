@@ -7,10 +7,9 @@ build/
 next-env.d.ts
 *.tsbuildinfo
 
-# Env
-.env
-.env.local
-.env*.local
+# Env — every real env file, and never the committed template `make setup` copies.
+.env*
+!.env.example
 
 # End-to-end screenshots
 .e2e/
@@ -18,4 +17,3 @@ next-env.d.ts
 # OS
 .DS_Store
 .vercel
-.env*

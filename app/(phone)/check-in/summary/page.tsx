@@ -145,10 +145,7 @@ export default async function CheckInSummaryPage() {
         {firstNudge !== null ? (
           <p className="mt-4 max-w-[40ch] text-base leading-relaxed text-ink">
             {t.checkInSummary.nudgeBlurb
-              .replace(
-                "{time}",
-                formatLocalTime(firstNudge.timeLocal, locale),
-              )
+              .replace("{time}", formatLocalTime(firstNudge.timeLocal, locale))
               .replace("{name}", firstNudge.nameAsWritten)}
           </p>
         ) : null}
@@ -207,7 +204,6 @@ function StatusMark({
   t: {
     markedTaken: string;
     markedMissed: string;
-    unanswered: string;
     markedScheduled: string;
   };
 }) {
@@ -232,13 +228,12 @@ function StatusMark({
           <span className="sr-only">{t.markedScheduled}</span>
         </span>
       );
+    // A mark only where there is something to mark, as on the plan's own rows.
+    // An empty ring here is not a control and answers nothing — and the chip on
+    // the right of the row already says "Not covered", so it was the same fact
+    // twice, once in a shape that looked broken.
     case null:
-      return (
-        <span
-          aria-hidden
-          className="mt-0.5 size-7 shrink-0 rounded-pill border border-rule"
-        />
-      );
+      return null;
     default: {
       const _exhaustive: never = status;
       return _exhaustive;

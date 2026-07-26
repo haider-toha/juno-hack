@@ -30,10 +30,8 @@ export const en = {
   // letter, each remaining step has a quiet pair written as a destination.
   home: {
     greeting: "Good afternoon.",
-    subtitle: "How are you doing today?",
+    subtitle: "How can I help today?",
     checkInTitle: "Start today's check-in",
-    // Quiet-row subtitle when check-in is demoted (e.g. adding another letter).
-    checkInBlurb: "A short voice chat about today.",
     planTitle: "See my recovery plan",
     planBlurb: "Day by day, from discharge.",
     // Second-reader surface — the daughter's phone in the demo. Same product,
@@ -42,9 +40,9 @@ export const en = {
     familyBlurb: "What your next of kin can see.",
     // Button label — opens the camera or the file picker on this screen.
     letterTitle: "Take a photo or upload a PDF",
-    // Names the exact document so "a PDF" is not a guess.
-    letterHint:
-      "Your hospital discharge letter. Photograph every page, or upload the PDF.",
+    // Names the exact document, and the one thing the button cannot say: all of
+    // it. How to send it is already on the button, in bigger type.
+    letterHint: "Every page of your discharge letter.",
     letterAgainTitle: "Add another letter",
     letterAgainBlurb: "Photograph it, or upload the PDF.",
     privacy:
@@ -86,8 +84,9 @@ export const en = {
     // only the frame around it.
     homeSince: "Home since {date}",
     emptyTitle: "No plan yet",
-    emptyBody:
-      "Your recovery plan is built from your discharge letter. Take a photo of it, or upload the PDF, and it will appear here.",
+    // One sentence. How to send the letter is on the button underneath, and
+    // "it will appear here" is what a plan screen already promises by existing.
+    emptyBody: "Your recovery plan is built from your discharge letter.",
     today: "Today",
     // Lower case because it is only ever read inside a tick's name —
     // "Metformin 500mg, today" — never on its own.
@@ -105,16 +104,18 @@ export const en = {
     moreOnPlan: "More on your plan",
     comingUp: "Follow-ups",
     anyTime: "As needed",
-    anyTimeBlurb: "When you need them — not on a set day.",
     changed: "Changed in hospital",
-    changedBlurb:
-      "What the ward altered about your usual medicines, in their words.",
+    // The rows under this heading are the ward's verbatim notes, which is the
+    // only thing a reader could not work out from the heading itself.
+    changedBlurb: "In the ward's own words.",
     // Shown only where the letter gave no note of its own. The row previously
     // printed the schema's raw `changeStatus` here, which is developer data and
     // was English on every screen whatever the reader's language.
     changeStoppedNote: "The letter says this one was stopped.",
     changeAmendedNote: "The letter says this one was changed.",
-    earlierDays: "Earlier days. You can still tick anything you took.",
+    // A section label, not an instruction. The cards below carry the same rings
+    // as today's, and today's card already says what a ring is for.
+    earlierDays: "Earlier days",
     missed: "Missed",
     markedTaken: "Marked as taken",
     markedMissed: "Marked as missed",
@@ -210,8 +211,16 @@ export const en = {
     thinking: "Thinking",
   },
 
+  // The strip above the composer. Before the first user turn it offers openings;
+  // from then on it offers the two answers a check-in actually turns on, so a
+  // dose can still be recorded by tapping when speech is not understood [B12].
+  // Both headings are the list's accessible name rather than visible text — a
+  // row of tappable sentences does not need a label saying it is one.
   suggestions: {
     heading: "Suggested questions",
+    answersHeading: "Quick answers",
+    taken: "I have taken it",
+    notYet: "I have not taken it yet",
   },
 
   languagePicker: {
@@ -240,7 +249,6 @@ export const en = {
   redFlag: {
     verbatim: "The exact words from your letter",
     viewSource: "See where it says that",
-    nhsSource: "From the NHS website",
     getHelpIf: "Get help if",
     // The letter names no recipient on three of the five corpus letters.
     // Saying so is the honest render; upgrading it to 999 would be us speaking.
@@ -331,10 +339,13 @@ How to answer:
 - Do not list. One clear thought per reply.
 - Explain things at roughly a reading age of 9.
 - Say times on a 12-hour clock, like 8am or 6pm. Never say a time as 18:00.
-- Answer only from the plan below. If something is not written there, say you do not have it written down, and offer to flag it for their nurse or GP.
+- Answer only from the plan below. If something is not written there, say you do not have it written down, and that it is worth asking their nurse or GP.
+- You cannot contact anybody. Never say you have flagged, sent, passed on, reported or forwarded anything to a nurse, a GP, a doctor or a pharmacy, and never say that someone will call them back. The only note you can leave is the one for their next of kin, described below.
 - Never invent a medication, a dose, a date or an instruction.
 - You are not a clinician and you never make a clinical judgement. If the person describes something worrying, tell them plainly to call 111, or 999 if it sounds severe, and stop there.
+- Never tell them how much to take, when to take it, or whether to skip, double, stop or make up a dose — not even to say a dose should not be doubled. Say plainly that you cannot advise on that, and that their pharmacist, nurse, GP or 111 can.
 - After you explain a step, ask one short, direct question about that exact step. Name the medicine or task, and ask for one clear fact — usually the time. Good: "What time are you taking your next metformin?" Bad: anything about whether you explained clearly, or "what should you say". The person must know exactly what to answer.
+- After any question, stop and wait. Silence or a turn timeout is never an answer: call no tool, record nothing, and do not move to another step. Briefly repeat the same unanswered question, then wait again. Use each answer once, only for the question directly before it.
 
 After you have greeted them, wait for them to answer. Do not read their whole plan back to them.`,
     // Plan-aware, not generic. The opening line names the one thing this call
@@ -345,6 +356,11 @@ After you have greeted them, wait for them to answer. Do not read their whole pl
     firstMessageDue: "I have {count} things on your plan for today.",
     firstMessageOneDue: "I have 1 thing on your plan for today.",
     firstMessageNothingDue: "Nothing is scheduled on your plan for today.",
+    firstMessageRemaining:
+      "You have {count} things left on your plan for today.",
+    firstMessageOneRemaining: "You have 1 thing left on your plan for today.",
+    firstMessageComplete:
+      "You have already answered everything on your plan for today.",
     firstMessageAsk: "How are you feeling?",
     // Every question is answerable from the plan the prompt already carries.
     // "Is this normal after surgery?" was cut: it invites the open clinical
@@ -368,6 +384,8 @@ After you have greeted them, wait for them to answer. Do not read their whole pl
     dayNumber: "Days since they came home from hospital:",
     planHeading: "Their plan for today",
     planNothing: "Nothing is scheduled for today.",
+    planComplete:
+      "Every scheduled step has already been answered today. Do not ask about those steps again.",
     standingHeading: "Standing advice, with no particular day",
     answeredHeading: "Already answered for today",
     answeredNone: "Nothing has been answered for today yet.",
@@ -380,13 +398,21 @@ After you have greeted them, wait for them to answer. Do not read their whole pl
     redFlagRule:
       "Read the trigger and the action as the letter wrote them. Do not add symptoms and do not soften the action. A line tagged (fr) is a faithful French rendering and is spoken as written; a line tagged (en) is the letter's original English, which you convey in the person's language without inventing symptoms or softening the action.",
     toolsHeading: "What you can do",
-    toolsBody: `- When the person tells you they have taken or missed one of today's steps, call log_step with that step's id and whether it was taken or missed. Call it once per step. Do not announce that you are calling it; just confirm warmly in your own words afterwards.
-- Only pass an id from the list above. If you cannot tell which step they mean, ask which one before calling anything.
+    toolsBody: `- Three things need the person's word before you do them, and this step is important. One: a step marked (important) recorded as missed. Two: any call to escalate_to_next_of_kin. Three: anything at all when you cannot tell which step they mean. In those three, ask one short yes-or-no question naming the medicine and exactly what you would put down, call NO tool in that reply, and do it the moment they say yes. Nothing else waits.
+- Everything else you record straight away. When the person tells you they have taken or missed one of today's steps, call log_step in that same reply with that step's id and whether it was taken or missed, and say what you have put down in the past tense: "I have put your metformin down as taken." That read-back is how they hear what was written and can correct you. Do not announce that you are about to call anything.
+- Never say you have noted, recorded or written something down unless you called log_step for it in that same reply. "I will record that" and then no call is the one thing you must never do.
+- Call it once per step, and one step at a time. If they answer for two medicines in one breath, record the first one now and say back only that one. Ask about the second in your very next question and record it then. Never name a second medicine in a read-back you have not called log_step for.
+- Only record a step as taken when they say they have already taken it. Meaning to take it later is not taken. Only record it as missed when they say they have not taken it and are not about to.
+- Record only what the person on this call says about their own day. If someone says they are speaking for them, or tells you what the patient did, do not record it — ask the person themselves.
+- Only pass an id from the list above.
 - If they will take a still-due medicine later today and name a time, call schedule_reminder with that step's id and the time as 24-hour HH:mm (for example 22:00 for ten at night). Confirm you will nudge them at that time. Do not mark it taken or missed.
 - If they describe something in the watch-out list above, call show_red_flag with that flag's id so it appears on their screen, then say the action the letter gives.
-- If they cannot take a step that the plan marks as important, and they seem to need someone, call escalate_to_next_of_kin with that step's id and a short plain reason. Tell them you have made a note for their next of kin. Never say anyone has been called or messaged.
+- If they cannot take a step that the plan marks as important, and they seem to need someone, call escalate_to_next_of_kin with that step's id and a short plain reason. Tell them you have made a note for their next of kin. Never say anyone has been called or messaged. That note is the only one you can leave anywhere — you cannot reach a nurse, a GP, a doctor or a pharmacy.
+- escalate_to_next_of_kin already records that step as missed, so do not call log_step for it as well.
 - You do not decide what counts as serious enough to escalate a pattern. You report what happened; the app works out the rest.
-- When the check-in is finished, say a short warm goodbye, then call end_check_in. Do not keep asking questions after goodbye. If end_check_in is not available, call end_call instead.`,
+- Answering every step does not finish the check-in. After all due steps have an answer, ask one short final question: "Before we finish, is anything worrying you about how you are feeling?" Then stop and wait.
+- If they raise a concern, handle it from the plan and watch-out list above, then ask whether anything else is worrying them and wait again. Do not end the check-in while a concern is still being discussed.
+- Finish only when they say nothing else is worrying them, ask to finish, or say goodbye. Then say a short warm goodbye and call end_check_in in the same turn. This step is important: saying goodbye without calling it leaves the person holding a live line. Do not keep asking questions after goodbye. If end_check_in is not available, call end_call instead.`,
     idNote:
       "Each step's id is in brackets. Ids are for the tools only. Never read one out loud.",
   },

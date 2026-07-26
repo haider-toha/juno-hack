@@ -268,7 +268,7 @@ const STEPS: Step[] = [
       const text = await open(page, "/");
       must(text.includes("Portico"), "home should be branded Portico", text);
       must(
-        text.includes("How are you doing today?"),
+        text.includes("How can I help today?"),
         "home should open with the greeting",
         text,
       );

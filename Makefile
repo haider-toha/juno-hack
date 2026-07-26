@@ -1,7 +1,7 @@
 # Task runner for the Next.js app.
 SHELL := /bin/bash
 
-.PHONY: help setup install dev build format lint typecheck clean eval e2e seed \
+.PHONY: help setup install dev build format lint typecheck clean eval e2e state ui-edges seed \
         operator ring unring clock miss clear-letter arc
 
 .DEFAULT_GOAL := help
@@ -40,6 +40,16 @@ eval: ## Score extraction against the medic's gold labels (needs `make dev`)
 
 e2e: ## Drive the demo arc in a real browser (needs a running app)
 	node --env-file-if-exists=.env --env-file-if-exists=.env.local scripts/e2e-demo.ts
+
+# `arc` asserts the beats in order; this asserts that the state behind them
+# survives a reload, a second reader and an operator who does the wrong thing.
+state: ## Assert demo state persists and computes (needs a running app)
+	node --env-file-if-exists=.env --env-file-if-exists=.env.local scripts/demo-state.ts
+
+# The four demo behaviours that only exist in a browser: a tick whose write
+# fails, a push landing on another screen, and a language change mid-flow.
+ui-edges: ## Assert the browser-only demo edges (needs a running app)
+	node --env-file-if-exists=.env --env-file-if-exists=.env.local scripts/demo-ui-edges.ts
 
 seed: ## Reset the demo to a known state (dev server must be running)
 	curl -fsS -X POST http://localhost:3000/api/seed && echo

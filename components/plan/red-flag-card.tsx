@@ -27,6 +27,13 @@ type Props = {
 // can always tell who said what. Precedence is height as well as weight — the
 // NHS block is a closed disclosure, because a screen of it above today's doses
 // is the secondary thing being primary.
+//
+// The split is now literal, and it is what keeps today's doses on the first
+// screen: the red tint carries the clinician's sentence and a number worth
+// ringing, and NOTHING else. Everything Portico added around them — that the
+// letter named no one, the trail back to the page, the NHS block — sits on the
+// grey strip underneath. Same words, a third less height, and a reader can tell
+// the two apart before they read either.
 export function RedFlagCard({
   flag,
   contacts,
@@ -37,6 +44,10 @@ export function RedFlagCard({
   t,
   nhs,
 }: Props) {
+  const named = contacts.filter((contact) =>
+    flag.contactIds.includes(contact.id),
+  );
+
   return (
     <section
       // Named by the heading AND the trigger: a letter with several red flags
@@ -82,7 +93,18 @@ export function RedFlagCard({
 
         {locale === "fr" ? <FrenchRendering flag={flag} t={t} /> : null}
 
-        <Recipients flag={flag} contacts={contacts} t={t} />
+        {/* A number to ring is an action and stays on the tint with the
+            sentence that would make someone ring it. "The letter names nobody"
+            is not an action; it is provenance, and it is on the strip below. */}
+        <Recipients named={named} />
+      </div>
+
+      <div className="rounded-b-card border-t border-rule bg-mist">
+        {named.length === 0 ? (
+          <p className="px-5 pt-3 text-sm leading-relaxed text-ink-muted">
+            {t.noRecipient}
+          </p>
+        ) : null}
 
         <SourceTrace
           flag={flag}
@@ -90,25 +112,25 @@ export function RedFlagCard({
           patientId={patientId}
           t={t}
         />
-      </div>
 
-      {medicines.length === 0 ? null : (
-        <details className="group rounded-b-card border-t border-rule bg-mist">
-          <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-3 px-5 py-2.5 transition-opacity duration-150 ease-out hover:opacity-90 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-accent active:opacity-80 [&::-webkit-details-marker]:hidden">
-            <h3 className="text-base font-semibold text-ink-muted">
-              {nhs.heading}
-            </h3>
-            <IconChevron className="size-4 shrink-0 text-ink-faint group-open:rotate-90" />
-          </summary>
-          <ul className="flex flex-col gap-3 px-5 pb-4">
-            {medicines.map((medicine) => (
-              <li key={medicine.name}>
-                <Medicine medicine={medicine} t={nhs} />
-              </li>
-            ))}
-          </ul>
-        </details>
-      )}
+        {medicines.length === 0 ? null : (
+          <details className="group border-t border-rule">
+            <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-3 px-5 py-2.5 transition-opacity duration-150 ease-out hover:opacity-90 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-accent active:opacity-80 [&::-webkit-details-marker]:hidden">
+              <h3 className="text-base font-semibold text-ink-muted">
+                {nhs.heading}
+              </h3>
+              <IconChevron className="size-4 shrink-0 text-ink-faint group-open:rotate-90" />
+            </summary>
+            <ul className="flex flex-col gap-3 px-5 pb-4">
+              {medicines.map((medicine) => (
+                <li key={medicine.name}>
+                  <Medicine medicine={medicine} t={nhs} />
+                </li>
+              ))}
+            </ul>
+          </details>
+        )}
+      </div>
     </section>
   );
 }
@@ -144,29 +166,12 @@ function FrenchRendering({ flag, t }: { flag: RedFlag; t: Strings }) {
   );
 }
 
-function Recipients({
-  flag,
-  contacts,
-  t,
-}: {
-  flag: RedFlag;
-  contacts: Contact[];
-  t: Strings;
-}) {
-  const named = contacts.filter((contact) =>
-    flag.contactIds.includes(contact.id),
-  );
-
-  // The letter names no recipient on three of the five corpus letters. Saying
-  // so is the honest render; upgrading it to 999 would be us speaking, not the
-  // doctor.
-  if (named.length === 0) {
-    return (
-      <p className="mt-4 text-base leading-relaxed text-ink-muted">
-        {t.noRecipient}
-      </p>
-    );
-  }
+// The letter names no recipient on three of the five corpus letters. Saying so
+// is the honest render; upgrading it to 999 would be us speaking, not the
+// doctor. That sentence lives on the grey strip, so this renders nothing at all
+// when there is nobody to ring.
+function Recipients({ named }: { named: Contact[] }) {
+  if (named.length === 0) return null;
 
   return (
     <ul className="mt-4 flex flex-col gap-2">
@@ -220,7 +225,7 @@ function SourceTrace({
   return (
     <a
       href={href}
-      className="mt-2 flex min-h-11 items-center text-base text-ink-muted underline underline-offset-4 transition duration-150 ease-out hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent active:opacity-80"
+      className="flex min-h-11 items-center px-5 py-2 text-base text-ink-muted underline underline-offset-4 transition duration-150 ease-out hover:text-ink focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-accent active:opacity-80"
     >
       {t.viewSource}
       {page === null ? "" : t.sourcePage.replace("{page}", String(page))}

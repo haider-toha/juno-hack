@@ -8,11 +8,13 @@ import type { Dictionary } from "@/lib/i18n/en";
 // which decides whether to send now or queue until the socket opens.
 export function Composer({
   onSubmit,
+  onUserActivity,
   onEnd,
   autoFocus,
   t,
 }: {
   onSubmit: (text: string) => void;
+  onUserActivity: () => void;
   onEnd: () => void;
   autoFocus: boolean;
   t: Dictionary["composer"];
@@ -52,7 +54,10 @@ export function Composer({
           <input
             ref={inputRef}
             value={draft}
-            onChange={(e) => setDraft(e.target.value)}
+            onChange={(e) => {
+              setDraft(e.target.value);
+              onUserActivity();
+            }}
             placeholder={t.placeholder}
             aria-label={t.placeholder}
             enterKeyHint="send"

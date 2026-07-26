@@ -29,10 +29,19 @@ check() {
 
 # The escalation card's heading is the whole claim of the family screen, so the
 # arc asserts on that rather than on an HTTP code.
+#
+# Keyed on the id the card's own `aria-labelledby` points at, never on its class
+# list: the alert branch and the calm branch carry different classes, so a
+# class-keyed pattern matches nothing on at least one of them and the assertion
+# passes or fails for a reason that has nothing to do with the escalation.
 family_says() {
-  curl -sS "$BASE/family" \
-    | grep -oE '<h2 class="font-display text-xl font-semibold tracking-tight text-ink">[^<]*' \
-    | sed 's/.*text-ink">//' | head -1
+  local heading
+  heading="$(curl -sS "$BASE/family" \
+    | grep -oE '<h2 id="family-assessment"[^>]*>[^<]*' \
+    | sed 's/.*>//' | head -1)"
+  # A blank `got:` is what let three silent failures read as a green arc in two
+  # documents. Name the absence instead.
+  echo "${heading:-(no escalation heading on /family)}"
 }
 
 post() { curl -sS -X POST "$BASE$1" -H 'content-type: application/json' ${2:+-d "$2"}; }

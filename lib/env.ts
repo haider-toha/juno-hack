@@ -31,21 +31,21 @@ export function serverEnv() {
   });
 }
 
-// One function per integration, not one fat schema: a missing Anthropic key
-// must not stop the Redis-only parts of the app from booting. Each is called at
-// the first line of the code that needs it, so a misconfiguration fails at the
+// One function per integration, not one fat schema: a missing OpenAI key must
+// not stop the Redis-only parts of the app from booting. Each is called at the
+// first line of the code that needs it, so a misconfiguration fails at the
 // config boundary with the variable's name — never as a third-party 401 in the
 // middle of an extraction.
 
-const llmSchema = z.object({
-  ANTHROPIC_API_KEY: z.string().min(1),
+const openAiSchema = z.object({
+  OPENAI_API_KEY: z.string().min(1),
 });
 
-// The provider reads ANTHROPIC_API_KEY from process.env itself, so nothing
-// forces this call. Extraction calls it anyway — that is the whole point.
-export function llmEnv() {
-  return llmSchema.parse({
-    ANTHROPIC_API_KEY: process.env.ANTHROPIC_API_KEY,
+// The provider reads OPENAI_API_KEY from process.env itself, so nothing forces
+// this call. Extraction calls it anyway — that is the whole point.
+export function openAiEnv() {
+  return openAiSchema.parse({
+    OPENAI_API_KEY: process.env.OPENAI_API_KEY,
   });
 }
 

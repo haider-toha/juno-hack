@@ -25,9 +25,7 @@ export function EscalationCard({
 }) {
   switch (assessment.kind) {
     case "none":
-      return (
-        <Card tone="calm" title={t.noneTitle} body={t.noneBody} t={t} />
-      );
+      return <Card tone="calm" title={t.noneTitle} body={t.noneBody} t={t} />;
     case "nudge":
       return (
         <Card

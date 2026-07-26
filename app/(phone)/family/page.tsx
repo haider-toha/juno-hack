@@ -84,7 +84,6 @@ export default async function FamilyPage() {
             />
           )}
         </div>
-
       </div>
     </div>
   );

@@ -17,6 +17,10 @@ type Props = {
   // boundary stays at the leaf and this row stays a server component. Absent on
   // rows there is nothing to answer about yet: a future day, an appointment.
   check?: ReactNode;
+  // Fragment target, set on today's rows only. The dose nudge names the exact
+  // medicine it is about, so tapping it should land on that row rather than at
+  // the top of a plan the patient then has to search.
+  anchorId?: string;
   t: Strings;
 };
 
@@ -32,11 +36,21 @@ type Props = {
 // dictionary fixes. The dose directions additionally take `translate="no"`:
 // they are the clinician's exact instruction, and a browser rewriting one
 // behind the patient's back is a safety defect, not a feature [Locked D7].
-export function TaskRow({ item, status, dateLabel, check, t }: Props) {
+export function TaskRow({
+  item,
+  status,
+  dateLabel,
+  check,
+  anchorId,
+  t,
+}: Props) {
   const detail = describe(item, t);
 
   return (
-    <li className="flex min-h-11 items-start gap-3 py-3">
+    <li
+      id={anchorId}
+      className="flex min-h-11 scroll-mt-4 items-start gap-3 py-3"
+    >
       {/* A mark only where there is something to mark. A row with no tick and
           no answer gets nothing: an empty ring on an appointment or on
           "Coming up" looks like a control that does not work. */}

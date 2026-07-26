@@ -63,7 +63,7 @@ export default async function CheckInPage() {
       firstMessage={
         bundle === null
           ? t.persona.firstMessage
-          : buildFirstMessage({ bundle, today, locale })
+          : buildFirstMessage({ bundle, today, logs, locale })
       }
       suggestedQuestions={t.persona.suggestedQuestions}
       patientId={DEMO_PATIENT_ID}

@@ -25,12 +25,24 @@ type Phase =
   | { kind: "ready"; highlights: Highlight[] }
   | { kind: "error"; message: string };
 
+// A whole A4 page fitted to a 390px column renders the letter's 8pt clinical
+// type at under 5 CSS pixels. The screen would prove the sentence is in the
+// letter and then make it unreadable, which is the opposite of what "see where
+// it says that" promises. So the page is rendered at a width the quote can
+// actually be read at and the reader pans — with the highlight scrolled to the
+// middle of the viewport, so the pan starts on the right words rather than at
+// the letterhead.
+const READABLE_WIDTH = 900;
+
 // In-app letter view: render the page the quote lives on, then paint a soft
 // highlight over the glyphs that match `SourceRef.quote`. Native PDF viewers
 // can jump to `#page=N` but cannot highlight a sentence from a URL — that is
 // why this is a client leaf rather than a bare link to the blob route.
 export function LetterViewer({ url, page, quote, t }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  // The pan box, not the canvas: the canvas is wider than the column by design,
+  // so it cannot be the thing measured to decide how wide to draw.
+  const viewRef = useRef<HTMLDivElement>(null);
   const [phase, setPhase] = useState<Phase>({ kind: "loading" });
 
   useEffect(() => {
@@ -68,10 +80,14 @@ export function LetterViewer({ url, page, quote, t }: Props) {
         const pdfPage = await doc.getPage(pageNumber);
         if (ac.signal.aborted) return;
 
-        // Fit the page to the column's CSS width, then paint into a backing
-        // store scaled by devicePixelRatio. Without that, a 1× canvas is
-        // stretched across a 2×/3× phone screen and the letter goes soft.
-        const cssWidth = canvas.parentElement?.clientWidth ?? 360;
+        // Draw at least `READABLE_WIDTH`, and wider on a column that is wider
+        // still, then paint into a backing store scaled by devicePixelRatio.
+        // Without that second part a 1× canvas is stretched across a 2×/3×
+        // phone screen and the letter goes soft.
+        const cssWidth = Math.max(
+          viewRef.current?.clientWidth ?? 0,
+          READABLE_WIDTH,
+        );
         const unscaled = pdfPage.getViewport({ scale: 1 });
         const scale = cssWidth / unscaled.width;
         const viewport = pdfPage.getViewport({ scale });
@@ -93,9 +109,7 @@ export function LetterViewer({ url, page, quote, t }: Props) {
           canvasContext: context,
           viewport,
           transform:
-            pixelRatio === 1
-              ? undefined
-              : [pixelRatio, 0, 0, pixelRatio, 0, 0],
+            pixelRatio === 1 ? undefined : [pixelRatio, 0, 0, pixelRatio, 0, 0],
         });
         await renderTask.promise;
         if (ac.signal.aborted) return;
@@ -127,43 +141,56 @@ export function LetterViewer({ url, page, quote, t }: Props) {
     };
   }, [url, page, quote, t.failed]);
 
+  // `inline: "center"` as well as `block`: the page is wider than the column
+  // now, so centring only vertically would still open on the left margin.
   useEffect(() => {
     if (phase.kind !== "ready" || phase.highlights.length === 0) return;
     const first = document.getElementById("letter-highlight-0");
-    first?.scrollIntoView({ block: "center", behavior: "smooth" });
+    first?.scrollIntoView({ block: "center", inline: "center" });
   }, [phase]);
 
   return (
-    <div className="relative w-full">
-      <canvas
-        ref={canvasRef}
-        className="block max-w-full rounded-tactile bg-surface shadow-card"
-        aria-label={t.pageLabel.replace("{page}", String(page ?? 1))}
-      />
-      {phase.kind === "ready"
-        ? phase.highlights.map((box, index) => (
-            <div
-              key={`${box.left}-${box.top}-${box.width}`}
-              id={index === 0 ? "letter-highlight-0" : undefined}
-              aria-hidden
-              className="pointer-events-none absolute rounded-sm bg-accent/40 mix-blend-multiply"
-              style={{
-                left: box.left,
-                top: box.top,
-                width: box.width,
-                height: box.height,
-              }}
-            />
-          ))
-        : null}
+    // The pan box fills what the phone shell gave this page and scrolls inside
+    // it — the frame owns the height, so no dvh/vh here or anywhere under it.
+    <div className="flex min-h-0 flex-1 flex-col">
+      <div
+        ref={viewRef}
+        className="min-h-0 flex-1 overflow-auto overscroll-contain rounded-tactile bg-surface shadow-card"
+      >
+        <div className="relative w-max">
+          <canvas
+            ref={canvasRef}
+            className="block"
+            aria-label={t.pageLabel.replace("{page}", String(page ?? 1))}
+          />
+          {phase.kind === "ready"
+            ? phase.highlights.map((box, index) => (
+                <div
+                  key={`${box.left}-${box.top}-${box.width}`}
+                  id={index === 0 ? "letter-highlight-0" : undefined}
+                  aria-hidden
+                  className="pointer-events-none absolute rounded-sm bg-accent/40 mix-blend-multiply"
+                  style={{
+                    left: box.left,
+                    top: box.top,
+                    width: box.width,
+                    height: box.height,
+                  }}
+                />
+              ))
+            : null}
+        </div>
+      </div>
       {phase.kind === "loading" ? (
-        <p className="mt-3 text-base text-ink-muted">{t.loading}</p>
+        <p className="mt-3 shrink-0 text-base text-ink-muted">{t.loading}</p>
       ) : null}
       {phase.kind === "error" ? (
-        <p className="mt-3 text-base text-ink-muted">{phase.message}</p>
+        <p className="mt-3 shrink-0 text-base text-ink-muted">
+          {phase.message}
+        </p>
       ) : null}
       {phase.kind === "ready" && phase.highlights.length === 0 ? (
-        <p className="mt-3 text-base text-ink-muted">{t.notFound}</p>
+        <p className="mt-3 shrink-0 text-base text-ink-muted">{t.notFound}</p>
       ) : null}
     </div>
   );

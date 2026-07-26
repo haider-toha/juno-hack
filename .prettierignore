@@ -13,6 +13,11 @@ next-env.d.ts
 .claude
 .agents
 
+# Vendored minified build output from pdfjs-dist, copied in verbatim so the
+# worker version cannot drift from the library's. Prettier would expand it to
+# thousands of lines and the next copy would revert them.
+public/pdf.worker.min.mjs
+
 # The medic's discharge corpus is an external input contract, not our source.
 # It is the ground-truth label set for extraction QA, so it stays byte-for-byte
 # as delivered — and re-sending a corrected letter must not turn CI red.

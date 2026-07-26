@@ -76,23 +76,6 @@ export function IconMenu({ className }: IconProps) {
   );
 }
 
-export function IconChat({ className }: IconProps) {
-  return (
-    <svg
-      viewBox="0 0 16 16"
-      aria-hidden
-      className={className ?? "size-4"}
-      fill="none"
-      stroke="currentColor"
-      strokeWidth={1.5}
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <path d="M3 4.5A1.5 1.5 0 0 1 4.5 3h7A1.5 1.5 0 0 1 13 4.5v4A1.5 1.5 0 0 1 11.5 10H6l-3 2.5V4.5Z" />
-    </svg>
-  );
-}
-
 export function IconClose({ className }: IconProps) {
   return (
     <svg

@@ -14,7 +14,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@ai-sdk/anthropic": "^4.0.20",
+    "@ai-sdk/openai": "^4.0.20",
     "@elevenlabs/react": "^1.8.0",
     "@upstash/redis": "^1.38.0",
     "@vercel/blob": "^2.6.1",

@@ -40,6 +40,7 @@ export function buildCheckInPrompt({
   const standing = standingItems(bundle);
   const answeredToday = logs.filter((entry) => entry.day === today);
   const answeredIds = new Set(answeredToday.map((entry) => entry.itemId));
+  const remainingDue = due.filter((item) => !answeredIds.has(item.id));
   const recentMisses = logs.filter(
     (entry) => entry.status === "missed" && entry.day !== today,
   );
@@ -65,7 +66,9 @@ export function buildCheckInPrompt({
     t.idNote,
     due.length === 0
       ? t.planNothing
-      : due.map((item) => describe(item, answeredIds)).join("\n"),
+      : remainingDue.length === 0
+        ? t.planComplete
+        : remainingDue.map((item) => describe(item, answeredIds)).join("\n"),
     "",
     standing.length === 0 ? null : `## ${t.standingHeading}`,
     standing.length === 0
@@ -116,10 +119,16 @@ export function buildCheckInPrompt({
 export function buildFirstMessage({
   bundle,
   today,
+  logs,
   locale,
-}: Omit<Inputs, "logs">): string {
+}: Inputs): string {
   const t = getDictionary(locale).persona;
-  const count = dueToday(bundle, today).length;
+  const due = dueToday(bundle, today);
+  const answeredIds = new Set(
+    logs.filter((entry) => entry.day === today).map((entry) => entry.itemId),
+  );
+  const count = due.filter((item) => !answeredIds.has(item.id)).length;
+  const continued = count < due.length;
   const name = bundle.patient.givenName;
 
   const greeting =
@@ -128,11 +137,17 @@ export function buildFirstMessage({
       : t.firstMessageNamed.replace("{name}", name);
 
   const plan =
-    count === 0
+    due.length === 0
       ? t.firstMessageNothingDue
-      : count === 1
-        ? t.firstMessageOneDue
-        : t.firstMessageDue.replace("{count}", String(count));
+      : count === 0
+        ? t.firstMessageComplete
+        : continued && count === 1
+          ? t.firstMessageOneRemaining
+          : continued
+            ? t.firstMessageRemaining.replace("{count}", String(count))
+            : count === 1
+              ? t.firstMessageOneDue
+              : t.firstMessageDue.replace("{count}", String(count));
 
   // The unnamed greeting already ends in a question, so appending another one
   // would have the agent open with two.

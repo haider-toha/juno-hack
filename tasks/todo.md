@@ -55,6 +55,36 @@ This file is the fast-scan version for the build itself.
 > and `pnpm format:check` **all pass**, and `make arc` is **21 passed, 0
 > failed**. Nothing was loosened to make a check pass.
 >
+> ### ⚠️ SUPERSEDED 2026-07-26 (overnight pass) — two claims above were false
+>
+> Read `audit/juno-recovery-companion/24-overnight-consolidated.md` first; it
+> rolls up files `18`–`23`. Two things this section claimed were **not true when
+> written**, and both were found by re-running rather than re-reading:
+>
+> 1. **`make arc` was 18 passed, 3 failed**, not 21/21. `family_says()` in
+>    `scripts/demo-arc.sh` keyed on a Tailwind class list, and the alert branch
+>    never carried `font-display`/`tracking-tight` at all — so the three family
+>    assertions could only ever match the calm branch. Re-keyed on
+>    `id="family-assessment"`. **Now genuinely 21/21**, proven not-looser by a
+>    12-cell discrimination matrix and a mutated-harness negative control.
+> 2. **`pnpm format:check` was red on 25 files** and had been since before this
+>    session (`brand/logo-candidates/*.json`, `public/pdf.worker.min.mjs`,
+>    `README.md`, `DEMO.md` and others no track had touched). Fixed by running
+>    Prettier repo-wide and adding the vendored pdfjs worker to
+>    `.prettierignore`.
+>
+> **And one claim from `14-…md` was already false when that file was written:**
+> its French red-flag finding rests on `grep "Fr" lib/check-in-prompt.ts`
+> returning no matches. It returns four, and the file has been unmodified since
+> `1df20a3` (01:57) — 27 minutes _before_ `14-…md` was written at 02:24.
+>
+> **The demo-mode badge does not exist.** `components/demo-mode-badge.tsx` was
+> deleted in `5cbaca9`; all seven screens grep zero, in both locales. Both
+> `14-…md` and `16-…md` record it as PASS on 5/5 screens. This removes one of
+> the three disclosures D9's honesty argument rests on, and `lib/env.ts:10`
+> still carries a comment asserting the UI renders it. **Human call: restore it,
+> or brief the presenter never to claim the app discloses demo mode.**
+>
 > **The tree has been moving all night** — several agents wrote to it while these
 > boxes were being set, and at one point typecheck was briefly red from a
 > half-landed dictionary edit. **Re-run the three checks yourself before
@@ -63,10 +93,11 @@ This file is the fast-scan version for the build itself.
 >
 > **Extraction contract (unchanged, restated so nobody drifts):**
 >
-> 1. **Live / eval** — real PDFs → AI Gateway → **OpenAI structured outputs**
->    (`generateText` + `Output.object`) → score vs medic gold JSON via
->    `make eval`. That gates "the AI works." **Out of scope for the 2026-07-26
->    build night** — the code is still Anthropic direct + prompt JSON [L9].
+> 1. **Live / eval** — real PDFs → **OpenAI direct** (no AI Gateway; the product
+>    owner ruled it out) → `generateText` + `Output.object` with `strict: true`
+>    → score vs medic gold JSON via `make eval`. That gates "the AI works."
+>    **DONE 2026-07-26 overnight.** Model `gpt-5.6-luna`; every scored family
+>    100% on all five letters. See `18-…md` and A6 below.
 > 2. **Demo mode** — **no** LLM extraction; use the baked Whitfield / seed
 >    JSON. Voice / Redis / UI stay real. Live failures must never fall into
 >    demo [D9]. This half is built and visible.
@@ -96,9 +127,12 @@ for every mutation are in `17-…md §Rollback`.
 >    stays **OFF**. All PATCHed and read back.
 > 4. **Skip** the Tier 3 Resend email stretch and `vitest` unless spare time
 >    remains at the end. Neither blocks anything.
-> 5. **Extraction = OpenAI structured outputs via AI Gateway** [L9]. Anthropic
->    is out for this schema. `make eval` against corpus gold JSON licenses
->    demo's baked bundle.
+> 5. **Extraction = OpenAI structured outputs, called DIRECTLY** — **not** via
+>    the AI Gateway; the product owner ruled the Gateway out on 2026-07-26 over
+>    an ongoing Gateway/Anthropic issue, superseding [L9]'s wording. Anthropic is
+>    out entirely (package and key both removed). `make eval` against corpus gold
+>    JSON licenses demo's baked bundle, **and as of 2026-07-26 it is green** —
+>    so the bundle is now licensed by a measurement rather than by intent.
 >
 > ### ⚠️ Five technical corrections that override older wording
 >
@@ -120,37 +154,37 @@ for every mutation are in `17-…md §Rollback`.
 
 ### Done
 
-| Item                             | Where                                                                                                                                                                                   |
-| -------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Product name locked              | **Portico** (D10) — not Juno                                                                                                                                                            |
-| Vercel project linked            | `haider-projects/juno-hack` (slug legacy; product is Portico)                                                                                                                           |
-| Claude Vercel MCP authenticated  | `claude mcp list` → ✔ Connected                                                                                                                                                         |
-| Upstash Redis (free) provisioned | URL + token on Vercel Prod/Preview/**Development**                                                                                                                                      |
-| Vercel Blob                      | `BLOB_READ_WRITE_TOKEN` on all envs                                                                                                                                                     |
-| `AI_GATEWAY_API_KEY`             | Created and probed 200 on 2026-07-25. **No longer in the local env files** — restore it when A6 is rewired to the Gateway [L9]                                                          |
-| `XI_API_KEY`                     | `.env.local` + Vercel; `GET /v1/user` → 200                                                                                                                                             |
-| `NEXT_PUBLIC_XI_VOICE_ID`        | **Was pointing at a nonexistent voice** (`voice_not_found`) — fixed to `EXAVITQu4vr4xnSDxMaL` (French-verified) in `.env`, `.env.example` + Vercel all envs                             |
-| `PORTICO_TOOL_SECRET`            | New for B4. Server-only, in `.env.local` + `.env.example`. ElevenLabs sends it as the `x-portico-tool-secret` header; it is never a `NEXT_PUBLIC_` var and never a `secret__` variable  |
-| Local env layout                 | **`.env`** = public `NEXT_PUBLIC_*`; **`.env.local`** = quoted secrets. **Drifted:** `.env` now also carries an unused `OPENAI_API_KEY`, and `ANTHROPIC_API_KEY` is in neither file     |
-| Real locales locked              | **English + French** — D4/D8/D9. Model pinned **per locale**, see correction 1 above                                                                                                    |
-| **Portico agent created**        | `agent_0201kyd61dnjey7bkz56hpyhs3f1` — in `.env` + Vercel all envs. All 5 D8 overrides verified; `client_events` corrected; live EN + FR sessions proved the overrides apply            |
-| Blob store access                | **Private** (`juno-letters` / `store_D2WuxECBKxmSPVzn`) — decided by infra, not open                                                                                                    |
-| **Deployed to production**       | `https://juno-hack.vercel.app` (stable alias). `PORTICO_TOOL_SECRET` added to Vercel Production — it was the blocker. **Ships the working tree, not `HEAD`: redeploy before filming**   |
-| **ElevenLabs tools wired**       | Workspace secret `jSDnjhNCouONynsL6JwP`; `log_step`, `escalate_to_next_of_kin`, `show_red_flag` created **and attached via `tool_ids`**; all three proven firing from a real agent      |
-| Free-tier confirmed              | Hobby Blob + Upstash free + AI Gateway $5 credits — fine for demo                                                                                                                       |
-| Medic discharge corpus           | **`fixtures/discharge-summaries/`** — **demo gold = Whitfield pneumonia (02)** [L6]; **Bradley (05) = red-flag QA**; Sinclair / Clarke / Okafor = QA. Not in `public/`                  |
-| **NHS drug lookup fully mapped** | **`fixtures/nhs-drug-map.json`** — all 25 corpus drugs resolved against the live A–Z: **18 found, 6 no-urgent-guidance, 1 absent, 0 failures.** A7's test oracle; A8 done early         |
-| Demo clot-preventer              | **Apixaban** (medic's call) → gold letter switched to Whitfield, the only letter carrying it. Resolves on NHS.uk with 2 urgent blocks. Enoxaparin/Sinclair stay as the `absent` QA case |
+| Item                             | Where                                                                                                                                                                                                                                                             |
+| -------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Product name locked              | **Portico** (D10) — not Juno                                                                                                                                                                                                                                      |
+| Vercel project linked            | `haider-projects/juno-hack` (slug legacy; product is Portico)                                                                                                                                                                                                     |
+| Claude Vercel MCP authenticated  | `claude mcp list` → ✔ Connected                                                                                                                                                                                                                                   |
+| Upstash Redis (free) provisioned | URL + token on Vercel Prod/Preview/**Development**                                                                                                                                                                                                                |
+| Vercel Blob                      | `BLOB_READ_WRITE_TOKEN` on all envs                                                                                                                                                                                                                               |
+| `AI_GATEWAY_API_KEY`             | Created and probed 200 on 2026-07-25. **No longer in the local env files** — restore it when A6 is rewired to the Gateway [L9]                                                                                                                                    |
+| `XI_API_KEY`                     | `.env.local` + Vercel; `GET /v1/user` → 200                                                                                                                                                                                                                       |
+| `NEXT_PUBLIC_XI_VOICE_ID`        | **Was pointing at a nonexistent voice** (`voice_not_found`) — fixed to `EXAVITQu4vr4xnSDxMaL` (French-verified) in `.env`, `.env.example` + Vercel all envs                                                                                                       |
+| `PORTICO_TOOL_SECRET`            | New for B4. Server-only, in `.env.local` + `.env.example`. ElevenLabs sends it as the `x-portico-tool-secret` header; it is never a `NEXT_PUBLIC_` var and never a `secret__` variable                                                                            |
+| Local env layout                 | **`.env`** = public `NEXT_PUBLIC_*`; **`.env.local`** = quoted secrets. **Drift fixed 2026-07-26:** `OPENAI_API_KEY` removed from `.env`, kept in `.env.local`, and now required by `openAiEnv()`. Anthropic is gone entirely. **Rotate that key** — see `23-…md` |
+| Real locales locked              | **English + French** — D4/D8/D9. Model pinned **per locale**, see correction 1 above                                                                                                                                                                              |
+| **Portico agent created**        | `agent_0201kyd61dnjey7bkz56hpyhs3f1` — in `.env` + Vercel all envs. All 5 D8 overrides verified; `client_events` corrected; live EN + FR sessions proved the overrides apply                                                                                      |
+| Blob store access                | **Private** (`juno-letters` / `store_D2WuxECBKxmSPVzn`) — decided by infra, not open                                                                                                                                                                              |
+| **Deployed to production**       | `https://juno-hack.vercel.app` (stable alias). `PORTICO_TOOL_SECRET` added to Vercel Production — it was the blocker. **Ships the working tree, not `HEAD`: redeploy before filming**                                                                             |
+| **ElevenLabs tools wired**       | Workspace secret `jSDnjhNCouONynsL6JwP`; `log_step`, `escalate_to_next_of_kin`, `show_red_flag` created **and attached via `tool_ids`**; all three proven firing from a real agent                                                                                |
+| Free-tier confirmed              | Hobby Blob + Upstash free + AI Gateway $5 credits — fine for demo                                                                                                                                                                                                 |
+| Medic discharge corpus           | **`fixtures/discharge-summaries/`** — **demo gold = Whitfield pneumonia (02)** [L6]; **Bradley (05) = red-flag QA**; Sinclair / Clarke / Okafor = QA. Not in `public/`                                                                                            |
+| **NHS drug lookup fully mapped** | **`fixtures/nhs-drug-map.json`** — all 25 corpus drugs resolved against the live A–Z: **18 found, 6 no-urgent-guidance, 1 absent, 0 failures.** A7's test oracle; A8 done early                                                                                   |
+| Demo clot-preventer              | **Apixaban** (medic's call) → gold letter switched to Whitfield, the only letter carrying it. Resolves on NHS.uk with 2 urgent blocks. Enoxaparin/Sinclair stay as the `absent` QA case                                                                           |
 
 ### Still to do (before / as Phase 0)
 
-| Item                    | Notes                                                                                                                                                                                                                                                                            |
-| ----------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Packages                | **Done.** `@upstash/redis`, `@vercel/blob`, `ai`, `server-only` are all in `package.json`                                                                                                                                                                                        |
-| Code Phase 0            | **Done.** Schema (`portico-extract/1`), `lib/store/log.ts`, redis client, clock, `llmEnv`/`blobEnv`/`redisEnv`/`toolEnv`, CI, `<html lang>`, override docs — see Phase 0 below                                                                                                   |
-| Server tools webhooks   | **Done.** Deployed, tools created and attached via `tool_ids`, and a real agent proven calling them — see B4. A5's `onUploadCompleted` still cannot reach `localhost`, but the browser upload path does not depend on it                                                         |
-| Extraction key          | **Live extraction is dead here.** `POST /api/extract` → 500, `ZodError: ANTHROPIC_API_KEY` at `lib/env.ts:47`, since commit `fe657f6`. Fails loudly and never serves baked data, but it means D9 rule 3 is breached — the demo shortcut has no runnable live counterpart. See A6 |
-| Human calls outstanding | **One:** the French ear-test (B11). Everything else only a human could do is done — deployed, tools attached, a real agent proven calling them. See "Before filming" at the foot of this file                                                                                    |
+| Item                    | Notes                                                                                                                                                                                                                    |
+| ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Packages                | **Done.** `@upstash/redis`, `@vercel/blob`, `ai`, `server-only` are all in `package.json`                                                                                                                                |
+| Code Phase 0            | **Done.** Schema (`portico-extract/1`), `lib/store/log.ts`, redis client, clock, `llmEnv`/`blobEnv`/`redisEnv`/`toolEnv`, CI, `<html lang>`, override docs — see Phase 0 below                                           |
+| Server tools webhooks   | **Done.** Deployed, tools created and attached via `tool_ids`, and a real agent proven calling them — see B4. A5's `onUploadCompleted` still cannot reach `localhost`, but the browser upload path does not depend on it |
+| Extraction key          | **Live extraction now works.** Rewired to OpenAI direct on 2026-07-26; `openAiEnv()` requires `OPENAI_API_KEY` from `.env.local`. `make eval` green on all five letters. **D9 rule 3 is closed.** See A6 and `18-…md`    |
+| Human calls outstanding | **Four:** the French ear-test (B11); rotate `OPENAI_API_KEY`; decide the demo badge; decide `next@16.2.9 → 16.2.11` (9 advisories). See "Before filming" at the foot of this file and `24-overnight-consolidated.md`     |
 
 ### Env file contract (do not undo)
 
@@ -162,12 +196,17 @@ for every mutation are in `17-…md §Rollback`.
 - Never print secret values into chat, commits, or audit files.
 - `vercel env pull .env.local --yes` is safe to re-run; it will not remove the
   layout above if you re-apply the split afterward.
-- **Drift to fix:** `.env` currently holds a live `OPENAI_API_KEY`, which nothing
-  in the codebase reads and which the file's own header says must not be there.
-  It is gitignored, so it is not committed — but it is in the wrong file and has
-  been read aloud by tooling. Move it, or rotate it.
-- **Missing:** `ANTHROPIC_API_KEY`, which `llmEnv()` requires. Its absence is why
-  live extraction 500s.
+- **Drift FIXED 2026-07-26:** `OPENAI_API_KEY` is out of `.env` and lives only in
+  `.env.local`, where `openAiEnv()` requires it. Verified three ways in `23-…md`
+  — working tree (631 files), full git history (41 commits, 0 hits) and a
+  partial-prefix probe. A real production build confirmed 0 of 8 secret values
+  reach any client chunk. **Still rotate the key:** it was surfaced in an agent
+  transcript. Nothing in the repo leaked it.
+- **`ANTHROPIC_API_KEY` is gone**, along with `llmEnv()` and
+  `@ai-sdk/anthropic`. No dangling code reference remains.
+- **`.gitignore` fixed:** a stray `.env*` appended under `# OS` by `vercel link`
+  made the deliberate `# Env` block dead and silently ignored `.env.example` —
+  the file `make setup` copies. Now `.env*` + `!.env.example`.
 
 ---
 
@@ -237,33 +276,47 @@ from memory. **Fail = nobody branches.** — **PASSED.**
       `accept="image/*,application/pdf"` + `capture="environment"` +
       `multiple`, uploaded in parallel with honest progress. Access is
       `Private`. `onUploadCompleted` still cannot reach localhost
-- [ ] A6 — **OUT OF SCOPE for the 2026-07-26 build night; do not expand into
-      it. But know that live extraction is currently DEAD on this machine.**
-      Verified against a live-mode server: `POST /api/extract` → **HTTP 500**,
-      `ZodError: ANTHROPIC_API_KEY … received undefined` at `lib/env.ts:47`.
-      Commit `fe657f6` moved the provider to `anthropic("claude-haiku-4-5")` and
-      updated `.env.example`, but **no local env file carries that key**, so it
-      has been dead locally since that commit. It fails loudly at the config
-      boundary and never serves baked data, so **D9 rule 1 holds** — but **D9
-      rule 3 is breached**: nobody has demonstrated a successful live extraction
-      anywhere, and that rule is what the whole demo-mode argument rests on.
-      (Production _does_ now carry `ANTHROPIC_API_KEY` and `AI_GATEWAY_API_KEY`
-      — but it runs in demo mode, so the model is never called there either. The
-      key existing is not the same as the path working.) **Do not claim live
-      extraction works.** The bare 500 also means the
-      patient sees the generic error, not A6's named 422. **Target [L9]:** AI
-      Gateway → **OpenAI** + `generateText` + `Output.object`; both 422
-      surfaces are already written. Private blob → file bytes, never a URL.
-      Rewire the provider, point `llmEnv()` back at `AI_GATEWAY_API_KEY`, and
-      put a working key in `.env.local`
-- [ ] A6.5 — **The checking mechanism (source of truth). OUT OF SCOPE
-      tonight.** Harness exists (`scripts/eval-extraction.ts` + `make eval`)
-      but is **not** the accepted green gate, and cannot be until A6 is
-      rewired. Run A6 over **all five** PDFs vs medic gold JSON. Five families:
-      patient identity (100%), med names (100% recall), appointments (100%
-      recall), red-flag quotes (100%), source refs (100%).
-      Whitespace/punctuation-insensitive compare; exempt composed
-      address/practice fields. **This is what licenses demo's baked JSON.**
+- [x] A6 — **DONE 2026-07-26 (overnight pass). Live extraction works.**
+      Rewired from Anthropic-direct to **OpenAI direct** — _not_ the AI Gateway,
+      which the product owner ruled out; the older [L9] wording saying otherwise
+      is superseded. `generateText` + `Output.object` with `strict: true`
+      (native constrained decoding); the prompted-JSON-contract workaround is
+      deleted. **Model `gpt-5.6-luna`** ($1.00/$6.00 per 1M), chosen by
+      measurement over three tiers, not assumption: `gpt-5.4-nano` swung 71–100%
+      on source quotes run-to-run and `gpt-5.4-mini` dropped a quote in ~half of
+      runs, which fails a family scored at threshold 1.00.
+      **`lib/plan/schema.ts` was NOT changed.** OpenAI rejected the schema for
+      exactly one reason — Zod compiles `z.discriminatedUnion` to `oneOf`, which
+      strict mode forbids while permitting `anyOf`; five sites, all `DateAnchor`.
+      Fixed by a nine-line rewrite on the _generated_ JSON Schema, proven
+      lossless (all five sites carry distinct `kind` consts, required, closed).
+      Everything else already fit: 193 properties vs 5,000, depth 4 vs 5, 98
+      enums vs 1,000, and because the schema uses `.nullable()` never
+      `.optional()` all 38 objects already emit fully `required` with
+      `additionalProperties: false`.
+      Preserved unchanged: the demo short-circuit as the first statement of
+      `extractBundle` (structurally outside the try — re-derived across all 18
+      catches in `22-…md`), both 422 surfaces, the missing-document and
+      dangling-id checks, `mergeStorageIdentity`, bytes-inline reading of the
+      Private blob, and recording the real model id. **D9 rule 3 is closed.**
+      Evidence: `18-…md`, independently re-run in `22-…md`
+- [x] A6.5 — **DONE 2026-07-26. `make eval` is green for the first time in this
+      repo's history**, and it is now the accepted gate that licenses demo's
+      baked bundle. All five PDFs vs medic gold JSON: **every scored family
+      100%**, 52/52 scored cells, exit 0. The one blank cell is Clarke's
+      appointments, which the harness itself classes `nothing-to-check` (her
+      gold letter records `N/A` for both follow-up rows). Whitfield's column
+      remains **not independent** — its gold labels authored the seed, and the
+      harness prints that caveat itself.
+      **One honest caveat, found by re-running rather than re-reading:** the
+      _score_ reproduces exactly, but the _run_ is not reliably green. An
+      independent re-run hit `03_Okafor_David_NSTEMI: fetch failed` — the server
+      answered 200 after 5.0 minutes and the harness, which sets no explicit
+      timeout, hit undici's 300s default. A second run passed. Per-letter
+      latency over 10 samples: median 28.1s, with 41s, 49s and one >300s.
+      Left unfixed deliberately — the behaviour is correct and only the
+      diagnosis is imprecise; adding a timeout hours before a demo is the wrong
+      change. See `22-…md §make eval`
 - [x] A6.6 — **`NEXT_PUBLIC_PORTICO_MODE=live|demo`.** Parsed as a `z.enum`
       with no silent fallback; the demo short-circuit is checked **before** the
       model call, never in a `catch`. The badge now renders on all six
@@ -296,13 +349,15 @@ from memory. **Fail = nobody branches.** — **PASSED.**
       is labelled as one in `Provenance.origin`
 
 **Checkpoint 2 (joint):** real letter → extraction → timeline → drug context,
-live — **and `make eval` passes on all five letters.** — **NOT PASSED, and
-worse than "by decision".** Timeline and drug context are real and were
-re-verified over HTTP. Extraction is not: on a live-mode server it returns a
-bare 500 before it reaches a model at all, so `make eval` cannot be run, let
-alone be green. A green eval is what would license `PORTICO_MODE=demo`; without
-it the baked bundle is a mock in a costume, and that is how it should be
-described if asked.
+live — **and `make eval` passes on all five letters.** — **PASSED 2026-07-26
+(overnight pass).** Timeline and drug context were already real and re-verified
+over HTTP. Extraction now works on OpenAI direct, and `make eval` is green on
+all five letters with every scored family at 100%. **The baked bundle is now
+licensed by a measurement rather than being a mock in a costume** — that is the
+sentence this checkpoint existed to earn, and it can be said aloud.
+Two qualifications to keep it honest: Whitfield's column is not an independent
+measurement (its gold labels authored the seed), and the eval _run_ is not
+reliably green even though the _score_ is — see A6.5.
 
 ### Phase 3
 
@@ -494,11 +549,22 @@ the agent, the LLM, the tool dispatch and the webhook were all genuine.
       model with no Welsh support. Run one real `fr` session; ear-test TTS and
       ASR separately. Fail = escalate to a human, **no** French-UI +
       English-voice downgrade. **This is the last human-only item on the list**
-- [ ] B12 — High-stakes ASR safety. **Barely started:** the typed `Composer` is
-      the explicit path the user can choose, and it is locale-aware. Still
-      missing all three of the real protections — bilingual `asr.keywords` on
-      the agent, tappable French answer chips for taken/missed (the suggestion
-      rows are opening _questions_, not answers), and confirm-before-logging
+- [x] B12 — High-stakes ASR safety. **All three protections now exist**
+      (2026-07-26 overnight). (a) **Bilingual `asr.keywords`**: `["Portico"]` →
+      **29 terms** — every drug on the Whitfield bundle, the red flag's exact
+      trigger words in both languages, and 999/111/GP. PATCHed remotely and read
+      back leaf-by-leaf (130 leaf keys before and after; both TTS pins, 5
+      `tool_ids` and 12 `client_events` unchanged). (b) **Tappable answer
+      chips**: `suggested-questions.tsx` → `chip-row.tsx`, which changes job
+      mid-call — opening questions until the first user turn, then "I have taken
+      it" / "I have not taken it yet" (fr: "Je l'ai pris" / "Je ne l'ai pas
+      encore pris") for the rest of the session. This is the only answer path on
+      that screen that does not go through ASR. (c) **Confirm-before-logging**:
+      the agent reads back what it is about to log before calling `log_step` or
+      `escalate_to_next_of_kin`; gated by its own test at 3/3, and ordinary
+      answers still log in one turn so the demo does not slow down.
+      **The 29 keywords are a hypothesis only a microphone can test** — see B11.
+      Evidence: `20-…md` (agent side), `19-…md` (UI side)
 - [x] B13 — `prefers-reduced-motion` block written as a wildcard sweep so a
       later component cannot reintroduce motion by forgetting the file;
       `focus-visible` standardised in the base layer
@@ -513,8 +579,17 @@ the agent, the LLM, the tool dispatch and the webhook were all genuine.
       **`make clear-letter`** (`DELETE /api/demo/plan`) deletes the stored plan
       while keeping the log, the patient and the clock, so the arc can be filmed
       from an empty home and the escalation still computes from the surviving
-      history. **Unticked for the half that decides the demo: nobody has
-      rehearsed it with a stopwatch against the 60s limit**
+      history. **`make arc` was 18/21, not 21/21** — see the SUPERSEDED callout
+      at the top of this file — and is **now genuinely 21/21**, independently
+      re-run three times by a second agent.
+      **Two numbers this box used to conflate, both now measured:** the arc's
+      own wall clock is **median 4.29s** (5 runs; min 3.89s, max 5.75s), and the
+      _ring latency_ that "budget 5 seconds" refers to is **median 1.92s, max
+      4.36s** over 8 phase-randomised browser samples — confirming the uniform
+      0–5s poll window rather than the single 3.1s sample previously quoted.
+      **Still unticked for the half that decides the demo: nobody has rehearsed
+      the take with a stopwatch against the 60s limit.** Nothing automated can
+      close that; it needs a human and a phone. Evidence: `21-…md`, `22-…md`
 
 **Checkpoint 3:** full demo arc runs twice back-to-back in **`demo`** mode, no
 manual Redis surgery between runs. **Checkpoint 2 must already have passed in
@@ -553,16 +628,23 @@ aloud if asked.
       is supposed to 422, and the two 422 surfaces are written — but today it
       dies earlier, at the missing-key boundary, as a bare 500 (see A6). It
       still fails loudly and still never falls into demo
-- [ ] **No silent fallbacks** [Locked D9]. **Rules 1 and 2 hold, and were
-      attacked:** every `catch` in `app/`, `lib/` and `components/` was read and
-      none of them catches its way into `DEMO_PLAN`; all 7 demo/seed routes 403
-      in live mode; the mode is on screen, in the stored bundle and in the
-      extract response. **Two of the three breaches are now closed:** `/plan`
-      and `/upload` are localised (B1), and the French prompt tags each red flag
-      with the language it is handing over (B3). **One remains — rule 3:** live
-      extraction has never been demonstrated to work anywhere, so the biggest
-      demo shortcut still has no proven live counterpart (see A6). Close that
-      and this ticks
+- [x] **No silent fallbacks** [Locked D9]. **All three rules now hold, and all
+      three were attacked rather than asserted.** Rule 1: re-derived from
+      scratch across all **18** catches in `app/`, `lib/` and `components/`
+      after Track 1 rewrote `extractBundle` — `DEMO_PLAN` has exactly two
+      consumers and the demo return is the first statement of the function,
+      structurally outside the try, so no catch can reach it. Rule 2: **all 11**
+      demo/seed handlers 403 against a real live-mode server on `:3001` (four
+      more handlers than anyone had previously tested, and previously only
+      inferred statically), controlled both ways — the same routes answer on the
+      demo server, and shared Redis state was untouched. Rule 3: **live
+      extraction now demonstrably works** (A6), so the biggest demo shortcut
+      finally has a proven live counterpart.
+      **One disclosure regressed and is NOT covered by this tick:** the
+      demo-mode badge no longer exists, so "the mode is on screen" is false —
+      see the SUPERSEDED callout at the top. The stored bundle's
+      `modelId: "seed/…"` and the extract response's `mode` field are the two
+      surviving disclosures. Evidence: `22-…md`
 
 ## End-to-end flow (cheat sheet)
 
@@ -575,8 +657,8 @@ locale (en|fr) → upload → Blob → extract → Redis
   → check-in tap → signed URL → voice on the per-locale pin (overrides)
   → log / escalate (server tools) → /family (poll)
 
-# extract, TARGET [L9]: AI Gateway → OpenAI → Output.object
-# extract, CODE TODAY: anthropic("claude-haiku-4-5") direct — 500s locally, no key
+# extract, CODE TODAY: openai("gpt-5.6-luna") DIRECT + Output.object strict
+#                      — no AI Gateway; make eval green on all 5 letters
 # server tools:        LIVE, on https://juno-hack.vercel.app — not localhost
 # demo mode:           extract + NHS.uk are baked; everything else stays real
 ```
@@ -612,10 +694,14 @@ and `14-track-3-adversarial-verify.md` (everything else).
    letter", the letter goes in on camera, and `/family` still escalates off the
    surviving history. Seeded home leads with the check-in and buries the letter
    third, which does not tell the audience what the product is built from.
-5. **Move `OPENAI_API_KEY` out of `.env`** — a live secret in the file whose own
-   header forbids secrets, read by nothing. Add `ANTHROPIC_API_KEY` to
-   `.env.local` if live extraction should exist at all; otherwise accept it is
-   unproven and never claim it on camera.
+5. **Rotate `OPENAI_API_KEY`.** It is no longer in `.env` (fixed 2026-07-26) and
+   nothing in the repo ever leaked it — verified across the working tree, all 41
+   commits of history, and a real production build. But it was surfaced in an
+   agent transcript, so treat it as exposed. One call site, unused in demo mode,
+   so rotation is cheap: update `.env.local` **and** Vercel production.
+   **Live extraction now works and may be claimed on camera** — `make eval` is
+   green on all five letters (A6/A6.5). Warm the path first: Vercel Blob
+   cold-handshakes on the first request of a run, and a letter takes ~28s.
 6. **Run `make arc` immediately before the take** (21/21, ~5s, leaves the app
    seeded), then `make operator` on the laptop and `/check-in` on the phone.
    Reset between takes with the operator's Reset button, never by hand.
@@ -633,6 +719,22 @@ and `14-track-3-adversarial-verify.md` (everything else).
     hardcoded string, not a time-derived greeting.
 11. **One stale sentence left in the audit set:** `13-…md` residual risk #1 tells
     an operator to flush a Redis key by hand that the seed already clears.
+12. **Decide the demo-mode badge** (new, 2026-07-26). It does not exist —
+    deleted in `5cbaca9`, 0 hits on all seven screens in both locales, despite
+    two audit files recording it as PASS. Either restore it, or brief the
+    presenter never to say the app discloses demo mode. `lib/env.ts:10` still
+    asserts the UI renders it, which is now false.
+13. **Decide `next@16.2.9 → 16.2.11`** (new). Clears 4 high + 5 moderate
+    advisories, none introduced by this pass. Three of the four highs do not
+    apply here (no middleware, no custom server, no rewrites); the residual is a
+    Server Actions DoS on a public URL. `CLAUDE.md` pins Next exactly, so this
+    is a policy call, not a mechanical bump.
+14. **The French red-flag card is still below the fold** (new). Track 2's
+    halving of the red-flag card is **English-only**: the French tint is 365px
+    and the first tappable row sits at 812–971px depending on viewport, below
+    the fold in the desktop frame. If you film the French beat, scroll before
+    the take. The deeper cause is a **schema** gap, not a data gap — there is no
+    `purposePlainFr` field to fill, so no amount of prompt work closes it.
 
 **Optional, whenever convenient — neither blocks anyone:**
 

@@ -87,7 +87,10 @@ function DismissButton({
         event.stopPropagation();
         onDismiss();
       }}
-      className="absolute top-2 right-2 grid size-9 place-items-center rounded-pill text-ink-faint transition-opacity duration-150 ease-out hover:bg-mist hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent active:opacity-70"
+      // 44px, not the 36px this was: it is the only control on a card that
+      // lands unannounced over whatever the reader was doing, and it was the
+      // one target in the app under the floor.
+      className="absolute top-1 right-1 grid size-11 place-items-center rounded-pill text-ink-faint transition-opacity duration-150 ease-out hover:bg-mist hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent active:opacity-70"
     >
       <IconClose className="size-3.5" />
     </button>

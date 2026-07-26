@@ -76,8 +76,7 @@ export function Timeline({
     }))
     .filter((day) => day.items.length > 0);
 
-  const hasMore =
-    later.length > 0 || standing.length > 0 || changed.length > 0;
+  const hasMore = later.length > 0 || standing.length > 0 || changed.length > 0;
 
   return (
     <div className="flex flex-col gap-8 pb-10">
@@ -159,7 +158,7 @@ export function Timeline({
             )}
 
             {standing.length === 0 ? null : (
-              <Group title={t.anyTime} blurb={t.anyTimeBlurb}>
+              <Group title={t.anyTime}>
                 <ul className="flex flex-col gap-1">
                   {standing.map((item) => (
                     <TaskRow
@@ -185,7 +184,10 @@ export function Timeline({
                           and the note itself is quoted, so it also refuses machine
                           translation [Locked D7]. Where the letter gave no note the
                           second line is ours, and it translates. */}
-                      <p lang="en" className="font-semibold leading-snug text-ink">
+                      <p
+                        lang="en"
+                        className="font-semibold leading-snug text-ink"
+                      >
                         {medication.name}
                       </p>
                       {medication.note === null ? (
@@ -220,7 +222,7 @@ export function Timeline({
         // label for a sighted reader; a screen reader still walks the days.
         // Still PlanCards — earlier days are the same calendar, just behind.
         <div>
-          <p className="px-1 text-base leading-relaxed text-ink-muted">
+          <p className="px-1 text-base font-medium text-ink-muted">
             {t.earlierDays}
           </p>
           <div className="mt-3 flex flex-col gap-3">

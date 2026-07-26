@@ -21,7 +21,10 @@ export function UploadBusy({
         <p className="font-display text-xl font-medium leading-snug text-ink">
           <LabelText state={state} t={t} />
         </p>
-        <p aria-live="polite" className="text-base leading-relaxed text-ink-muted">
+        <p
+          aria-live="polite"
+          className="text-base leading-relaxed text-ink-muted"
+        >
           <StateMessage state={state} t={t} />
         </p>
       </div>
