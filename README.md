@@ -19,6 +19,10 @@ make dev       # http://localhost:3000
 
 ## Demo night (handoff)
 
+**New to the project / doing QA?** Start with [`DEMO.md`](DEMO.md) — a short
+entry-level walkthrough of the phone, operator, and the rough demo arc (safe to
+hand to a colleague or to Claude to explore from).
+
 Two windows: the **phone** (`/` — product) and the **operator desk**
 (`/operator` — laptop only, not linked from the app). State lives in Redis +
 Blob and **persists** after every run. You never wipe a Vercel database; you
